@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width,initial-scale=1.0" name="viewport">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/favicon.ico" rel="icon">
+    <title>Authentication server</title>
+</head>
+<body>
+<h1>Authentication server main page</h1>
+<a href="/admin" th:href="@{/admin}">Admin panel</a>
+<form action="#" method="post" th:action="@{/do_logout}">
+    <input type="submit" value="Logout"/>
+</form>
+</body>
+</html>

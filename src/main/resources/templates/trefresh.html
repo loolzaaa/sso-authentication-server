@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width,initial-scale=1.0" name="viewport">
+    <script src="/webjars/fingerprintjs2/1.8.0/fingerprint2.js"></script>
+    <link href="/favicon.ico" rel="icon">
+    <title>Authentication server</title>
+</head>
+<body>
+<noscript>
+    <strong>We're sorry but this app doesn't work properly without JavaScript enabled. Please enable it to
+        continue.</strong>
+</noscript>
+<form action="#" id="refresh_form" method="post" th:action="@{/api/refresh}">
+    <input id="fp_input" name="_fingerprint" type="hidden" value="FP_PLACEHOLDER">
+</form>
+<script>
+     let refresh = function() {
+        let p = new Promise((resolve, reject) => {
+            if (window.requestIdleCallback) {
+                requestIdleCallback(() => {
+                    new Fingerprint2().get(result => resolve(result));
+                })
+            } else {
+                setTimeout(() => {
+                    new Fingerprint2().get(result => resolve(result));
+                }, 500)
+            }
+        });
+
+        p.then(result => {
+            document.getElementById('fp_input').value = result;
+            document.getElementById('refresh_form').submit();
+        });
+    }
+    refresh();
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width,initial-scale=1.0" name="viewport">
+    <script src="/webjars/lodash/4.17.21/lodash.js"></script>
+    <script src="/webjars/fingerprintjs2/1.8.0/fingerprint2.js"></script>
+    <script src="/js/script.js"></script>
+    <link href="/webjars/font-awesome/5.15.3/css/all.css" rel="stylesheet">
+    <link href="/webjars/bulma/0.9.2/css/bulma.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/favicon.ico" rel="icon">
+    <title>Authentication server</title>
+</head>
+<body>
+<noscript>
+    <strong>We're sorry but this app doesn't work properly without JavaScript enabled. Please enable it to
+        continue.</strong>
+</noscript>
+<div>
+    <form action="#" id="login_form" method="post" th:action="@{/do_login}">
+        <label>Имя пользователя</label>
+        <input name="username" placeholder="Имя пользователя" type="text">
+        <label>Пароль</label>
+        <input name="password" placeholder="Пароль" type="password">
+        <button type="submit">Вход</button>
+        <p th:if="${param.credentialsError}" th:text="${session?.SPRING_SECURITY_LAST_EXCEPTION?.message}">Неверное имя пользователя или пароль</p>
+        <p th:if="${param.successLogout}">Вы вышли из системы</p>
+        <input id="fp_input" name="_fingerprint" type="hidden" value="FP_PLACEHOLDER">
+    </form>
+</div>
+<script>
+     document.getElementById('login_form').onsubmit = function(e) {
+        e.preventDefault();
+
+        let p = new Promise((resolve, reject) => {
+            if (window.requestIdleCallback) {
+                requestIdleCallback(() => {
+                    new Fingerprint2().get(result => resolve(result));
+                })
+            } else {
+                setTimeout(() => {
+                    new Fingerprint2().get(result => resolve(result));
+                }, 500)
+            }
+        });
+
+        p.then(result => {
+            document.getElementById('fp_input').value = result;
+            document.getElementById('login_form').submit();
+        });
+    }
+</script>
+</body>
+</html>
