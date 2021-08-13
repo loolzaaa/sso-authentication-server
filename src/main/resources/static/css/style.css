@@ -1,0 +1,48 @@
+.is-primary {
+    background-color: #323d5e!important;
+}
+.is-link {
+    background-color: #323d5e!important;
+}
+
+#keyboard {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+
+	z-index: 1000;
+	width: 100%;
+	max-width: 1000px;
+	margin: 0 auto;
+
+	padding: 1em;
+
+	background-color: #EEE;
+	box-shadow: 0px -3px 10px rgba(0,0,0, 0.3);
+
+	border-radius: 10px;
+}
+
+.active, .my-button:hover, .my-disabled:hover {
+  background-color: #323d5e;
+  color: #fff;
+}
+
+.logo {
+	width:180px;
+	margin-top:5px;
+}
+.sticky-navbar {
+    position:sticky;
+    top: 0;
+}
+.simple-clock {
+    position: absolute;
+    margin: 0 auto;
+    font-size: 2.5rem;
+    line-height: normal;
+    text-align: center;
+    left:50%;
+    transform: translateX(-50%);
+}
