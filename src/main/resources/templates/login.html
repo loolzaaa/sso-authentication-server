@@ -71,6 +71,7 @@
                             <p class="help" th:if="${param.successLogout}">Вы вышли из системы</p>
                         </div>
                         <input id="fp_input" name="_fingerprint" type="hidden" value="FP_PLACEHOLDER">
+                        <input th:if="${param.continue != null}" name="_continue" type="hidden" th:value="${param.continue}">
                     </form>
                 </div>
             </div>
