@@ -2,7 +2,9 @@ package ru.loolzaaa.authserver.config.security.filter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.web.util.UrlUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
@@ -13,6 +15,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Base64;
 
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
@@ -56,12 +59,20 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             if (req.getParameter("_fingerprint") == null) {
                 logger.trace("There is no fingerprint in request, redirecting to " + refreshTokenURI);
 
-                if (cookieService.getCookieValueByName("_continue", req.getCookies()) == null) {
-                    String continueParamValue = UrlUtils.buildFullRequestUrl(req);
-                    resp.addCookie(cookieService.createCookie("_continue", continueParamValue));
+                String continuePath = req.getParameter("_continue");
+                if (continuePath == null) {
+                    resp.sendRedirect(refreshTokenURI);
+                } else {
+                    String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
+                    if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
+                        String redirectURL = UriComponentsBuilder.fromHttpUrl(refreshTokenURI)
+                                .queryParam("continue", continueUri)
+                                .toUriString();
+                        resp.sendRedirect(redirectURL);
+                    } else {
+                        resp.sendRedirect(refreshTokenURI);
+                    }
                 }
-
-                resp.sendRedirect(refreshTokenURI);
                 return;
             }
 

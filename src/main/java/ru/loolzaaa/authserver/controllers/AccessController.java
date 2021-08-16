@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.util.UrlUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -63,11 +64,15 @@ public class AccessController {
             return "redirect:/";
         } else {
             String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
-            //TODO: decode token
-            String redirectURL = UriComponentsBuilder
-                    .fromHttpUrl(continueUri).queryParam("token", jwtAuthentication.getAccessToken())
-                    .toUriString();
-            return "redirect:" + redirectURL;
+            if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
+                //TODO: decode token
+                String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+                        .queryParam("token", jwtAuthentication.getAccessToken())
+                        .toUriString();
+                return "redirect:" + redirectURL;
+            } else {
+                return "redirect:/";
+            }
         }
     }
 
@@ -110,17 +115,28 @@ public class AccessController {
         String from = req.getParameter("from");
 
         if (!KEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
-        if (!StringUtils.hasText(from)) throw new RequestErrorException("In RFID authentication MUST be a FROM parameter in URL");
 
-        securityContextService.updateSecurityContextHolder(req, resp, login);
+        String continueUri;
+        try {
+            continueUri = new String(Base64.getUrlDecoder().decode(from));
+        } catch (IllegalArgumentException e) {
+            throw new RequestErrorException("Invalid Base64 scheme for FROM parameter for RFID authentication");
+        }
+        if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
+            securityContextService.updateSecurityContextHolder(req, resp, login);
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
-        resp.addCookie(cookieService.createCookie("_t_rfid", ""));
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
+            resp.addCookie(cookieService.createCookie("_t_rfid", ""));
 
-        //TODO: Base decode for FROM URL
-        String redirectURL = UriComponentsBuilder.fromHttpUrl(from).queryParam("token", accessToken).toUriString();
-        return "redirect:" + redirectURL;
+            //TODO: decode token
+            String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+                    .queryParam("token", accessToken)
+                    .toUriString();
+            return "redirect:" + redirectURL;
+        } else {
+            throw new RequestErrorException("Invalid FROM parameter for RFID authentication");
+        }
     }
 
     @PostMapping("/fast/logout")

@@ -3,7 +3,9 @@ package ru.loolzaaa.authserver.config.security.bean;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.util.UrlUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.services.JWTService;
 
@@ -29,10 +31,15 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
             super.onAuthenticationSuccess(req, resp, authentication);
         } else {
             String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
-            //TODO absolute/relative URL path check
-            //TODO decode token
-            String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri).queryParam("token", accessToken).toUriString();
-            resp.sendRedirect(redirectURL);
+            if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
+                //TODO decode token
+                String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+                        .queryParam("token", accessToken)
+                        .toUriString();
+                resp.sendRedirect(redirectURL);
+            } else {
+                super.onAuthenticationSuccess(req, resp, authentication);
+            }
         }
     }
 }
