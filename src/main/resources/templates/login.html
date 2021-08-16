@@ -28,6 +28,7 @@
         <p th:if="${param.credentialsError}" th:text="${session?.SPRING_SECURITY_LAST_EXCEPTION?.message}">Неверное имя пользователя или пароль</p>
         <p th:if="${param.successLogout}">Вы вышли из системы</p>
         <input id="fp_input" name="_fingerprint" type="hidden" value="FP_PLACEHOLDER">
+        <input th:if="${param.continue != null}" name="_continue" type="hidden" th:value="${param.continue}">
     </form>
 </div>
 <script>

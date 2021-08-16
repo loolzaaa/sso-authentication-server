@@ -15,6 +15,7 @@
 </noscript>
 <form action="#" id="refresh_form" method="post" th:action="@{/api/refresh}">
     <input id="fp_input" name="_fingerprint" type="hidden" value="FP_PLACEHOLDER">
+    <input th:if="${param.continue != null}" name="_continue" type="hidden" th:value="${param.continue}">
 </form>
 <script>
      let refresh = function() {
