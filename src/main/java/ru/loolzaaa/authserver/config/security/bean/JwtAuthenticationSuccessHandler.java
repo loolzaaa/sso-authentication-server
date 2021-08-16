@@ -35,6 +35,7 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
                 //TODO decode token
                 String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                         .queryParam("token", accessToken)
+                        .queryParam("serverTime", System.currentTimeMillis())
                         .toUriString();
                 resp.sendRedirect(redirectURL);
             } else {

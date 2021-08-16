@@ -68,6 +68,7 @@ public class AccessController {
                 //TODO: decode token
                 String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                         .queryParam("token", jwtAuthentication.getAccessToken())
+                        .queryParam("serverTime", System.currentTimeMillis())
                         .toUriString();
                 return "redirect:" + redirectURL;
             } else {
@@ -102,7 +103,9 @@ public class AccessController {
                     );
         }
 
-        return ResponseEntity.ok().body(RequestStatusDTO.ok("Token refreshed:" + jwtAuthentication.getAccessToken()));
+        //TODO: decode token
+        return ResponseEntity.ok().body(RequestStatusDTO.ok("{\"token\":\"%s\",\"serverTime\":%d}",
+                jwtAuthentication.getAccessToken(), System.currentTimeMillis()));
     }
 
     @PostMapping("/fast/rfid")
@@ -132,6 +135,7 @@ public class AccessController {
             //TODO: decode token
             String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                     .queryParam("token", accessToken)
+                    .queryParam("serverTime", System.currentTimeMillis())
                     .toUriString();
             return "redirect:" + redirectURL;
         } else {
