@@ -30,12 +30,12 @@ public class JWTService {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public void authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp, Authentication authentication) {
+    public String authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp, Authentication authentication) {
         String fingerprint = req.getParameter("_fingerprint");
-        authenticateWithJWT(req, resp, authentication, fingerprint);
+        return authenticateWithJWT(req, resp, authentication, fingerprint);
     }
 
-    public void authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp,
+    public String authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp,
                                     Authentication authentication, String fingerprint) {
         UserPrincipal user = (UserPrincipal) authentication.getPrincipal();
 
@@ -55,6 +55,8 @@ public class JWTService {
         cookieService.updateTokenCookies(req, resp, jwtAuthentication.getAccessToken(), jwtAuthentication.getRefreshToken());
 
         //log.info("User {}[{}] logged in.", login, req.getRemoteAddr());
+
+        return jwtAuthentication.getAccessToken();
     }
 
     public String checkAccessToken(String token) {
@@ -66,7 +68,7 @@ public class JWTService {
         }
     }
 
-    public String refreshAccessToken(HttpServletRequest req, HttpServletResponse resp, String refreshToken) {
+    public JWTAuthentication refreshAccessToken(HttpServletRequest req, HttpServletResponse resp, String refreshToken) {
         String currentFingerprint = req.getParameter("_fingerprint");
 
         String sql = "SELECT login, fingerprint " +
@@ -96,7 +98,7 @@ public class JWTService {
 
         cookieService.updateTokenCookies(req, resp, jwtAuthentication.getAccessToken(), jwtAuthentication.getRefreshToken());
 
-        return username;
+        return jwtAuthentication;
     }
 
     public void deleteTokenFromDatabase(String refreshToken) {
@@ -124,6 +126,7 @@ public class JWTService {
         UUID refreshToken = UUID.randomUUID();
 
         return JWTAuthentication.builder()
+                .username(username)
                 .accessToken(accessToken)
                 .refreshToken(refreshToken.toString())
                 .accessExp(accessExp)
