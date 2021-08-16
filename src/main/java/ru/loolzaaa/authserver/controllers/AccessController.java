@@ -11,9 +11,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.dto.RequestStatus;
 import ru.loolzaaa.authserver.dto.RequestStatusDTO;
 import ru.loolzaaa.authserver.exception.RequestErrorException;
+import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
 import ru.loolzaaa.authserver.services.LogoutService;
@@ -21,6 +23,7 @@ import ru.loolzaaa.authserver.services.SecurityContextService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Base64;
 
 @RequiredArgsConstructor
 @Controller
@@ -49,18 +52,22 @@ public class AccessController {
             return "redirect:" + mainLoginPage;
         }
 
-        String login = jwtService.refreshAccessToken(req, resp, refreshToken);
-        if (login == null) {
+        JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
+        if (jwtAuthentication == null) {
             securityContextService.clearSecurityContextHolder(req, resp);
             return "redirect:" + mainLoginPage;
         }
 
-        String continuePath = cookieService.getCookieValueByName("_continue", req.getCookies());
+        String continuePath = req.getParameter("_continue");
         if (continuePath == null) {
             return "redirect:/";
         } else {
-            cookieService.clearCookieByName(req, resp, "_continue");
-            return "redirect:" + continuePath;
+            String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
+            //TODO: decode token
+            String redirectURL = UriComponentsBuilder
+                    .fromHttpUrl(continueUri).queryParam("token", jwtAuthentication.getAccessToken())
+                    .toUriString();
+            return "redirect:" + redirectURL;
         }
     }
 
@@ -78,8 +85,8 @@ public class AccessController {
                     );
         }
 
-        String login = jwtService.refreshAccessToken(req, resp, refreshToken);
-        if (login == null) {
+        JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
+        if (jwtAuthentication == null) {
             securityContextService.clearSecurityContextHolder(req, resp);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(RequestStatusDTO.builder()
@@ -90,7 +97,7 @@ public class AccessController {
                     );
         }
 
-        return ResponseEntity.ok().body(RequestStatusDTO.ok("Token refreshed"));
+        return ResponseEntity.ok().body(RequestStatusDTO.ok("Token refreshed:" + jwtAuthentication.getAccessToken()));
     }
 
     @PostMapping("/fast/rfid")
@@ -108,10 +115,12 @@ public class AccessController {
         securityContextService.updateSecurityContextHolder(req, resp, login);
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
+        String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
         resp.addCookie(cookieService.createCookie("_t_rfid", ""));
 
-        return "redirect:" + from;
+        //TODO: Base decode for FROM URL
+        String redirectURL = UriComponentsBuilder.fromHttpUrl(from).queryParam("token", accessToken).toUriString();
+        return "redirect:" + redirectURL;
     }
 
     @PostMapping("/fast/logout")

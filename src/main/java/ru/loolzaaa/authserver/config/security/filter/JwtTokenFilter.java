@@ -3,6 +3,7 @@ package ru.loolzaaa.authserver.config.security.filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
 import ru.loolzaaa.authserver.services.SecurityContextService;
@@ -64,8 +65,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 return;
             }
 
-            login = jwtService.refreshAccessToken(req, resp, refreshToken);
-            if (login != null) {
+            JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
+            if (jwtAuthentication != null) {
+                login = jwtAuthentication.getUsername();
                 logger.debug(String.format("Refresh token for user [%s] validated and updated. Update SecurityContext", login));
 
                 securityContextService.updateSecurityContextHolder(req, resp, login);
