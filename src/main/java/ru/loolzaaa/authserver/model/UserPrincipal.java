@@ -78,8 +78,8 @@ public class UserPrincipal implements UserDetails {
                 }
                 ((ObjectNode) appConfig).remove(List.of(UserAttributes.ROLES, UserAttributes.PRIVILEGES));
                 user.setConfig(appConfig);
-            }
-        }
+            } else throw new IllegalArgumentException(String.format("There is no application [%s] for user [%s]", app, this.user.getLogin()));
+        } else throw new IllegalArgumentException(String.format("There is no config for user [%s]", this.user.getLogin()));
     }
 
     public static void setApplicationName(String applicationName) {
