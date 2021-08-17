@@ -65,7 +65,6 @@ public class AccessController {
         } else {
             String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
             if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-                //TODO: decode token
                 String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                         .queryParam("token", jwtAuthentication.getAccessToken())
                         .queryParam("serverTime", System.currentTimeMillis())
@@ -103,7 +102,6 @@ public class AccessController {
                     );
         }
 
-        //TODO: decode token
         return ResponseEntity.ok().body(RequestStatusDTO.ok("{\"token\":\"%s\",\"serverTime\":%d}",
                 jwtAuthentication.getAccessToken(), System.currentTimeMillis()));
     }
@@ -130,9 +128,8 @@ public class AccessController {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
-            resp.addCookie(cookieService.createCookie("_t_rfid", ""));
+            resp.addCookie(cookieService.createCookie("_t_rfid", "", req.isSecure()));
 
-            //TODO: decode token
             String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                     .queryParam("token", accessToken)
                     .queryParam("serverTime", System.currentTimeMillis())
