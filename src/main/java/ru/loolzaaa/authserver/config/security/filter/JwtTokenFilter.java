@@ -61,16 +61,16 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
                 String continuePath = req.getParameter("_continue");
                 if (continuePath == null) {
-                    resp.sendRedirect(refreshTokenURI);
+                    resp.sendRedirect(req.getContextPath() + refreshTokenURI);
                 } else {
                     String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
                     if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-                        String redirectURL = UriComponentsBuilder.fromHttpUrl(refreshTokenURI)
+                        String redirectURL = UriComponentsBuilder.fromHttpUrl(req.getContextPath() + refreshTokenURI)
                                 .queryParam("continue", continueUri)
                                 .toUriString();
                         resp.sendRedirect(redirectURL);
                     } else {
-                        resp.sendRedirect(refreshTokenURI);
+                        resp.sendRedirect(req.getContextPath() + refreshTokenURI);
                     }
                 }
                 return;

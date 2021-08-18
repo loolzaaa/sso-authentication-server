@@ -1,11 +1,13 @@
 package ru.loolzaaa.authserver.services;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.Collection;
 
 @Service
 public class CookieService {
@@ -25,8 +27,19 @@ public class CookieService {
     }
 
     public void updateTokenCookies(HttpServletRequest req, HttpServletResponse resp, String accessToken, String refreshToken) {
-        resp.addCookie(createCookie("_t_access", accessToken));
-        resp.addCookie(createCookie("_t_refresh", refreshToken));
+        resp.addCookie(createCookie("_t_access", accessToken, req, resp));
+        resp.addCookie(createCookie("_t_refresh", refreshToken, req, resp));
+
+        Collection<String> headers = resp.getHeaders(HttpHeaders.SET_COOKIE);
+        boolean firstHeader = true;
+        for (String header : headers) {
+            if (firstHeader) {
+                resp.setHeader(HttpHeaders.SET_COOKIE, String.format("%s; %s", header, "SameSite=None"));
+                firstHeader = false;
+                continue;
+            }
+            resp.addHeader(HttpHeaders.SET_COOKIE, String.format("%s; %s", header, "SameSite=None"));
+        }
     }
 
     public void clearCookies(HttpServletRequest req, HttpServletResponse resp) {
@@ -45,13 +58,12 @@ public class CookieService {
         resp.addCookie(c);
     }
 
-    //TODO: Check path of new cookie. Must work on origin application AND authentication server
-    // Now work if all applications on localhost
-    public Cookie createCookie(String name, String value) {
+    // This method used only for passport cookie creation
+    public Cookie createCookie(String name, String value, HttpServletRequest req, HttpServletResponse resp) {
         Cookie cookie = new Cookie(name, value);
         cookie.setHttpOnly(true);
-        //cookie.setSecure(true); //FIXME: Check it
-        cookie.setPath("/");
+        cookie.setSecure(req.isSecure());
+        cookie.setPath(req.getContextPath() + "/");
         return cookie;
     }
 }

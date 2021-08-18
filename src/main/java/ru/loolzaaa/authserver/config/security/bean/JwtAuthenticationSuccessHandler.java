@@ -32,7 +32,6 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
         } else {
             String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
             if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-                //TODO decode token
                 String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                         .queryParam("token", accessToken)
                         .queryParam("serverTime", System.currentTimeMillis())
