@@ -30,16 +30,7 @@ public class CookieService {
         resp.addCookie(createCookie("_t_access", accessToken, req, resp));
         resp.addCookie(createCookie("_t_refresh", refreshToken, req, resp));
 
-        Collection<String> headers = resp.getHeaders(HttpHeaders.SET_COOKIE);
-        boolean firstHeader = true;
-        for (String header : headers) {
-            if (firstHeader) {
-                resp.setHeader(HttpHeaders.SET_COOKIE, String.format("%s; %s", header, "SameSite=None"));
-                firstHeader = false;
-                continue;
-            }
-            resp.addHeader(HttpHeaders.SET_COOKIE, String.format("%s; %s", header, "SameSite=None"));
-        }
+        addSameSiteAttributeToAllCookies(req, resp);
     }
 
     public void clearCookies(HttpServletRequest req, HttpServletResponse resp) {
@@ -47,6 +38,7 @@ public class CookieService {
         Arrays.stream(req.getCookies()).forEach(cookie -> {
             clearCookieByName(req, resp, cookie.getName());
         });
+        addSameSiteAttributeToAllCookies(req, resp);
     }
 
     public void clearCookieByName(HttpServletRequest req, HttpServletResponse resp, String name) {
@@ -65,5 +57,18 @@ public class CookieService {
         cookie.setSecure(req.isSecure());
         cookie.setPath(req.getContextPath() + "/");
         return cookie;
+    }
+
+    private void addSameSiteAttributeToAllCookies(HttpServletRequest req, HttpServletResponse resp) {
+        Collection<String> headers = resp.getHeaders(HttpHeaders.SET_COOKIE);
+        boolean firstHeader = true;
+        for (String header : headers) {
+            if (firstHeader) {
+                resp.setHeader(HttpHeaders.SET_COOKIE, String.format("%s; %s", header, "SameSite=None"));
+                firstHeader = false;
+                continue;
+            }
+            resp.addHeader(HttpHeaders.SET_COOKIE, String.format("%s; %s", header, "SameSite=None"));
+        }
     }
 }
