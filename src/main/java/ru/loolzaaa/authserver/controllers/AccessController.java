@@ -128,7 +128,9 @@ public class AccessController {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
-            resp.addCookie(cookieService.createCookie("_t_rfid", "", req.isSecure()));
+            //FIXME: need httpOnly = false, for different views in applications
+            //TODO: use cookieService
+            //resp.addCookie(cookieService.createCookie("_t_rfid", "", req, resp));
 
             String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                     .queryParam("token", accessToken)
