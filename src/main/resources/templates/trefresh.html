@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <meta content="width=device-width,initial-scale=1.0" name="viewport">
-    <script th:src="@{/webjars/fingerprintjs2/1.8.0/fingerprint2.js}"></script>
+    <script th:src="@{/js/fingerprint2.min.js}"></script>
     <link th:href="@{/favicon.ico}" rel="icon">
     <title>Authentication server</title>
 </head>
@@ -20,14 +20,33 @@
 <script>
      let refresh = function() {
         let p = new Promise((resolve, reject) => {
+            async function getHash () {
+                const options = {
+                    excludes: {
+                        plugins: true,
+                        localStorage: true,
+                        adBlock: true,
+                        screenResolution: true,
+                        availableScreenResolution: true,
+                        enumerateDevices: true,
+                        pixelRatio: true,
+                        doNotTrack: true
+                    }
+                }
+
+                try {
+                    const components = await Fingerprint2.getPromise(options);
+                    const values = components.map(component => component.value);
+                    return String(Fingerprint2.x64hash128(values.join(''), 31));
+                } catch (e) {
+                    reject(e);
+                }
+            }
+
             if (window.requestIdleCallback) {
-                requestIdleCallback(() => {
-                    new Fingerprint2().get(result => resolve(result));
-                })
+                requestIdleCallback(async () => resolve(await getHash()));
             } else {
-                setTimeout(() => {
-                    new Fingerprint2().get(result => resolve(result));
-                }, 500)
+                setTimeout(async () => resolve(await getHash()), 500);
             }
         });
 
