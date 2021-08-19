@@ -28,12 +28,17 @@ public class UserController {
 
     @GetMapping("/fast/user/get/{username}")
     @ResponseBody
-    UserPrincipal getUserByUsername(@PathVariable("username") String username, @RequestParam("app") String app) {
+    UserPrincipal getUserByUsername(@PathVariable("username") String username,
+                                    @RequestParam(value = "app", required = false) String app) {
         User user = userRepository.findByLogin(username).orElse(null);
         if (user == null) {
             return null;
         }
-        return new UserPrincipal(user, app);
+        try {
+            return new UserPrincipal(user, app);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @PreAuthorize("hasRole('ADMIN')")

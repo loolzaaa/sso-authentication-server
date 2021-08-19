@@ -67,18 +67,20 @@ public class UserPrincipal implements UserDetails {
 
         JsonNode userConf = user.getConfig();
         if (userConf != null) {
-            JsonNode appConfig = userConf.get(app);
-            if (appConfig != null) {
-                this.authorities.removeIf(grantedAuthority -> !app.equals(grantedAuthority.getAuthority()));
-                if (appConfig.has(UserAttributes.ROLES)) {
-                    appConfig.get(UserAttributes.ROLES).forEach(role -> this.authorities.add(new SimpleGrantedAuthority(role.asText())));
-                }
-                if (appConfig.has(UserAttributes.PRIVILEGES)) {
-                    appConfig.get(UserAttributes.PRIVILEGES).forEach(privilege -> this.authorities.add(new SimpleGrantedAuthority(privilege.asText())));
-                }
-                ((ObjectNode) appConfig).remove(List.of(UserAttributes.ROLES, UserAttributes.PRIVILEGES));
-                user.setConfig(appConfig);
-            } else throw new IllegalArgumentException(String.format("There is no application [%s] for user [%s]", app, this.user.getLogin()));
+            if (app != null) {
+                JsonNode appConfig = userConf.get(app);
+                if (appConfig != null) {
+                    this.authorities.removeIf(grantedAuthority -> !app.equals(grantedAuthority.getAuthority()));
+                    if (appConfig.has(UserAttributes.ROLES)) {
+                        appConfig.get(UserAttributes.ROLES).forEach(role -> this.authorities.add(new SimpleGrantedAuthority(role.asText())));
+                    }
+                    if (appConfig.has(UserAttributes.PRIVILEGES)) {
+                        appConfig.get(UserAttributes.PRIVILEGES).forEach(privilege -> this.authorities.add(new SimpleGrantedAuthority(privilege.asText())));
+                    }
+                    ((ObjectNode) appConfig).remove(List.of(UserAttributes.ROLES, UserAttributes.PRIVILEGES));
+                    user.setConfig(appConfig);
+                } else throw new IllegalArgumentException(String.format("There is no application [%s] for user [%s]", app, this.user.getLogin()));
+            }
         } else throw new IllegalArgumentException(String.format("There is no config for user [%s]", this.user.getLogin()));
     }
 
