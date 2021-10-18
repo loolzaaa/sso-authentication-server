@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.HttpStatus;
 
-import static java.lang.String.format;
+import static java.lang.String.*;
 
 @Getter
 @Setter

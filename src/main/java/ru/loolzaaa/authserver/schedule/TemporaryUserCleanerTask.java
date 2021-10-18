@@ -15,7 +15,7 @@ import ru.loolzaaa.authserver.services.UserControlService;
 
 import java.util.concurrent.Callable;
 
-import static java.lang.String.format;
+import static java.lang.String.*;
 
 @Log4j2
 @RequiredArgsConstructor
