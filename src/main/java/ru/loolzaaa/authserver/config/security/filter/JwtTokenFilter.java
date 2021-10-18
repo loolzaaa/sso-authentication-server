@@ -59,6 +59,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             if (req.getParameter("_fingerprint") == null) {
                 logger.trace("There is no fingerprint in request, redirecting to " + refreshTokenURI);
 
+                //TODO: Save request, because now work only with GET method
+
                 String continuePath = req.getParameter("_continue");
                 if (continuePath == null) {
                     resp.sendRedirect(req.getContextPath() + refreshTokenURI);
