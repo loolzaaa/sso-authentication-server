@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.loolzaaa.authserver.config.security.bean.CustomPBKDF2PasswordEncoder;
@@ -17,12 +18,15 @@ import ru.loolzaaa.authserver.dto.RequestStatusDTO;
 import ru.loolzaaa.authserver.exception.RequestErrorException;
 import ru.loolzaaa.authserver.model.User;
 import ru.loolzaaa.authserver.model.UserAttributes;
+import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.repositories.UserRepository;
 
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -42,6 +46,35 @@ public class UserControlService {
     private final AuthenticationProvider authenticationProvider;
 
     private final CustomPBKDF2PasswordEncoder passwordEncoder;
+
+    public UserPrincipal getUserByUsername(String username, String appName) {
+        User user = userRepository.findByLogin(username).orElse(null);
+        if (user == null) {
+            throw new RequestErrorException("There is no user with login [%s]", username);
+        }
+        try {
+            return new UserPrincipal(user, appName);
+        } catch (Exception e) {
+            throw new RequestErrorException(e.getMessage());
+        }
+    }
+
+    public List<UserPrincipal> getUsersByRole(String role, String appName) {
+        Iterable<User> allUsers = userRepository.findAll();
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
+        List<UserPrincipal> users = new ArrayList<>();
+        try {
+            for (User u : allUsers) {
+                UserPrincipal userPrincipal = new UserPrincipal(u, appName);
+                if (userPrincipal.getAuthorities().contains(authority)) {
+                    users.add(userPrincipal);
+                }
+            }
+            return users;
+        } catch (Exception e) {
+            throw new RequestErrorException(e.getMessage());
+        }
+    }
 
     @Transactional
     public RequestStatusDTO createUser(String app, CreateUserRequestDTO newUser) {

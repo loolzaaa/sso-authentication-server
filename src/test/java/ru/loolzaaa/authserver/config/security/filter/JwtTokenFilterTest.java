@@ -1,0 +1,142 @@
+package ru.loolzaaa.authserver.config.security.filter;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import ru.loolzaaa.authserver.model.JWTAuthentication;
+import ru.loolzaaa.authserver.services.CookieService;
+import ru.loolzaaa.authserver.services.JWTService;
+import ru.loolzaaa.authserver.services.SecurityContextService;
+
+import javax.servlet.FilterChain;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class JwtTokenFilterTest {
+
+    final String REFRESH_TOKEN_URI = "/trefresh";
+
+    @Mock
+    SecurityContextService securityContextService;
+    @Mock
+    JWTService jwtService;
+    @Mock
+    CookieService cookieService;
+
+    @Mock
+    JWTAuthentication jwtAuthentication;
+
+    @Mock
+    HttpServletRequest req;
+    @Mock
+    HttpServletResponse resp;
+    @Mock
+    FilterChain filterChain;
+
+    JwtTokenFilter jwtTokenFilter;
+
+    @BeforeEach
+    void setUp() {
+        jwtTokenFilter = new JwtTokenFilter(REFRESH_TOKEN_URI, securityContextService, jwtService, cookieService);
+    }
+
+    @Test
+    void shouldContinueFilteringIfAccessTokenIsNull() throws Exception {
+        when(cookieService.getCookieValueByName(anyString(), any())).thenReturn(null);
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        verify(filterChain).doFilter(req, resp);
+        verifyNoMoreInteractions(filterChain);
+    }
+
+    @Test
+    void shouldUpdateSecurityContextAndContinueFilteringWhenCorrectAccessToken() throws Exception {
+        final String VALID_ACCESS_TOKEN = "VALID_ACCESS_TOKEN";
+        final String LOGIN = "LOGIN";
+        when(cookieService.getCookieValueByName(anyString(), any())).thenReturn(VALID_ACCESS_TOKEN);
+        when(jwtService.checkAccessToken(VALID_ACCESS_TOKEN)).thenReturn(LOGIN);
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        verify(securityContextService).updateSecurityContextHolder(req, resp, LOGIN);
+        verify(filterChain).doFilter(req, resp);
+        verifyNoMoreInteractions(filterChain);
+    }
+
+    @Test
+    void shouldClearSecurityContextAndContinueFilteringWhenIncorrectAccessTokenAndRefreshTokenIsNull() throws Exception {
+        final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
+        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(null);
+        when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        verify(securityContextService).clearSecurityContextHolder(req, resp);
+        verify(filterChain).doFilter(req, resp);
+        verifyNoMoreInteractions(filterChain);
+    }
+
+    @Test
+    void shouldClearSecurityContextAndContinueFilteringWhenIncorrectAccessTokenAndIncorrectRefreshToken() throws Exception {
+        final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
+        final String INVALID_REFRESH_TOKEN = "INVALID_REFRESH_TOKEN";
+        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(INVALID_REFRESH_TOKEN);
+        when(req.getParameter(eq("_fingerprint"))).thenReturn("FINGERPRINT");
+        when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
+        when(jwtService.refreshAccessToken(req, resp, INVALID_REFRESH_TOKEN)).thenReturn(null);
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        verify(securityContextService).clearSecurityContextHolder(req, resp);
+        verify(filterChain).doFilter(req, resp);
+        verifyNoMoreInteractions(filterChain);
+    }
+
+    @Test
+    void shouldUpdateSecurityContextAndContinueFilteringWhenIncorrectAccessTokenAndCorrectRefreshToken() throws Exception {
+        final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
+        final String VALID_REFRESH_TOKEN = "VALID_REFRESH_TOKEN";
+        final String LOGIN = "LOGIN";
+        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(VALID_REFRESH_TOKEN);
+        when(req.getParameter(eq("_fingerprint"))).thenReturn("FINGERPRINT");
+        when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
+        when(jwtService.refreshAccessToken(req, resp, VALID_REFRESH_TOKEN)).thenReturn(jwtAuthentication);
+        when(jwtAuthentication.getUsername()).thenReturn(LOGIN);
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        verify(securityContextService).updateSecurityContextHolder(req, resp, LOGIN);
+        verify(filterChain).doFilter(req, resp);
+        verifyNoMoreInteractions(filterChain);
+    }
+
+    @Test
+    void shouldSaveRequestAndRedirectForFingerprintIfContinuePathIsNull() throws Exception {
+        final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
+        final String VALID_REFRESH_TOKEN = "VALID_REFRESH_TOKEN";
+        ArgumentCaptor<String> redirectUrlCaptor = ArgumentCaptor.forClass(String.class);
+        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(VALID_REFRESH_TOKEN);
+        when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
+        when(req.getParameter(eq("_continue"))).thenReturn(null);
+        when(req.getContextPath()).thenReturn("");
+        when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        verify(resp).sendRedirect(redirectUrlCaptor.capture());
+        assertThat(redirectUrlCaptor.getValue()).isEqualTo(REFRESH_TOKEN_URI);
+        verifyNoInteractions(filterChain);
+    }
+}

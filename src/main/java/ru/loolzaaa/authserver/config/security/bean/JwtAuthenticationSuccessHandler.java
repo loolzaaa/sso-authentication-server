@@ -30,14 +30,19 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
         if (continuePath == null) {
             super.onAuthenticationSuccess(req, resp, authentication);
         } else {
-            String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
-            if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-                String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
-                        .queryParam("token", accessToken)
-                        .queryParam("serverTime", System.currentTimeMillis())
-                        .toUriString();
-                resp.sendRedirect(redirectURL);
-            } else {
+            String continueUri;
+            try {
+                continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
+                if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
+                    String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+                            .queryParam("token", accessToken)
+                            .queryParam("serverTime", System.currentTimeMillis())
+                            .toUriString();
+                    resp.sendRedirect(redirectURL);
+                } else {
+                    super.onAuthenticationSuccess(req, resp, authentication);
+                }
+            } catch (IllegalArgumentException e) {
                 super.onAuthenticationSuccess(req, resp, authentication);
             }
         }
