@@ -5,12 +5,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.util.UrlUtils;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -21,17 +21,32 @@ public class LoginAccessFilter extends GenericFilterBean {
     private final String mainLoginPage;
 
     @Override
+    protected void initFilterBean() {
+        Assert.isTrue(StringUtils.hasText(this.mainLoginPage) && UrlUtils.isValidRedirectUrl(this.mainLoginPage),
+                "loginFormUrl must be specified and must be a valid redirect URL");
+    }
+
+    @Override
     public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest servletRequest = (HttpServletRequest) req;
         HttpServletResponse servletResponse = (HttpServletResponse) resp;
 
-        if (isAuthenticated() && mainLoginPage.equals(servletRequest.getRequestURI())) {
+        String uriWithoutContextPath = servletRequest.getRequestURI().substring(servletRequest.getContextPath().length());
+        if (isAuthenticated() && mainLoginPage.equals(uriWithoutContextPath)) {
             logger.debug("Already authenticated user with login path detected");
 
             String encodedRedirectURL = servletResponse.encodeRedirectURL(servletRequest.getContextPath() + "/");
 
             servletResponse.setStatus(HttpStatus.TEMPORARY_REDIRECT.value());
             servletResponse.setHeader("Location", encodedRedirectURL);
+        } else if (!isAuthenticated() && mainLoginPage.equals(uriWithoutContextPath)) {
+            String continueParameter = req.getParameter("continue");
+            if (continueParameter != null) {
+                //TODO: add parameter check (absolute URL)
+                RequestDispatcher dispatcher = req.getRequestDispatcher(mainLoginPage);
+                dispatcher.forward(req, resp);
+                return;
+            }
         }
 
         chain.doFilter(servletRequest, servletResponse);
@@ -41,8 +56,7 @@ public class LoginAccessFilter extends GenericFilterBean {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || AnonymousAuthenticationToken.class.isAssignableFrom(authentication.getClass())) {
             return false;
-        } else {
-            return authentication.isAuthenticated();
         }
+        return authentication.isAuthenticated();
     }
 }
