@@ -20,11 +20,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
-import ru.loolzaaa.authserver.config.security.bean.CustomDaoAuthenticationProvider;
-import ru.loolzaaa.authserver.config.security.bean.CustomPBKDF2PasswordEncoder;
-import ru.loolzaaa.authserver.config.security.bean.JwtAuthenticationSuccessHandler;
-import ru.loolzaaa.authserver.config.security.bean.JwtLogoutHandler;
-import ru.loolzaaa.authserver.config.security.filter.ContinueParameterLoginFilter;
+import ru.loolzaaa.authserver.config.security.bean.*;
 import ru.loolzaaa.authserver.config.security.filter.JwtTokenFilter;
 import ru.loolzaaa.authserver.config.security.filter.LoginAccessFilter;
 import ru.loolzaaa.authserver.model.UserPrincipal;
@@ -107,6 +103,7 @@ public class SecurityConfig {
         private final UserDetailsService userDetailsService;
 
         private final JwtAuthenticationSuccessHandler jwtAuthenticationSuccessHandler;
+        private final JwtAuthenticationFailureHandler jwtAuthenticationFailureHandler;
         private final JwtLogoutHandler jwtLogoutHandler;
 
         private final JWTService jwtService;
@@ -133,16 +130,16 @@ public class SecurityConfig {
                             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                     .and()
                         .authorizeRequests()
-                        .antMatchers("/actuator/**")
-                            .hasRole("ADMIN")
-                        .anyRequest()
-                            .hasAuthority(applicationName)
+                            .antMatchers("/actuator/**")
+                                .hasRole("ADMIN")
+                            .anyRequest()
+                                .hasAuthority(applicationName)
                     .and()
                         .formLogin()
                             .loginPage(mainLoginPage)
                             .loginProcessingUrl("/do_login")
+                            .failureHandler(jwtAuthenticationFailureHandler)
                             .successHandler(jwtAuthenticationSuccessHandler)
-                            .failureUrl(mainLoginPage + "?credentialsError") //TODO: define MessageSource for localization
                             .permitAll()
                     .and()
                         .logout()
@@ -158,7 +155,6 @@ public class SecurityConfig {
                             .disable()
                     .addFilterBefore(new JwtTokenFilter(refreshTokenURI, securityContextService, jwtService, cookieService),
                             UsernamePasswordAuthenticationFilter.class)
-                    .addFilterBefore(new ContinueParameterLoginFilter(mainLoginPage), UsernamePasswordAuthenticationFilter.class)
                     .addFilterAfter(new LoginAccessFilter(mainLoginPage), UsernamePasswordAuthenticationFilter.class);
         }
 
