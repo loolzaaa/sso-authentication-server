@@ -10,8 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.dto.RequestStatus;
 import ru.loolzaaa.authserver.dto.RequestStatusDTO;
@@ -19,7 +18,6 @@ import ru.loolzaaa.authserver.exception.RequestErrorException;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
-import ru.loolzaaa.authserver.services.LogoutService;
 import ru.loolzaaa.authserver.services.SecurityContextService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,8 +37,6 @@ public class AccessController {
     private boolean rfidActive;
 
     private final SecurityContextService securityContextService;
-
-    private final LogoutService logoutService;
 
     private final JWTService jwtService;
     private final CookieService cookieService;
@@ -142,9 +138,11 @@ public class AccessController {
         }
     }
 
-    @PostMapping("/fast/logout")
-    void logout(HttpServletRequest req, HttpServletResponse resp) {
-        logoutService.logout(req, resp);
+    @ResponseBody
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PostMapping("/fast/prepare_logout")
+    void prepareLogout(@RequestHeader("Revoke-Token") String token) {
+        jwtService.revokeToken(token);
     }
 
     public String getKEY() {

@@ -15,10 +15,8 @@ import ru.loolzaaa.authserver.model.UserPrincipal;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @RequiredArgsConstructor
 @Service
@@ -29,6 +27,8 @@ public class JWTService {
     private final JWTUtils jwtUtils;
 
     private final JdbcTemplate jdbcTemplate;
+
+    private final List<String> revokedTokens = new CopyOnWriteArrayList<>();
 
     public String authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp, Authentication authentication) {
         String fingerprint = req.getParameter("_fingerprint");
@@ -114,6 +114,14 @@ public class JWTService {
         } else {
             //log.warn("User [{}] logged out. There is no tokens in db for this user.", login);
         }
+    }
+
+    public void revokeToken(String token) {
+        revokedTokens.add(token);
+    }
+
+    public boolean checkTokenForRevoke(String token) {
+        return revokedTokens.remove(token);
     }
 
     private JWTAuthentication generateJWTAuthentication(HttpServletRequest req, HttpServletResponse resp, String username) {
