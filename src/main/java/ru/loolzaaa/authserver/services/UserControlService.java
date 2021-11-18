@@ -65,10 +65,13 @@ public class UserControlService {
         List<UserPrincipal> users = new ArrayList<>();
         try {
             for (User u : allUsers) {
-                UserPrincipal userPrincipal = new UserPrincipal(u, appName);
-                if (userPrincipal.getAuthorities().contains(authority)) {
-                    users.add(userPrincipal);
-                }
+                UserPrincipal userPrincipal;
+                try {
+                    userPrincipal = new UserPrincipal(u, appName);
+                    if (userPrincipal.getAuthorities().contains(authority)) {
+                        users.add(userPrincipal);
+                    }
+                } catch (IllegalArgumentException ignored) {}
             }
             return users;
         } catch (Exception e) {
@@ -122,7 +125,14 @@ public class UserControlService {
             throw new RequestErrorException("There is no user with login [%s]", login);
         }
 
-        boolean isHashDeleted = checkUserAndDeleteHash(user, password);
+        boolean isHashDeleted;
+        try {
+            isHashDeleted = checkUserAndDeleteHash(user, password);
+        } catch (BadCredentialsException e) {
+            throw new RequestErrorException("Incorrect password for user [%s]", user.getLogin());
+        } catch (Exception e) {
+            throw new RequestErrorException("Some error while user [%s] delete process: %s", user.getLogin(), e.getMessage());
+        }
 
         jdbcTemplate.update("DELETE FROM refresh_sessions WHERE user_id = ?", user.getId());
         userRepository.delete(user);
@@ -138,7 +148,13 @@ public class UserControlService {
             throw new RequestErrorException("There is no user with login [%s]", login);
         }
 
-        checkUserAndDeleteHash(user, oldPassword);
+        try {
+            checkUserAndDeleteHash(user, oldPassword);
+        } catch (BadCredentialsException e) {
+            throw new RequestErrorException("Incorrect password for user [%s]", user.getLogin());
+        } catch (Exception e) {
+            throw new RequestErrorException("Some error while user [%s] change password process: %s", user.getLogin(), e.getMessage());
+        }
 
         String salt = passwordEncoder.generateSalt();
         passwordEncoder.setSalt(salt);
@@ -276,16 +292,12 @@ public class UserControlService {
     private boolean checkUserAndDeleteHash(User user, String password) {
         boolean isHashDeleted = false;
         if (password != null) {
-            try {
-                authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));
-                passwordEncoder.setSalt(user.getSalt());
-                String hash = passwordEncoder.encode(password);
-                passwordEncoder.setSalt(null);
-                if (jdbcTemplate.update("DELETE FROM hashes WHERE hash = ?", hash) > 0) {
-                    isHashDeleted = true;
-                }
-            } catch (BadCredentialsException e) {
-                throw new RequestErrorException("Incorrect password for user [%s]", user.getLogin());
+            authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));
+            passwordEncoder.setSalt(user.getSalt());
+            String hash = passwordEncoder.encode(password);
+            passwordEncoder.setSalt(null);
+            if (jdbcTemplate.update("DELETE FROM hashes WHERE hash = ?", hash) > 0) {
+                isHashDeleted = true;
             }
         }
         return isHashDeleted;

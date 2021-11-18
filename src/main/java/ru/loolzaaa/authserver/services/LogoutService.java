@@ -18,6 +18,5 @@ public class LogoutService {
         if (refreshToken != null) {
             jwtService.deleteTokenFromDatabase(refreshToken);
         }
-        cookieService.clearCookies(req, resp);
     }
 }

@@ -21,6 +21,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import ru.loolzaaa.authserver.config.security.bean.*;
+import ru.loolzaaa.authserver.config.security.filter.ExternalLogoutFilter;
 import ru.loolzaaa.authserver.config.security.filter.JwtTokenFilter;
 import ru.loolzaaa.authserver.config.security.filter.LoginAccessFilter;
 import ru.loolzaaa.authserver.model.UserPrincipal;
@@ -153,6 +154,8 @@ public class SecurityConfig {
                     .and()
                         .httpBasic()
                             .disable()
+                    // Filters order is important!
+                    .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
                     .addFilterBefore(new JwtTokenFilter(refreshTokenURI, securityContextService, jwtService, cookieService),
                             UsernamePasswordAuthenticationFilter.class)
                     .addFilterAfter(new LoginAccessFilter(mainLoginPage), UsernamePasswordAuthenticationFilter.class);
