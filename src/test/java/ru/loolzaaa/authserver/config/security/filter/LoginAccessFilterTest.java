@@ -46,6 +46,8 @@ class LoginAccessFilterTest {
     @Test
     void shouldContinueFilteringIfNotAuthenticated() throws Exception {
         when(authentication.isAuthenticated()).thenReturn(false);
+        when(servletRequest.getRequestURI()).thenReturn("");
+        when(servletRequest.getContextPath()).thenReturn("");
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -58,6 +60,8 @@ class LoginAccessFilterTest {
     @Test
     void shouldContinueFilteringIfAuthenticatedIsNull() throws Exception {
         SecurityContextHolder.getContext().setAuthentication(null);
+        when(servletRequest.getRequestURI()).thenReturn("");
+        when(servletRequest.getContextPath()).thenReturn("");
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -70,6 +74,8 @@ class LoginAccessFilterTest {
     @Test
     void shouldContinueFilteringIfAuthenticatedIsAnonymous() throws Exception {
         SecurityContextHolder.getContext().setAuthentication(mock(AnonymousAuthenticationToken.class));
+        when(servletRequest.getRequestURI()).thenReturn("");
+        when(servletRequest.getContextPath()).thenReturn("");
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -83,6 +89,7 @@ class LoginAccessFilterTest {
     void shouldRedirectIfAuthenticatedAndRequestToLogin() throws Exception {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(MAIN_LOGIN_PAGE);
+        when(servletRequest.getContextPath()).thenReturn("");
         when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
 
