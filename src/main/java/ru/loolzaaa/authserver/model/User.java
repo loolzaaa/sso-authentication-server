@@ -17,7 +17,7 @@ import java.util.Objects;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table("USERS")
+@Table("users")
 public class User {
     @Id
     private Long id;
