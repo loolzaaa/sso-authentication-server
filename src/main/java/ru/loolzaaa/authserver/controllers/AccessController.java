@@ -43,31 +43,38 @@ public class AccessController {
 
     @PostMapping("/refresh")
     String refreshToken(HttpServletRequest req, HttpServletResponse resp) {
+        boolean isRefreshTokenValid = true;
+
         String refreshToken = cookieService.getCookieValueByName("_t_refresh", req.getCookies());
         if (refreshToken == null) {
+            isRefreshTokenValid = false;
             securityContextService.clearSecurityContextHolder(req, resp);
-            return "redirect:" + mainLoginPage;
         }
 
-        JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
-        if (jwtAuthentication == null) {
-            securityContextService.clearSecurityContextHolder(req, resp);
-            return "redirect:" + mainLoginPage;
+        JWTAuthentication jwtAuthentication = null;
+        if (isRefreshTokenValid) {
+            jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
+            if (jwtAuthentication == null) {
+                isRefreshTokenValid = false;
+                securityContextService.clearSecurityContextHolder(req, resp);
+            }
         }
 
         String continuePath = req.getParameter("_continue");
         if (continuePath == null) {
-            return "redirect:/";
+            return !isRefreshTokenValid ? ("redirect:" + mainLoginPage) : "redirect:/";
         } else {
             String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
             if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-                String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
-                        .queryParam("token", jwtAuthentication.getAccessToken())
-                        .queryParam("serverTime", System.currentTimeMillis())
-                        .toUriString();
-                return "redirect:" + redirectURL;
+                UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromHttpUrl(continueUri);
+                if (isRefreshTokenValid) {
+                    uriComponentsBuilder
+                            .queryParam("token", jwtAuthentication.getAccessToken())
+                            .queryParam("serverTime", System.currentTimeMillis());
+                }
+                return "redirect:" + uriComponentsBuilder.toUriString();
             } else {
-                return "redirect:/";
+                return !isRefreshTokenValid ? ("redirect:" + mainLoginPage) : "redirect:/";
             }
         }
     }

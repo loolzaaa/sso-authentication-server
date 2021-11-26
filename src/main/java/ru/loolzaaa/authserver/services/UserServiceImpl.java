@@ -26,7 +26,7 @@ public class UserServiceImpl implements UserDetailsService {
 
         if (user != null) {
             if (user.isEnabled()) {
-                List<String> hashes = jdbcTemplate.queryForList("SELECT * FROM HASHES", String.class);
+                List<String> hashes = jdbcTemplate.queryForList("SELECT * FROM hashes", String.class);
                 user.getHashes().addAll(hashes);
             }
 

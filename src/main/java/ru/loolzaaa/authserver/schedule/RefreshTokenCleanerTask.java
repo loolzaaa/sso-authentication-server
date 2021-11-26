@@ -19,7 +19,7 @@ public class RefreshTokenCleanerTask implements Callable<Integer> {
 
     private final JdbcTemplate jdbcTemplate;
 
-    @Scheduled(initialDelay = 60 * 1000, fixedDelay = 24 * 60 * 60 * 1000)
+    @Scheduled(initialDelay = 10 * 1000, fixedDelay = 30 * 60 * 1000)
     @Override
     public Integer call() {
         int i = 0;

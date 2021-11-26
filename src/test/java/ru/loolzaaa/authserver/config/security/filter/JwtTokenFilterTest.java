@@ -129,7 +129,7 @@ class JwtTokenFilterTest {
         when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
         when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(VALID_REFRESH_TOKEN);
         when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
-        when(req.getParameter(eq("_continue"))).thenReturn(null);
+        when(req.getParameter(eq("continue"))).thenReturn(null);
         when(req.getContextPath()).thenReturn("");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
 

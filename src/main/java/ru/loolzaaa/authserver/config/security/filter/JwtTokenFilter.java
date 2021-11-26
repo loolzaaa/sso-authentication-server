@@ -61,7 +61,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
                 //TODO: Save request, because now work only with GET method
 
-                String continuePath = req.getParameter("_continue");
+                // If client application NOT CONTAIN access token, it will redirect to login with continue param,
+                // but SSO application can contain access token, so it will try to refresh it
+                String continuePath = req.getParameter("continue");
                 if (continuePath == null) {
                     resp.sendRedirect(req.getContextPath() + refreshTokenURI);
                 } else {
