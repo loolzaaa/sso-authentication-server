@@ -2,7 +2,6 @@ package ru.loolzaaa.authserver.config.security.filter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.web.util.UrlUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
@@ -15,7 +14,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Base64;
 
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
@@ -67,15 +65,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 if (continuePath == null) {
                     resp.sendRedirect(req.getContextPath() + refreshTokenURI);
                 } else {
-                    String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
-                    if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-                        String redirectURL = UriComponentsBuilder.fromHttpUrl(req.getContextPath() + refreshTokenURI)
-                                .queryParam("continue", continueUri)
-                                .toUriString();
-                        resp.sendRedirect(redirectURL);
-                    } else {
-                        resp.sendRedirect(req.getContextPath() + refreshTokenURI);
-                    }
+                    String fullRequestUrl = UrlUtils.buildFullRequestUrl(req);
+                    String requestUrl = fullRequestUrl.substring(0, fullRequestUrl.indexOf(req.getContextPath()));
+                    String redirectURL = UriComponentsBuilder.fromHttpUrl(requestUrl + req.getContextPath() + refreshTokenURI)
+                            .queryParam("continue", continuePath)
+                            .toUriString();
+                    resp.sendRedirect(redirectURL);
                 }
                 return;
             }
