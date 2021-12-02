@@ -6,6 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.web.util.UrlUtils;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
@@ -121,22 +123,57 @@ class JwtTokenFilterTest {
         verifyNoMoreInteractions(filterChain);
     }
 
+    // Request NOT saved!
+    @Test
+    void shouldSaveRequestAndRedirectForFingerprintIfContinuePathIsNotNull() throws Exception {
+        final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
+        final String VALID_REFRESH_TOKEN = "VALID_REFRESH_TOKEN";
+        final String CONTEXT_PATH = "/context-path";
+        final String CONTINUE_PATH = "http://some-site.com/uri";
+        ArgumentCaptor<String> redirectUrlCaptor = ArgumentCaptor.forClass(String.class);
+        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(VALID_REFRESH_TOKEN);
+        when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
+        when(req.getParameter(eq("continue"))).thenReturn(CONTINUE_PATH);
+        when(req.getContextPath()).thenReturn(CONTEXT_PATH);
+        when(req.getScheme()).thenReturn("http");
+        when(req.getServerName()).thenReturn("some-site.com");
+        when(req.getServerPort()).thenReturn(8080);
+        when(req.getRequestURI()).thenReturn(CONTEXT_PATH + "/some-uri");
+        when(req.getQueryString()).thenReturn("");
+        when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        String fullRequestUrl = UrlUtils.buildFullRequestUrl(req);
+        String requestUrl = fullRequestUrl.substring(0, fullRequestUrl.indexOf(req.getContextPath()));
+        String redirectURL = UriComponentsBuilder.fromHttpUrl(requestUrl + CONTEXT_PATH + REFRESH_TOKEN_URI)
+                .queryParam("continue", CONTINUE_PATH)
+                .toUriString();
+
+        verify(resp).sendRedirect(redirectUrlCaptor.capture());
+        assertThat(redirectUrlCaptor.getValue()).isEqualTo(redirectURL);
+        verifyNoInteractions(filterChain);
+    }
+
+    // Request NOT saved!
     @Test
     void shouldSaveRequestAndRedirectForFingerprintIfContinuePathIsNull() throws Exception {
         final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
         final String VALID_REFRESH_TOKEN = "VALID_REFRESH_TOKEN";
+        final String CONTEXT_PATH = "/context-path";
         ArgumentCaptor<String> redirectUrlCaptor = ArgumentCaptor.forClass(String.class);
         when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
         when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(VALID_REFRESH_TOKEN);
         when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
         when(req.getParameter(eq("continue"))).thenReturn(null);
-        when(req.getContextPath()).thenReturn("");
+        when(req.getContextPath()).thenReturn(CONTEXT_PATH);
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
 
         verify(resp).sendRedirect(redirectUrlCaptor.capture());
-        assertThat(redirectUrlCaptor.getValue()).isEqualTo(REFRESH_TOKEN_URI);
+        assertThat(redirectUrlCaptor.getValue()).isEqualTo(CONTEXT_PATH + REFRESH_TOKEN_URI);
         verifyNoInteractions(filterChain);
     }
 }
