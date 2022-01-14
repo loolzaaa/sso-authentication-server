@@ -52,7 +52,7 @@ public class JWTService {
                 fingerprint
         );
 
-        cookieService.updateTokenCookies(req, resp, jwtAuthentication.getAccessToken(), jwtAuthentication.getRefreshToken());
+        cookieService.updateTokenCookies(req, resp, jwtAuthentication.getAccessToken(), jwtAuthentication.getRefreshToken().toString());
 
         //log.info("User {}[{}] logged in.", login, req.getRemoteAddr());
 
@@ -73,7 +73,7 @@ public class JWTService {
 
         String sql = "SELECT login, fingerprint " +
                 "FROM refresh_sessions, users " +
-                "WHERE refresh_token = ? AND refresh_sessions.user_id = users.id " +
+                "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id " +
                 "AND (fingerprint = ? OR fingerprint = 'RFID')";
         Map<String, Object> stringObjectMap;
         try {
@@ -88,15 +88,15 @@ public class JWTService {
         JWTAuthentication jwtAuthentication = generateJWTAuthentication(req, resp, username);
 
         jdbcTemplate.update("UPDATE refresh_sessions " +
-                        "SET refresh_token = ?, expires_in = ?, fingerprint = ? " +
-                        "WHERE refresh_token = ? AND fingerprint = ?",
+                        "SET refresh_token = ?::uuid, expires_in = ?, fingerprint = ? " +
+                        "WHERE refresh_token = ?::uuid AND fingerprint = ?",
                 jwtAuthentication.getRefreshToken(),
                 new Timestamp(jwtAuthentication.getRefreshExp()),
                 currentFingerprint,
                 refreshToken,
                 oldFingerprint);
 
-        cookieService.updateTokenCookies(req, resp, jwtAuthentication.getAccessToken(), jwtAuthentication.getRefreshToken());
+        cookieService.updateTokenCookies(req, resp, jwtAuthentication.getAccessToken(), jwtAuthentication.getRefreshToken().toString());
 
         return jwtAuthentication;
     }
@@ -104,11 +104,11 @@ public class JWTService {
     public void deleteTokenFromDatabase(String refreshToken) {
         String sql = "SELECT login " +
                 "FROM refresh_sessions, users " +
-                "WHERE refresh_token = ? AND refresh_sessions.user_id = users.id";
+                "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id";
         String username = DataAccessUtils.singleResult(jdbcTemplate.queryForList(sql, String.class, refreshToken));
         //if (username == null) log.warn("Cannot find user with token [{}] in database!", token);
 
-        int count = jdbcTemplate.update("DELETE FROM refresh_sessions WHERE refresh_token = ?", refreshToken);
+        int count = jdbcTemplate.update("DELETE FROM refresh_sessions WHERE refresh_token = ?::uuid", refreshToken);
         if (count > 0) {
             //log.info("User [{}] logged out. Refresh token for this session successfully deleted.", login);
         } else {
@@ -136,7 +136,7 @@ public class JWTService {
         return JWTAuthentication.builder()
                 .username(username)
                 .accessToken(accessToken)
-                .refreshToken(refreshToken.toString())
+                .refreshToken(refreshToken)
                 .accessExp(accessExp)
                 .refreshExp(refreshExp)
                 .build();
