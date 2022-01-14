@@ -59,16 +59,16 @@ public class UserControlService {
         }
     }
 
-    public List<UserPrincipal> getUsersByRole(String role, String appName) {
+    public List<UserPrincipal> getUsersByAuthority(String appName, String authority) {
         Iterable<User> allUsers = userRepository.findAll();
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
+        SimpleGrantedAuthority grantedAuthority = new SimpleGrantedAuthority(authority);
         List<UserPrincipal> users = new ArrayList<>();
         try {
             for (User u : allUsers) {
                 UserPrincipal userPrincipal;
                 try {
                     userPrincipal = new UserPrincipal(u, appName);
-                    if (userPrincipal.getAuthorities().contains(authority)) {
+                    if (userPrincipal.getAuthorities().contains(grantedAuthority)) {
                         users.add(userPrincipal);
                     }
                 } catch (IllegalArgumentException ignored) {}
@@ -103,6 +103,9 @@ public class UserControlService {
         passwordEncoder.setSalt(null);
 
         String name = newUser.getName();
+        if (name == null || name.length() < 3 || name.length() > 128) {
+            throw new RequestErrorException("Name property [%s] for user [%s] must not be null and 3-128 length", name, login);
+        }
 
         ObjectNode config = objectMapper.createObjectNode();
         config.putObject(applicationName)
@@ -290,6 +293,7 @@ public class UserControlService {
 
     @Transactional
     private boolean checkUserAndDeleteHash(User user, String password) {
+        //TODO: catch user expired exception (only?), because of error if temporary user delete
         boolean isHashDeleted = false;
         if (password != null) {
             authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));

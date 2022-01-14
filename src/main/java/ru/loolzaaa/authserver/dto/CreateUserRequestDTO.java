@@ -13,11 +13,7 @@ public class CreateUserRequestDTO {
     @NotNull
     @Size(min = 3, max = 32)
     private String login;
-
-    @NotNull
-    @Size(min = 3, max = 128)
     private String name;
-
     @NotNull
     private JsonNode config;
 }

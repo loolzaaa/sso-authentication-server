@@ -45,7 +45,7 @@ public class CookieService {
         Cookie c = new Cookie(name, null);
         c.setHttpOnly(true);
         c.setSecure(req.isSecure());
-        c.setPath(req.getContextPath() + "/");
+        c.setPath(getRequestContext(req));
         c.setMaxAge(0);
         resp.addCookie(c);
     }
@@ -55,7 +55,7 @@ public class CookieService {
         Cookie cookie = new Cookie(name, value);
         cookie.setHttpOnly(true);
         cookie.setSecure(req.isSecure());
-        cookie.setPath(req.getContextPath() + "/");
+        cookie.setPath(getRequestContext(req));
         return cookie;
     }
 
@@ -70,5 +70,10 @@ public class CookieService {
             }
             resp.addHeader(HttpHeaders.SET_COOKIE, String.format("%s; %s", header, "SameSite=None"));
         }
+    }
+
+    private String getRequestContext(HttpServletRequest request) {
+        String contextPath = request.getContextPath();
+        return (contextPath.length() > 0) ? contextPath : "/";
     }
 }

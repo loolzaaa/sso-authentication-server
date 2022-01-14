@@ -2,7 +2,6 @@ package ru.loolzaaa.authserver.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
@@ -24,16 +23,15 @@ public class UserController {
     private final UserControlService userControlService;
 
     @GetMapping(value = "/fast/user/get/{username}", produces = "application/json")
-    ResponseEntity<UserPrincipal> getUserByUsername(@PathVariable("username") String username,
+    UserPrincipal getUserByUsername(@PathVariable("username") String username,
                                     @RequestParam(value = "app", required = false) String app) {
-        UserPrincipal userPrincipal = userControlService.getUserByUsername(username, app);
-        return ResponseEntity.status(HttpStatus.OK).body(userPrincipal);
+        return userControlService.getUserByUsername(username, app);
     }
 
-    @GetMapping(value = "/fast/user/{role}", produces = "application/json")
-    ResponseEntity<List<UserPrincipal>> getUsersByRole(@PathVariable("role") String role, @RequestParam(value = "app") String app) {
-        List<UserPrincipal> users = userControlService.getUsersByRole(role, app);
-        return ResponseEntity.status(HttpStatus.OK).body(users);
+    @GetMapping(value = "/fast/users", produces = "application/json")
+    List<UserPrincipal> getUsersByAuthority(@RequestParam(value = "app") String app,
+                                            @RequestParam("authority") String authority) {
+        return userControlService.getUsersByAuthority(app, authority);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
