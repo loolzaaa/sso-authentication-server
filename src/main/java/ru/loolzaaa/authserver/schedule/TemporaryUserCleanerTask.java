@@ -27,7 +27,7 @@ public class TemporaryUserCleanerTask implements Callable<Integer> {
 
     private final UserControlService userControlService;
 
-    @Scheduled(initialDelay = 60 * 1000, fixedDelay = 24 * 60 * 60 * 1000)
+    @Scheduled(cron = "0 0 0 * * *")
     @Override
     public Integer call() {
         int deleteUserCounter = 0;
