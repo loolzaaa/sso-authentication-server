@@ -70,9 +70,12 @@ public class UserController {
         return ResponseEntity.status(requestStatusDTO.getStatusCode()).body(requestStatusDTO);
     }
 
-    @PutMapping(value = "/user/{username}/config/{app}/edit", consumes = "application/json", produces = "application/json")
-    ResponseEntity<RequestStatusDTO> changeUserConfig(@PathVariable("username") String username, @PathVariable("app") String app,
-                                                      @RequestBody JsonNode config, BindingResult bindingResult) {
+    @PatchMapping(value = {"/user/{username}/config/{app}", "/fast/user/{username}/config/{app}"},
+            consumes = "application/json", produces = "application/json")
+    ResponseEntity<RequestStatusDTO> changeUserConfig(@PathVariable("username") String username,
+                                                      @PathVariable("app") String app,
+                                                      @RequestBody JsonNode config,
+                                                      BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestErrorException("Can't create JsonNode for config");
         }
