@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -182,9 +183,16 @@ public class SecurityConfig {
         }
     }
 
+    @Profile("prod")
     @Bean
     PasswordEncoder passwordEncoder() {
         return new CustomPBKDF2PasswordEncoder();
+    }
+
+    @Profile("dev")
+    @Bean
+    PasswordEncoder noopPasswordEncoder() {
+        return new NoopCustomPasswordEncoder();
     }
 
     @Bean

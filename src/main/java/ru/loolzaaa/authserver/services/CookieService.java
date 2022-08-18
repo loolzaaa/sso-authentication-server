@@ -1,5 +1,6 @@
 package ru.loolzaaa.authserver.services;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +12,11 @@ import java.util.Collection;
 
 @Service
 public class CookieService {
+
+    private static final String COOKIE_NAME_PATTERN = ".*_t_access.*|.*_t_refresh.*|.*_t_rfid.*";
+
+    @Value("${auth.cookie.same-site}")
+    String sameSiteValue;
 
     public String getCookieValueByName(String cookieName, Cookie[] cookies) {
         if (cookieName == null) {
@@ -64,11 +70,19 @@ public class CookieService {
         boolean firstHeader = true;
         for (String header : headers) {
             if (firstHeader) {
-                resp.setHeader(HttpHeaders.SET_COOKIE, String.format("%s; %s", header, "SameSite=None"));
+                if (header.matches(COOKIE_NAME_PATTERN)) {
+                    resp.setHeader(HttpHeaders.SET_COOKIE, String.format("%s; SameSite=%s", header, sameSiteValue));
+                } else {
+                    resp.setHeader(HttpHeaders.SET_COOKIE, header);
+                }
                 firstHeader = false;
                 continue;
             }
-            resp.addHeader(HttpHeaders.SET_COOKIE, String.format("%s; %s", header, "SameSite=None"));
+            if (header.matches(COOKIE_NAME_PATTERN)) {
+                resp.addHeader(HttpHeaders.SET_COOKIE, String.format("%s; SameSite=%s", header, sameSiteValue));
+            } else {
+                resp.addHeader(HttpHeaders.SET_COOKIE, header);
+            }
         }
     }
 
