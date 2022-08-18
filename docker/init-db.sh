@@ -38,13 +38,40 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     INSERT INTO users (login, config)
         VALUES
             ('admin', '{
+                "smpo": {
+                    "params": {
+                     "ncBook": {
+                       "signNc": {
+                         "showActHistory": false
+                       },
+                       "showNormData": true,
+                       "showAllNcBook": false
+                     },
+                     "mailSendingPeriod": {
+                       "signNc": {
+                         "signNc": 10,
+                         "refuseNc": 10,
+                         "firstLvlNotifyNc": 10,
+                         "fullSignedNotifyNc": 10
+                       }
+                     }
+                    },
+                    "reports": [
+                     1,
+                     6
+                    ],
+                    "machines": [ 16, 17 ],
+                    "roleName": "administrator",
+                    "structureName": "pnppk"
+                },
                 "passport": {
                     "roles": [
                         "ROLE_ADMIN"
                     ],
                     "credentials_exp": 1672513199001
                 }
-            }');
+            }'),
+            ('zpm_operator', '{"smpo":{"params":{"ncBook":{"signNc":{"showActHistory":true},"showNormData":false,"showAllNcBook":true}},"roleId":2,"reports":[10],"machines":[16,17],"roleName":"operator","structureName":"zpm"}}');
 
     INSERT INTO hashes VALUES ('dummy');
 EOSQL
