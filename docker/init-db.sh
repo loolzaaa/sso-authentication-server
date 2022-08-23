@@ -71,7 +71,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     "credentials_exp": 1672513199001
                 }
             }'),
-            ('zpm_operator', '{"smpo":{"params":{"ncBook":{"signNc":{"showActHistory":true},"showNormData":false,"showAllNcBook":true}},"roleId":2,"reports":[10],"machines":[16,17],"roleName":"operator","structureName":"zpm"}}');
+            ('zpm_operator', '{"smpo":{"params":{"ncBook":{"signNc":{"showActHistory":true},"showNormData":false,"showAllNcBook":true}},"roleId":2,"reports":[10],"machines":[16,17],"roleName":"operator","structureName":"zpm"},"passport":{"credentials_exp": 1672513199001}}');
 
     INSERT INTO hashes VALUES ('dummy');
 EOSQL
