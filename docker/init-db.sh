@@ -71,7 +71,496 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     "credentials_exp": 1672513199001
                 }
             }'),
-            ('zpm_operator', '{"smpo":{"params":{"ncBook":{"signNc":{"showActHistory":true},"showNormData":false,"showAllNcBook":true}},"roleId":2,"reports":[10],"machines":[16,17],"roleName":"operator","structureName":"zpm"},"passport":{"credentials_exp": 1672513199001}}');
+            ('zpm_operator', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory":true
+                            },
+                                "showNormData":false,
+                                "showAllNcBook":true
+                        }
+                    },
+                    "roleId":2,
+                    "reports":[10],
+                    "machines":[16,17],
+                    "roleName":"operator",
+                    "structureName":"zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_director', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        }
+                    },
+                    "roleId": 7,
+                    "reports": [
+                        1,
+                        3,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        14,
+                        13,
+                        15,
+                        17,
+                        18
+                    ],
+                    "machines": [16,17],
+                    "roleName": "director",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "planner": {
+                    "areas": [1,4,5],
+                    "roles": ["ROLE_TRACK"],
+                    "privileges": ["ORDER_DATE","PLAN_AREA"]
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_foreman', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        },
+                        "mailSendingPeriod": {
+                            "signNc": {
+                            "signNc": 10
+                            }
+                        }
+                    },
+                    "roleId": 6,
+                    "reports": [
+                        6,
+                        1,
+                        3,
+                        7,
+                        8,
+                        5,
+                        13,
+                        14,
+                        12,
+                        9,
+                        10,
+                        11,
+                        15,
+                        17,
+                        18
+                    ],
+                    "machines": [16,17],
+                    "roleName": "foreman",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_softwareengineer', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": true
+                        },
+                        "mailSendingPeriod": {
+                            "signNc": {
+                                "signNc": 10,
+                                "refuseNc": 10
+                            }
+                        }
+                    },
+                    "roleId": 8,
+                    "reports": [
+                        1,
+                        3,
+                        7,
+                        8,
+                        5,
+                        10,
+                        11,
+                        6,
+                        9,
+                        4,
+                        13,
+                        12
+                    ],
+                    "machines": [16,17],
+                    "roleName": "softwareEngineer",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('sgm_mechanic', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        }
+                    },
+                    "roleId": 5,
+                    "reports": [
+                        1,
+                        5,
+                        6,
+                        3,
+                        8,
+                        14,
+                        15
+                    ],
+                    "machines": [16,17],
+                    "roleName": "mechanic",
+                    "structureId": 3,
+                    "structureName": "sgm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_deputyDirector', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        }
+                    },
+                    "roleId": 9,
+                    "reports": [
+                        1,
+                        3,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12
+                    ],
+                    "machines": [16,17],
+                    "roleName": "deputyDirector",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_chiefEngineer', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": true
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        },
+                        "mailSendingPeriod": {
+                            "signNc": {
+                                "signNc": 10
+                            }
+                        }
+                    },
+                    "roleId": 10,
+                    "reports": [
+                        1,
+                        3,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12
+                    ],
+                    "machines": [16,17],
+                    "roleName": "chiefEngineer",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_chiefTechDpt', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        }
+                    },
+                    "roleId": 11,
+                    "reports": [
+                        1,
+                        3,
+                        7,
+                        8,
+                        5,
+                        6
+                    ],
+                    "machines": [16,17],
+                    "roleName": "chiefTechDpt",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_chiefTechOffice', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        },
+                        "mailSendingPeriod": {
+                            "signNc": {
+                                "signNc": 10
+                            }
+                        }
+                    },
+                    "roleId": 12,
+                    "reports": [
+                        3,
+                        7,
+                        8
+                    ],
+                    "machines": [16,17],
+                    "roleName": "chiefTechOffice",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_techEngineer', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        },
+                        "mailSendingPeriod": {
+                            "signNc": {
+                                "firstLvlNotifyNc": 10
+                            }
+                        }
+                    },
+                    "roleId": 17,
+                    "reports": [
+                        7,
+                        8
+                    ],
+                    "machines": [16,17],
+                    "roleName": "techEngineer",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_qualityEngineer', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        }
+                    },
+                    "roleId": 20,
+                    "reports": [
+                        9,
+                        10,
+                        11,
+                        12
+                    ],
+                    "machines": [16,17],
+                    "roleName": "qualityEngineer",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('zpm_normEngineer', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": true
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": true
+                        },
+                        "mailSendingPeriod": {
+                            "signNc": {
+                                "signNc": 10,
+                                "fullSignedNotifyNc": 10
+                            }
+                        }
+                    },
+                    "roleId": 21,
+                    "reports": [],
+                    "machines": [16,17],
+                    "roleName": "normEngineer",
+                    "structureId": 1,
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('pnppk_user', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        }
+                    },
+                    "roleId": 22,
+                    "reports": [
+                        3,
+                        13
+                    ],
+                    "machines": [16,17],
+                    "roleName": "universal",
+                    "structureId": 0,
+                    "structureName": "pnppk"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('sgm_chiefMechanic', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        }
+                    },
+                    "roleId": 23,
+                    "reports": [
+                        8,
+                        1,
+                        5,
+                        3,
+                        15,
+                        6,
+                        14
+                    ],
+                    "machines": [16,17],
+                    "roleName": "chiefMechanic",
+                    "structureId": 3,
+                    "structureName": "sgm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('direction_techDirector', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": false
+                        }
+                    },
+                    "roleId": 19,
+                    "reports": [
+                        12,
+                        9,
+                        6,
+                        14,
+                        3,
+                        10
+                    ],
+                    "machines": [16, 17],
+                    "roleName": "techDirector",
+                    "structureId": 6,
+                    "structureName": "direction"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }'),
+            ('SMPO', '{
+                "smpo": {
+                    "params": {},
+                    "machines":[],
+                    "reports":[],
+                    "roleName":"SMPO",
+                    "structureName":"SMPO"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
+            }');
 
     INSERT INTO hashes VALUES ('dummy');
 EOSQL
