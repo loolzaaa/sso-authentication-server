@@ -60,7 +60,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                      1,
                      6
                     ],
-                    "machines": [ 16, 17 ],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "administrator",
                     "structureName": "pnppk"
                 },
@@ -84,7 +84,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     },
                     "roleId":2,
                     "reports":[10],
-                    "machines":[16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName":"operator",
                     "structureName":"zpm"
                 },
@@ -121,7 +121,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         17,
                         18
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "director",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -169,7 +169,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         17,
                         18
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "foreman",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -210,7 +210,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         13,
                         12
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "softwareEngineer",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -240,7 +240,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         14,
                         15
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "mechanic",
                     "structureId": 3,
                     "structureName": "sgm"
@@ -273,7 +273,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         11,
                         12
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "deputyDirector",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -311,7 +311,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         11,
                         12
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "chiefEngineer",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -340,7 +340,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         5,
                         6
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "chiefTechDpt",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -371,7 +371,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         7,
                         8
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "chiefTechOffice",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -401,7 +401,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         7,
                         8
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "techEngineer",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -428,7 +428,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         11,
                         12
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "qualityEngineer",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -456,7 +456,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     },
                     "roleId": 21,
                     "reports": [],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "normEngineer",
                     "structureId": 1,
                     "structureName": "zpm"
@@ -481,7 +481,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         3,
                         13
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "universal",
                     "structureId": 0,
                     "structureName": "pnppk"
@@ -511,7 +511,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         6,
                         14
                     ],
-                    "machines": [16,17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "chiefMechanic",
                     "structureId": 3,
                     "structureName": "sgm"
@@ -540,7 +540,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         3,
                         10
                     ],
-                    "machines": [16, 17],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "techDirector",
                     "structureId": 6,
                     "structureName": "direction"
