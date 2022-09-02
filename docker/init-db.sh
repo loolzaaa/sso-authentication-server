@@ -82,7 +82,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                                 "showAllNcBook":true
                         }
                     },
-                    "roleId":2,
                     "reports":[10],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName":"operator",
@@ -103,7 +102,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             "showAllNcBook": false
                         }
                     },
-                    "roleId": 7,
                     "reports": [
                         1,
                         3,
@@ -123,7 +121,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "director",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "planner": {
@@ -151,7 +148,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             }
                         }
                     },
-                    "roleId": 6,
                     "reports": [
                         6,
                         1,
@@ -171,7 +167,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "foreman",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "passport": {
@@ -195,7 +190,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             }
                         }
                     },
-                    "roleId": 8,
                     "reports": [
                         1,
                         3,
@@ -212,7 +206,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "softwareEngineer",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "passport": {
@@ -230,7 +223,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             "showAllNcBook": false
                         }
                     },
-                    "roleId": 5,
                     "reports": [
                         1,
                         5,
@@ -242,7 +234,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "mechanic",
-                    "structureId": 3,
                     "structureName": "sgm"
                 },
                 "passport": {
@@ -260,7 +251,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             "showAllNcBook": false
                         }
                     },
-                    "roleId": 9,
                     "reports": [
                         1,
                         3,
@@ -275,7 +265,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "deputyDirector",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "passport": {
@@ -298,7 +287,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             }
                         }
                     },
-                    "roleId": 10,
                     "reports": [
                         1,
                         3,
@@ -313,7 +301,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "chiefEngineer",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "passport": {
@@ -331,7 +318,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             "showAllNcBook": false
                         }
                     },
-                    "roleId": 11,
                     "reports": [
                         1,
                         3,
@@ -342,7 +328,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "chiefTechDpt",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "passport": {
@@ -365,7 +350,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             }
                         }
                     },
-                    "roleId": 12,
                     "reports": [
                         3,
                         7,
@@ -373,7 +357,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "chiefTechOffice",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "passport": {
@@ -396,14 +379,12 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             }
                         }
                     },
-                    "roleId": 17,
                     "reports": [
                         7,
                         8
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "techEngineer",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "passport": {
@@ -421,7 +402,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             "showAllNcBook": false
                         }
                     },
-                    "roleId": 20,
                     "reports": [
                         9,
                         10,
@@ -430,7 +410,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "qualityEngineer",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "passport": {
@@ -454,11 +433,9 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             }
                         }
                     },
-                    "roleId": 21,
                     "reports": [],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "normEngineer",
-                    "structureId": 1,
                     "structureName": "zpm"
                 },
                 "passport": {
@@ -476,14 +453,12 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             "showAllNcBook": false
                         }
                     },
-                    "roleId": 22,
                     "reports": [
                         3,
                         13
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "universal",
-                    "structureId": 0,
                     "structureName": "pnppk"
                 },
                 "passport": {
@@ -501,7 +476,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             "showAllNcBook": false
                         }
                     },
-                    "roleId": 23,
                     "reports": [
                         8,
                         1,
@@ -513,7 +487,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "chiefMechanic",
-                    "structureId": 3,
                     "structureName": "sgm"
                 },
                 "passport": {
@@ -531,7 +504,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                             "showAllNcBook": false
                         }
                     },
-                    "roleId": 19,
                     "reports": [
                         12,
                         9,
@@ -542,7 +514,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
                     "roleName": "techDirector",
-                    "structureId": 6,
                     "structureName": "direction"
                 },
                 "passport": {
@@ -560,7 +531,47 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                 "passport": {
                     "credentials_exp": 1672513199001
                 }
+            }'),
+            ('progs', '{
+                "smpo": {
+                    "params": {
+                        "ncBook": {
+                            "signNc": {
+                                "showActHistory": false
+                            },
+                            "showNormData": true,
+                            "showAllNcBook": true
+                        },
+                        "mailSendingPeriod": {
+                            "signNc": {
+                                "signNc": 10,
+                                "refuseNc": 10
+                            }
+                        }
+                    },
+                    "reports": [
+                        1,
+                        3,
+                        7,
+                        8,
+                        5,
+                        10,
+                        11,
+                        6,
+                        9,
+                        4,
+                        13,
+                        12
+                    ],
+                    "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
+                    "roleName": "softwareEngineer",
+                    "structureName": "zpm"
+                },
+                "passport": {
+                    "credentials_exp": 1672513199001
+                }
             }');
+    UPDATE users SET name = 'NAME' WHERE login = 'progs';
 
     INSERT INTO hashes VALUES ('dummy');
 EOSQL
