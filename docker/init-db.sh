@@ -503,7 +503,12 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                 }
             }'),
             ('SMPO', '{
-                "smpo_zpm": {},
+                "smpo_zpm": {
+                    "roleName": "smpo",
+                    "params": {},
+                    "reports": [],
+                    "machines": []
+                },
                 "passport": {
                     "credentials_exp": 1672513199001
                 }
