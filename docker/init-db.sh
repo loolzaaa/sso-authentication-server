@@ -206,7 +206,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                 }
             }'),
             ('sgm_mechanic', '{
-                "smpo_sgm": {
+                "smpo_zpm": {
                     "params": {
                         "ncBook": {
                             "signNc": {
@@ -450,7 +450,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                 }
             }'),
             ('sgm_chiefMechanic', '{
-                "smpo_sgm": {
+                "smpo_zpm": {
                     "params": {
                         "ncBook": {
                             "signNc": {
@@ -503,6 +503,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                 }
             }'),
             ('SMPO', '{
+                "smpo_zpm": {},
                 "passport": {
                     "credentials_exp": 1672513199001
                 }
