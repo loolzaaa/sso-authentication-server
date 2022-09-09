@@ -59,8 +59,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                      6
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "administrator",
-                    "structureName": "pnppk"
+                    "roleName": "administrator"
                 },
                 "passport": {
                     "roles": [
@@ -82,8 +81,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     },
                     "reports":[10],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName":"operator",
-                    "structureName":"zpm"
+                    "roleName":"operator"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -118,8 +116,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         18
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "director",
-                    "structureName": "zpm"
+                    "roleName": "director"
                 },
                 "planner": {
                     "areas": [1,4,5],
@@ -164,8 +161,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         18
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "foreman",
-                    "structureName": "zpm"
+                    "roleName": "foreman"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -203,15 +199,14 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         12
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "softwareEngineer",
-                    "structureName": "zpm"
+                    "roleName": "softwareEngineer"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
                 }
             }'),
             ('sgm_mechanic', '{
-                "smpo_zpm": {
+                "smpo_sgm": {
                     "params": {
                         "ncBook": {
                             "signNc": {
@@ -231,8 +226,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         15
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "mechanic",
-                    "structureName": "sgm"
+                    "roleName": "mechanic"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -262,8 +256,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         12
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "deputyDirector",
-                    "structureName": "zpm"
+                    "roleName": "deputyDirector"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -298,8 +291,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         12
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "chiefEngineer",
-                    "structureName": "zpm"
+                    "roleName": "chiefEngineer"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -325,8 +317,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         6
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "chiefTechDpt",
-                    "structureName": "zpm"
+                    "roleName": "chiefTechDpt"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -354,8 +345,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         8
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "chiefTechOffice",
-                    "structureName": "zpm"
+                    "roleName": "chiefTechOffice"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -382,8 +372,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         8
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "techEngineer",
-                    "structureName": "zpm"
+                    "roleName": "techEngineer"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -407,8 +396,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         12
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "qualityEngineer",
-                    "structureName": "zpm"
+                    "roleName": "qualityEngineer"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -433,8 +421,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     },
                     "reports": [],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "normEngineer",
-                    "structureName": "zpm"
+                    "roleName": "normEngineer"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -456,15 +443,14 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         13
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "universal",
-                    "structureName": "pnppk"
+                    "roleName": "universal"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
                 }
             }'),
             ('sgm_chiefMechanic', '{
-                "smpo_zpm": {
+                "smpo_sgm": {
                     "params": {
                         "ncBook": {
                             "signNc": {
@@ -484,8 +470,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         14
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "chiefMechanic",
-                    "structureName": "sgm"
+                    "roleName": "chiefMechanic"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -511,8 +496,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         10
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "techDirector",
-                    "structureName": "direction"
+                    "roleName": "techDirector"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
@@ -555,8 +539,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         12
                     ],
                     "machines": [1,2,3,4,5,6,7,8,9,10,16,17],
-                    "roleName": "softwareEngineer",
-                    "structureName": "zpm"
+                    "roleName": "softwareEngineer"
                 },
                 "passport": {
                     "credentials_exp": 1672513199001
