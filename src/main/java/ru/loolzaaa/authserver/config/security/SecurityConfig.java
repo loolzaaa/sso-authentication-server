@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +14,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configurers.provisioning.InMemoryUserDetailsManagerConfigurer;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -38,7 +39,7 @@ import ru.loolzaaa.authserver.services.SecurityContextService;
 
 import java.util.List;
 
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity
 @Configuration
 public class SecurityConfig {
 
@@ -119,6 +120,8 @@ public class SecurityConfig {
         private final JwtAuthenticationFailureHandler jwtAuthenticationFailureHandler;
         private final JwtLogoutHandler jwtLogoutHandler;
 
+        private final AnonymousAuthenticationHandler anonymousAuthenticationHandler;
+
         private final JWTService jwtService;
         private final CookieService cookieService;
         private final SecurityContextService securityContextService;
@@ -145,6 +148,10 @@ public class SecurityConfig {
                         .authorizeRequests()
                             .antMatchers("/actuator/**")
                                 .hasRole("ADMIN")
+                            .antMatchers(anonymousAuthenticationHandler.toAntPatterns())
+                                .anonymous()
+                            .requestMatchers(PathRequest.toStaticResources().atCommonLocations())
+                                .anonymous()
                             .anyRequest()
                                 .hasAuthority(ssoServerProperties.getApplication().getName())
                     .and()
@@ -168,19 +175,14 @@ public class SecurityConfig {
                             .disable()
                     // Filters order is important!
                     .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
-                    .addFilterBefore(new JwtTokenFilter(ssoServerProperties.getRefreshUri(), securityContextService, jwtService, cookieService),
-                            UsernamePasswordAuthenticationFilter.class)
+                    .addFilterBefore(new JwtTokenFilter(ssoServerProperties.getRefreshUri(), anonymousAuthenticationHandler,
+                                    securityContextService, jwtService, cookieService), UsernamePasswordAuthenticationFilter.class)
                     .addFilterAfter(new LoginAccessFilter(ssoServerProperties.getLoginPage()), UsernamePasswordAuthenticationFilter.class);
             log.debug("Jwt [all API except Basic authentication] configuration completed");
         }
 
         @Override
-        public void configure(WebSecurity web) throws Exception {
-            web
-                    .ignoring()
-                        .antMatchers("/webjars/**", "/js/**", "/css/**", "/images/**", "/favicon.*")
-                        .antMatchers(ssoServerProperties.getRefreshUri(), "/api/refresh", "/api/refresh/ajax");
-
+        public void configure(WebSecurity web) {
             if (activeProfile.contains("dev")) {
                 web.ignoring().antMatchers("/h2-console/**");
             }

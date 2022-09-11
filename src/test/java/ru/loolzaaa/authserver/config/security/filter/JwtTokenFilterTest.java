@@ -47,7 +47,7 @@ class JwtTokenFilterTest {
 
     @BeforeEach
     void setUp() {
-        jwtTokenFilter = new JwtTokenFilter(REFRESH_TOKEN_URI, securityContextService, jwtService, cookieService);
+        jwtTokenFilter = new JwtTokenFilter(REFRESH_TOKEN_URI, null, securityContextService, jwtService, cookieService);
     }
 
     @Test

@@ -5,6 +5,7 @@ import org.springframework.security.web.util.UrlUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.config.security.CookieName;
+import ru.loolzaaa.authserver.config.security.bean.AnonymousAuthenticationHandler;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
@@ -21,6 +22,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final String refreshTokenURI;
 
+    private final AnonymousAuthenticationHandler anonymousAuthenticationHandler;
+
     private final SecurityContextService securityContextService;
 
     private final JWTService jwtService;
@@ -29,6 +32,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse resp,
                                     FilterChain chain) throws ServletException, IOException {
+        String requestedUri = req.getRequestURI().substring(req.getContextPath().length());
+        if (anonymousAuthenticationHandler.checkUri(requestedUri)) {
+            logger.debug(String.format("Access to '%s' is anonymously allowed", requestedUri));
+
+            chain.doFilter(req, resp);
+            return;
+        }
+
         String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), req.getCookies());
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
 
