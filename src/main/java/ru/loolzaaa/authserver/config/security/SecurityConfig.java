@@ -159,7 +159,7 @@ public class SecurityConfig {
                             .logoutRequestMatcher(new AntPathRequestMatcher("/do_logout", "POST"))
                             .logoutSuccessUrl(ssoServerProperties.getLoginPage() + "?successLogout")
                             .addLogoutHandler(jwtLogoutHandler)
-                            .deleteCookies("JSESSIONID", "_t_access", "_t_refresh", "_t_rfid")
+                            .deleteCookies("JSESSIONID", CookieName.ACCESS.getName(), CookieName.REFRESH.getName(), CookieName.RFID.getName())
                             .invalidateHttpSession(true)
                             .clearAuthentication(true)
                             .permitAll()

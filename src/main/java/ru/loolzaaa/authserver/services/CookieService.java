@@ -1,8 +1,10 @@
 package ru.loolzaaa.authserver.services;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import ru.loolzaaa.authserver.config.security.CookieName;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -10,13 +12,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Collection;
 
+@RequiredArgsConstructor
 @Service
 public class CookieService {
 
-    private static final String COOKIE_NAME_PATTERN = ".*_t_access.*|.*_t_refresh.*|.*_t_rfid.*";
-
-    @Value("${auth.cookie.same-site}")
-    String sameSiteValue;
+    private final SsoServerProperties ssoServerProperties;
 
     public String getCookieValueByName(String cookieName, Cookie[] cookies) {
         if (cookieName == null) {
@@ -69,9 +69,12 @@ public class CookieService {
         Collection<String> headers = resp.getHeaders(HttpHeaders.SET_COOKIE);
         boolean firstHeader = true;
         for (String header : headers) {
+            final String COOKIE_NAME_PATTERN = String.format(".*%s.*|.*%s.*|.*%s.*",
+                    CookieName.ACCESS.getName(), CookieName.REFRESH.getName(), CookieName.RFID.getName());
             if (firstHeader) {
                 if (header.matches(COOKIE_NAME_PATTERN)) {
-                    resp.setHeader(HttpHeaders.SET_COOKIE, String.format("%s; SameSite=%s", header, sameSiteValue));
+                    resp.setHeader(HttpHeaders.SET_COOKIE, String.format(
+                            "%s; SameSite=%s", header, ssoServerProperties.getCookie().getSameSite()));
                 } else {
                     resp.setHeader(HttpHeaders.SET_COOKIE, header);
                 }
@@ -79,7 +82,8 @@ public class CookieService {
                 continue;
             }
             if (header.matches(COOKIE_NAME_PATTERN)) {
-                resp.addHeader(HttpHeaders.SET_COOKIE, String.format("%s; SameSite=%s", header, sameSiteValue));
+                resp.addHeader(HttpHeaders.SET_COOKIE, String.format(
+                        "%s; SameSite=%s", header, ssoServerProperties.getCookie().getSameSite()));
             } else {
                 resp.addHeader(HttpHeaders.SET_COOKIE, header);
             }
