@@ -24,8 +24,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 import ru.loolzaaa.authserver.config.security.bean.*;
 import ru.loolzaaa.authserver.config.security.filter.ExternalLogoutFilter;
 import ru.loolzaaa.authserver.config.security.filter.JwtTokenFilter;
@@ -128,7 +128,7 @@ public class SecurityConfig {
             auth.authenticationProvider(authenticationProvider());
 
             // Set current application name from properties for request authorizing
-            UserPrincipal.setApplicationName(applicationName);
+            //UserPrincipal.setApplicationName(applicationName);
         }
 
         @Override
@@ -208,7 +208,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
@@ -216,6 +216,6 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "HEAD", "POST", "PATCH"));
         config.addAllowedHeader("*");
         source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
+        return source;
     }
 }
