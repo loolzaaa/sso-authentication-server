@@ -6,6 +6,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.bean.AnonymousAuthenticationHandler;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
@@ -20,7 +21,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
 
-    private final String refreshTokenURI;
+    private final SsoServerProperties ssoServerProperties;
 
     private final AnonymousAuthenticationHandler anonymousAuthenticationHandler;
 
@@ -67,7 +68,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             }
 
             if (req.getParameter("_fingerprint") == null) {
-                logger.trace("There is no fingerprint in request, redirecting to " + refreshTokenURI);
+                logger.trace("There is no fingerprint in request, redirecting to " + ssoServerProperties.getRefreshUri());
 
                 //TODO: Save request, because now work only with GET method
 
@@ -75,11 +76,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 // but SSO application can contain access token, so it will try to refresh it
                 String continuePath = req.getParameter("continue");
                 if (continuePath == null) {
-                    resp.sendRedirect(req.getContextPath() + refreshTokenURI);
+                    resp.sendRedirect(req.getContextPath() + ssoServerProperties.getRefreshUri());
                 } else {
                     String fullRequestUrl = UrlUtils.buildFullRequestUrl(req);
                     String requestUrl = fullRequestUrl.substring(0, fullRequestUrl.indexOf(req.getContextPath()));
-                    String redirectURL = UriComponentsBuilder.fromHttpUrl(requestUrl + req.getContextPath() + refreshTokenURI)
+                    String redirectURL = UriComponentsBuilder.fromHttpUrl(requestUrl + req.getContextPath() + ssoServerProperties.getRefreshUri())
                             .queryParam("continue", continuePath)
                             .toUriString();
                     resp.sendRedirect(redirectURL);

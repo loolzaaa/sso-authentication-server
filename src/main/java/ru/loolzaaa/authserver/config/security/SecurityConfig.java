@@ -175,9 +175,9 @@ public class SecurityConfig {
                             .disable()
                     // Filters order is important!
                     .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
-                    .addFilterBefore(new JwtTokenFilter(ssoServerProperties.getRefreshUri(), anonymousAuthenticationHandler,
+                    .addFilterBefore(new JwtTokenFilter(ssoServerProperties, anonymousAuthenticationHandler,
                                     securityContextService, jwtService, cookieService), UsernamePasswordAuthenticationFilter.class)
-                    .addFilterAfter(new LoginAccessFilter(ssoServerProperties.getLoginPage()), UsernamePasswordAuthenticationFilter.class);
+                    .addFilterAfter(new LoginAccessFilter(ssoServerProperties), UsernamePasswordAuthenticationFilter.class);
             log.debug("Jwt [all API except Basic authentication] configuration completed");
         }
 

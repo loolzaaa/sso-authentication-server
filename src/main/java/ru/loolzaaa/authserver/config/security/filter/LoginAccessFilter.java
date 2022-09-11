@@ -9,6 +9,7 @@ import org.springframework.security.web.util.UrlUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -18,11 +19,12 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class LoginAccessFilter extends GenericFilterBean {
 
-    private final String mainLoginPage;
+    private final SsoServerProperties ssoServerProperties;
 
     @Override
     protected void initFilterBean() {
-        Assert.isTrue(StringUtils.hasText(this.mainLoginPage) && UrlUtils.isValidRedirectUrl(this.mainLoginPage),
+        Assert.isTrue(StringUtils.hasText(this.ssoServerProperties.getLoginPage())
+                        && UrlUtils.isValidRedirectUrl(this.ssoServerProperties.getLoginPage()),
                 "loginFormUrl must be specified and must be a valid redirect URL");
     }
 
@@ -32,18 +34,18 @@ public class LoginAccessFilter extends GenericFilterBean {
         HttpServletResponse servletResponse = (HttpServletResponse) resp;
 
         String uriWithoutContextPath = servletRequest.getRequestURI().substring(servletRequest.getContextPath().length());
-        if (isAuthenticated() && mainLoginPage.equals(uriWithoutContextPath)) {
+        if (isAuthenticated() && ssoServerProperties.getLoginPage().equals(uriWithoutContextPath)) {
             logger.debug("Already authenticated user with login path detected");
 
             String encodedRedirectURL = servletResponse.encodeRedirectURL(servletRequest.getContextPath() + "/");
 
             servletResponse.setStatus(HttpStatus.TEMPORARY_REDIRECT.value());
             servletResponse.setHeader("Location", encodedRedirectURL);
-        } else if (!isAuthenticated() && mainLoginPage.equals(uriWithoutContextPath)) {
+        } else if (!isAuthenticated() && ssoServerProperties.getLoginPage().equals(uriWithoutContextPath)) {
             String continueParameter = req.getParameter("continue");
             if (continueParameter != null) {
                 //TODO: add parameter check (absolute URL)
-                RequestDispatcher dispatcher = req.getRequestDispatcher(mainLoginPage);
+                RequestDispatcher dispatcher = req.getRequestDispatcher(ssoServerProperties.getLoginPage());
                 dispatcher.forward(req, resp);
                 return;
             }
