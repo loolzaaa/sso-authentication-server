@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.dto.RequestStatus;
 import ru.loolzaaa.authserver.dto.RequestStatusDTO;
@@ -43,7 +44,7 @@ public class AccessController {
     String refreshToken(HttpServletRequest req, HttpServletResponse resp) {
         boolean isRefreshTokenValid = true;
 
-        String refreshToken = cookieService.getCookieValueByName("_t_refresh", req.getCookies());
+        String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
         if (refreshToken == null) {
             isRefreshTokenValid = false;
             securityContextService.clearSecurityContextHolder(req, resp);
@@ -79,7 +80,7 @@ public class AccessController {
 
     @PostMapping("/refresh/ajax")
     ResponseEntity<RequestStatusDTO> refreshTokenByAjax(HttpServletRequest req, HttpServletResponse resp) {
-        String refreshToken = cookieService.getCookieValueByName("_t_refresh", req.getCookies());
+        String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
         if (refreshToken == null) {
             securityContextService.clearSecurityContextHolder(req, resp);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -135,7 +136,7 @@ public class AccessController {
             String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
             //FIXME: need httpOnly = false, for different views in applications
             //TODO: use cookieService
-            //resp.addCookie(cookieService.createCookie("_t_rfid", "", req, resp));
+            //resp.addCookie(cookieService.createCookie(CookieName.RFID.getName(), "", req, resp));
 
             String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                     .queryParam("token", accessToken)

@@ -33,8 +33,8 @@ public class CookieService {
     }
 
     public void updateTokenCookies(HttpServletRequest req, HttpServletResponse resp, String accessToken, String refreshToken) {
-        resp.addCookie(createCookie("_t_access", accessToken, req, resp));
-        resp.addCookie(createCookie("_t_refresh", refreshToken, req, resp));
+        resp.addCookie(createCookie(CookieName.ACCESS.getName(), accessToken, req, resp));
+        resp.addCookie(createCookie(CookieName.REFRESH.getName(), refreshToken, req, resp));
 
         addSameSiteAttributeToAllCookies(req, resp);
     }

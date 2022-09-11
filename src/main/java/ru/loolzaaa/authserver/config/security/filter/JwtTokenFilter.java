@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.UriComponentsBuilder;
+import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
@@ -28,8 +29,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse resp,
                                     FilterChain chain) throws ServletException, IOException {
-        String accessToken = cookieService.getCookieValueByName("_t_access", req.getCookies());
-        String refreshToken = cookieService.getCookieValueByName("_t_refresh", req.getCookies());
+        String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), req.getCookies());
+        String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
 
         if (accessToken == null) {
             logger.trace("Access token is null");

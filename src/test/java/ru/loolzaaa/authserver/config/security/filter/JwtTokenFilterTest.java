@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.web.util.UriComponentsBuilder;
+import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
@@ -17,7 +18,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,8 +77,8 @@ class JwtTokenFilterTest {
     @Test
     void shouldClearSecurityContextAndContinueFilteringWhenIncorrectAccessTokenAndRefreshTokenIsNull() throws Exception {
         final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
-        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
-        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(null);
+        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(null);
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
@@ -91,8 +92,8 @@ class JwtTokenFilterTest {
     void shouldClearSecurityContextAndContinueFilteringWhenIncorrectAccessTokenAndIncorrectRefreshToken() throws Exception {
         final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
         final String INVALID_REFRESH_TOKEN = "INVALID_REFRESH_TOKEN";
-        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
-        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(INVALID_REFRESH_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(INVALID_REFRESH_TOKEN);
         when(req.getParameter(eq("_fingerprint"))).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
         when(jwtService.refreshAccessToken(req, resp, INVALID_REFRESH_TOKEN)).thenReturn(null);
@@ -109,8 +110,8 @@ class JwtTokenFilterTest {
         final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
         final String VALID_REFRESH_TOKEN = "VALID_REFRESH_TOKEN";
         final String LOGIN = "LOGIN";
-        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
-        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(VALID_REFRESH_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
         when(req.getParameter(eq("_fingerprint"))).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
         when(jwtService.refreshAccessToken(req, resp, VALID_REFRESH_TOKEN)).thenReturn(jwtAuthentication);
@@ -131,8 +132,8 @@ class JwtTokenFilterTest {
         final String CONTEXT_PATH = "/context-path";
         final String CONTINUE_PATH = "http://some-site.com/uri";
         ArgumentCaptor<String> redirectUrlCaptor = ArgumentCaptor.forClass(String.class);
-        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
-        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(VALID_REFRESH_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
         when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
         when(req.getParameter(eq("continue"))).thenReturn(CONTINUE_PATH);
         when(req.getContextPath()).thenReturn(CONTEXT_PATH);
@@ -163,8 +164,8 @@ class JwtTokenFilterTest {
         final String VALID_REFRESH_TOKEN = "VALID_REFRESH_TOKEN";
         final String CONTEXT_PATH = "/context-path";
         ArgumentCaptor<String> redirectUrlCaptor = ArgumentCaptor.forClass(String.class);
-        when(cookieService.getCookieValueByName(eq("_t_access"), any())).thenReturn(INVALID_ACCESS_TOKEN);
-        when(cookieService.getCookieValueByName(eq("_t_refresh"), any())).thenReturn(VALID_REFRESH_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
         when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
         when(req.getParameter(eq("continue"))).thenReturn(null);
         when(req.getContextPath()).thenReturn(CONTEXT_PATH);
