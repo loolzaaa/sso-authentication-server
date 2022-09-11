@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -13,6 +12,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.loolzaaa.authserver.config.security.bean.CustomPBKDF2PasswordEncoder;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.dto.CreateUserRequestDTO;
 import ru.loolzaaa.authserver.dto.RequestStatusDTO;
 import ru.loolzaaa.authserver.exception.RequestErrorException;
@@ -34,10 +34,9 @@ import java.util.stream.Collectors;
 @Service
 public class UserControlService {
 
-    @Value("${auth.application.name}")
-    private String applicationName;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private final SsoServerProperties ssoServerProperties;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -108,7 +107,7 @@ public class UserControlService {
         }
 
         ObjectNode config = objectMapper.createObjectNode();
-        config.putObject(applicationName)
+        config.putObject(ssoServerProperties.getApplication().getName())
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(365)).toEpochMilli());
         if (!config.has(app)) config.set(app, newUser.getConfig());
 
@@ -166,7 +165,7 @@ public class UserControlService {
 
         userRepository.updateSaltByLogin(salt, login);
 
-        ((ObjectNode) user.getConfig().get(applicationName))
+        ((ObjectNode) user.getConfig().get(ssoServerProperties.getApplication().getName()))
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(365)).toEpochMilli());
 
         if (user.getConfig().has(UserAttributes.TEMPORARY)) {
@@ -211,8 +210,8 @@ public class UserControlService {
 
     @Transactional
     public RequestStatusDTO deleteApplicationConfigForUser(String login, String app) {
-        if (applicationName.equals(app)) {
-            throw new RequestErrorException("Cannot delete %s configuration", applicationName);
+        if (ssoServerProperties.getApplication().getName().equals(app)) {
+            throw new RequestErrorException("Cannot delete %s configuration", ssoServerProperties.getApplication().getName());
         }
 
         User user = userRepository.findByLogin(login).orElse(null);
@@ -272,7 +271,7 @@ public class UserControlService {
         temporaryNode.put("originTabNumber", temporaryLogin);
         ((ObjectNode) temporaryUser.getConfig()).set(UserAttributes.TEMPORARY, temporaryNode);
 
-        ((ObjectNode) temporaryUser.getConfig().get(applicationName))
+        ((ObjectNode) temporaryUser.getConfig().get(ssoServerProperties.getApplication().getName()))
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(90)).toEpochMilli());
 
         dTemporaryUser = User.builder()

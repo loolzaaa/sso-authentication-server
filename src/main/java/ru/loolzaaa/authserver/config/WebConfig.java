@@ -1,22 +1,21 @@
 package ru.loolzaaa.authserver.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 
+@RequiredArgsConstructor
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${auth.refresh.token.uri}")
-    private String refreshTokenURI;
-    @Value("${auth.main.login.page}")
-    private String mainLoginPage;
+    private final SsoServerProperties ssoServerProperties;
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/").setViewName("index");
-        registry.addViewController(mainLoginPage).setViewName("login");
-        registry.addViewController(refreshTokenURI).setViewName("trefresh");
+        registry.addViewController(ssoServerProperties.getLoginPage()).setViewName("login");
+        registry.addViewController(ssoServerProperties.getRefreshUri()).setViewName("trefresh");
     }
 }

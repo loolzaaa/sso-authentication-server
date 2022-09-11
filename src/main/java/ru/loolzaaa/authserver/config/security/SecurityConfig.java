@@ -1,13 +1,18 @@
 package ru.loolzaaa.authserver.config.security;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configurers.provisioning.InMemoryUserDetailsManagerConfigurer;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -25,7 +30,8 @@ import ru.loolzaaa.authserver.config.security.bean.*;
 import ru.loolzaaa.authserver.config.security.filter.ExternalLogoutFilter;
 import ru.loolzaaa.authserver.config.security.filter.JwtTokenFilter;
 import ru.loolzaaa.authserver.config.security.filter.LoginAccessFilter;
-import ru.loolzaaa.authserver.model.UserPrincipal;
+import ru.loolzaaa.authserver.config.security.property.BasicUsersProperties;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
 import ru.loolzaaa.authserver.services.SecurityContextService;
@@ -37,68 +43,73 @@ import java.util.List;
 public class SecurityConfig {
 
     @RequiredArgsConstructor
+    @EnableConfigurationProperties(BasicUsersProperties.class)
     @Order(1)
     @Configuration
     public static class BasicConfiguration extends WebSecurityConfigurerAdapter {
 
-        @Value("${auth.basic.login}")
-        private String basicLogin;
-        @Value("${auth.basic.password}")
-        private String basicPassword;
-        @Value("${auth.basic.authority}")
-        private String basicAuthority;
+        private static final Logger log = LogManager.getLogger(BasicConfiguration.class.getName());
 
-        @Value("${auth.basic.external.login}")
-        private String basicExternalLogin;
-        @Value("${auth.basic.external.password}")
-        private String basicExternalPassword;
-
-        private final PasswordEncoder passwordEncoder;
+        private final BasicUsersProperties basicUsersProperties;
 
         @Override
         protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-            auth
-                    .inMemoryAuthentication()
-                        .withUser(basicLogin)
-                            .password(passwordEncoder.encode(basicPassword))
-                            .authorities(basicAuthority)
-                    .and()
-                        .withUser(basicExternalLogin)
-                            .password(passwordEncoder.encode(basicExternalPassword))
-                            .authorities(basicAuthority);
+            if (basicUsersProperties.getUsers().size() == 0) {
+                log.warn("\n\n\tThere is no basic users in properties. Some API unavailable!\n");
+            }
+            InMemoryUserDetailsManagerConfigurer<AuthenticationManagerBuilder> usersConfigurer = auth.inMemoryAuthentication();
+            for (BasicUsersProperties.BasicUser user : basicUsersProperties.getUsers()) {
+                usersConfigurer
+                        .withUser(user.getUsername())
+                        .password(user.getPassword())
+                        .authorities(basicUsersProperties.getBasicUserAuthority());
+                log.info("Register basic user: {}", user.getUsername());
+            }
+            usersConfigurer
+                    .withUser(basicUsersProperties.getRevokeUsername())
+                    .password(basicUsersProperties.getRevokeUsername())
+                    .authorities(basicUsersProperties.getRevokeAuthority());
+            log.info("Register revoke token basic user: {}", basicUsersProperties.getRevokeUsername());
         }
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
+            final String basicAntMatcherPattern = "/api/fast/**";
+            final String basicPrepareLogoutMatcherPattern = "/api/fast/**";
             http
-                    .antMatcher("/api/fast/**")
+                    .antMatcher(basicPrepareLogoutMatcherPattern)
                     .csrf()
                         .disable()
                     .sessionManagement()
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                     .and()
                         .authorizeRequests()
-                        .anyRequest()
-                            .hasAuthority(basicAuthority)
+                            .antMatchers(HttpMethod.POST, basicPrepareLogoutMatcherPattern)
+                                .hasAuthority(basicUsersProperties.getRevokeAuthority())
+                            .anyRequest()
+                                .hasAuthority(basicUsersProperties.getBasicUserAuthority())
                     .and()
                         .httpBasic()
                             .realmName("Fast API");
+            log.debug("Basic [{}] configuration completed", basicAntMatcherPattern);
+            log.debug("JWT logout for other applications can be prepared via POST {} with '{}' authority",
+                    basicPrepareLogoutMatcherPattern, basicUsersProperties.getRevokeAuthority());
+            log.debug("All basic API can be accessed with '{}' authority", basicUsersProperties.getBasicUserAuthority());
         }
     }
 
     @RequiredArgsConstructor
+    @EnableConfigurationProperties(SsoServerProperties.class)
     @Order(2)
     @Configuration
-    public static class WebConfiguration extends WebSecurityConfigurerAdapter {
+    public static class JwtConfiguration extends WebSecurityConfigurerAdapter {
+
+        private static final Logger log = LogManager.getLogger(JwtConfiguration.class.getName());
 
         @Value("${spring.profiles.active:}")
         private String activeProfile;
-        @Value("${auth.application.name}")
-        private String applicationName;
-        @Value("${auth.refresh.token.uri}")
-        private String refreshTokenURI;
-        @Value("${auth.main.login.page}")
-        private String mainLoginPage;
+
+        private final SsoServerProperties ssoServerProperties;
 
         private final PasswordEncoder passwordEncoder;
 
@@ -135,10 +146,10 @@ public class SecurityConfig {
                             .antMatchers("/actuator/**")
                                 .hasRole("ADMIN")
                             .anyRequest()
-                                .hasAuthority(applicationName)
+                                .hasAuthority(ssoServerProperties.getApplication().getName())
                     .and()
                         .formLogin()
-                            .loginPage(mainLoginPage)
+                            .loginPage(ssoServerProperties.getLoginPage())
                             .loginProcessingUrl("/do_login")
                             .failureHandler(jwtAuthenticationFailureHandler)
                             .successHandler(jwtAuthenticationSuccessHandler)
@@ -146,7 +157,7 @@ public class SecurityConfig {
                     .and()
                         .logout()
                             .logoutRequestMatcher(new AntPathRequestMatcher("/do_logout", "POST"))
-                            .logoutSuccessUrl(mainLoginPage + "?successLogout")
+                            .logoutSuccessUrl(ssoServerProperties.getLoginPage() + "?successLogout")
                             .addLogoutHandler(jwtLogoutHandler)
                             .deleteCookies("JSESSIONID", "_t_access", "_t_refresh", "_t_rfid")
                             .invalidateHttpSession(true)
@@ -157,9 +168,10 @@ public class SecurityConfig {
                             .disable()
                     // Filters order is important!
                     .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
-                    .addFilterBefore(new JwtTokenFilter(refreshTokenURI, securityContextService, jwtService, cookieService),
+                    .addFilterBefore(new JwtTokenFilter(ssoServerProperties.getRefreshUri(), securityContextService, jwtService, cookieService),
                             UsernamePasswordAuthenticationFilter.class)
-                    .addFilterAfter(new LoginAccessFilter(mainLoginPage), UsernamePasswordAuthenticationFilter.class);
+                    .addFilterAfter(new LoginAccessFilter(ssoServerProperties.getLoginPage()), UsernamePasswordAuthenticationFilter.class);
+            log.debug("Jwt [all API except Basic authentication] configuration completed");
         }
 
         @Override
@@ -167,7 +179,7 @@ public class SecurityConfig {
             web
                     .ignoring()
                         .antMatchers("/webjars/**", "/js/**", "/css/**", "/images/**", "/favicon.*")
-                        .antMatchers(refreshTokenURI, "/api/refresh", "/api/refresh/ajax");
+                        .antMatchers(ssoServerProperties.getRefreshUri(), "/api/refresh", "/api/refresh/ajax");
 
             if (activeProfile.contains("dev")) {
                 web.ignoring().antMatchers("/h2-console/**");
