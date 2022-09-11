@@ -8,7 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.RedirectStrategy;
-import org.springframework.test.util.ReflectionTestUtils;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -16,13 +16,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFailureHandlerTest {
 
-    final String mainLoginPage = "/login";
+    SsoServerProperties ssoServerProperties;
 
     @Mock
     HttpServletRequest req;
@@ -39,10 +39,13 @@ class JwtAuthenticationFailureHandlerTest {
 
     @BeforeEach
     void setUp() {
-        jwtAuthenticationFailureHandler = new JwtAuthenticationFailureHandler();
-        jwtAuthenticationFailureHandler.setRedirectStrategy(redirectStrategy);
+        final String mainLoginPage = "/login";
 
-        ReflectionTestUtils.setField(jwtAuthenticationFailureHandler, "mainLoginPage", mainLoginPage);
+        ssoServerProperties = new SsoServerProperties();
+        ssoServerProperties.setLoginPage(mainLoginPage);
+
+        jwtAuthenticationFailureHandler = new JwtAuthenticationFailureHandler(ssoServerProperties);
+        jwtAuthenticationFailureHandler.setRedirectStrategy(redirectStrategy);
     }
 
     @Test
@@ -55,7 +58,7 @@ class JwtAuthenticationFailureHandlerTest {
         jwtAuthenticationFailureHandler.onAuthenticationFailure(req, resp, authenticationException);
 
         verify(redirectStrategy).sendRedirect(any(), any(), captor.capture());
-        assertThat(captor.getValue()).isEqualTo(mainLoginPage + "?credentialsError");
+        assertThat(captor.getValue()).isEqualTo(ssoServerProperties.getLoginPage() + "?credentialsError");
     }
 
     @Test
@@ -69,6 +72,6 @@ class JwtAuthenticationFailureHandlerTest {
         jwtAuthenticationFailureHandler.onAuthenticationFailure(req, resp, authenticationException);
 
         verify(redirectStrategy).sendRedirect(any(), any(), captor.capture());
-        assertThat(captor.getValue()).isEqualTo(mainLoginPage + "?credentialsError" + "&continue=" + continuePath);
+        assertThat(captor.getValue()).isEqualTo(ssoServerProperties.getLoginPage() + "?credentialsError" + "&continue=" + continuePath);
     }
 }
