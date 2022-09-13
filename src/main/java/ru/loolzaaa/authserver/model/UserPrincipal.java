@@ -17,11 +17,11 @@ import java.util.Objects;
 
 public class UserPrincipal implements UserDetails {
 
-    private static String applicationName = "passport"; // Change it in SecurityConfig
+    private static String applicationName;
 
     private final User user;
 
-    private List<GrantedAuthority> authorities = new ArrayList<>();
+    private final List<GrantedAuthority> authorities = new ArrayList<>();
 
     private boolean accountNonExpired = true;
     private boolean accountNonLocked = true;
