@@ -57,4 +57,80 @@ Run application with `spring-boot-maven-plugin` and `dev`, and `postgres` profil
 
 # Server Configuration
 
-Under construction
+Some properties can be defined to prevent other dependencies from changing the required values.
+```
+# Remove all session tracking attributes from servlet container
+server.servlet.session.persistent=false
+server.servlet.session.tracking-modes=
+
+# Expose JMX endpoint for RFID key update
+spring.jmx.enabled=true
+```
+
+## Main configuration
+
+```
+# Application name for SSO
+# Will be the main authority to access the application!
+sso.server.application.name=passport
+
+# Activate flag for RFID authentication through RFID key
+# This type of authentication implies access 
+# through a SINGLE key, which is insecure!
+# Default: false
+sso.server.rfid.activate=true
+
+# Login page URI
+# Default: /login
+sso.server.login-page=/login
+
+# Refresh token URI for browser request
+# Default: /trefresh
+sso.server.refresh-uri=/trefresh
+
+# SameSite parameter for token cookies
+# Default: Lax
+sso.server.cookie.same-site=Lax
+
+# Predefined users for Basic authentication
+# Can be used to better restrict access 
+# between external applications
+sso.server.basic.users[0].username=SERVICE
+sso.server.basic.users[0].password=PASSWORD
+```
+**Note:** all basic users must have `BasicUsersProperties.basicUserAuthority` authority for access.
+
+### External application logout
+
+In addition, the application defines a user to revoke JWT tokens when external applications logout.
+```Java
+private String revokeUsername = "REVOKE_TOKEN_USER";
+private String revokePassword = "REVOKE_TOKEN_USER_PASSWORD";
+private String revokeAuthority = "REVOKE_TOKEN";
+```
+
+## Database User config scheme
+
+The user configuration schema can be viewed on the [[wiki page|User configuration]]
+
+## Application profiles
+
+The application must be launched with one of two profiles: `dev`, `prod`.
+
+### Developer mode
+
+Main active profile: `dev`.  
+Additional profiles: `h2` **OR** `postgres`. 
+
+Additional profiles determine which database the application will connect to: H2 in-memory database or PostgreSQL database inside Docker container.
+
+### Production mode
+
+Main active profile: `prod`.  
+Additional profiles: N/A.
+
+Application properties for production (`application-prod.properties`) mode already contains database connection parameters.
+
+# Server Components
+
+...
