@@ -5,7 +5,7 @@ import org.springframework.security.web.util.UrlUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.config.security.CookieName;
-import ru.loolzaaa.authserver.config.security.bean.AnonymousAuthenticationHandler;
+import ru.loolzaaa.authserver.config.security.bean.IgnoredPathsHandler;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
@@ -23,7 +23,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final SsoServerProperties ssoServerProperties;
 
-    private final AnonymousAuthenticationHandler anonymousAuthenticationHandler;
+    private final IgnoredPathsHandler ignoredPathsHandler;
 
     private final SecurityContextService securityContextService;
 
@@ -34,8 +34,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse resp,
                                     FilterChain chain) throws ServletException, IOException {
         String requestedUri = req.getRequestURI().substring(req.getContextPath().length());
-        if (anonymousAuthenticationHandler.checkUri(requestedUri)) {
-            logger.debug(String.format("Access to '%s' is anonymously allowed", requestedUri));
+        if (ignoredPathsHandler.checkUri(requestedUri)) {
+            logger.debug(String.format("Access to '%s' is permitted without jwt filter", requestedUri));
 
             chain.doFilter(req, resp);
             return;

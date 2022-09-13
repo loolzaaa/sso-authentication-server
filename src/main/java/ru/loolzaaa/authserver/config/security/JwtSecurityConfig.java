@@ -47,7 +47,7 @@ public class JwtSecurityConfig {
     private final JwtAuthenticationFailureHandler jwtAuthenticationFailureHandler;
     private final JwtLogoutHandler jwtLogoutHandler;
 
-    private final AnonymousAuthenticationHandler anonymousAuthenticationHandler;
+    private final IgnoredPathsHandler ignoredPathsHandler;
 
     private final JWTService jwtService;
     private final CookieService cookieService;
@@ -76,7 +76,7 @@ public class JwtSecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .mvcMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                        .mvcMatchers(anonymousAuthenticationHandler.toAntPatterns()).permitAll()
+                        .mvcMatchers(ignoredPathsHandler.toMvcPatterns()).permitAll()
                         .anyRequest().hasAuthority(ssoServerProperties.getApplication().getName()))
                 .formLogin(formLogin -> formLogin
                         .loginPage(ssoServerProperties.getLoginPage())
@@ -96,7 +96,7 @@ public class JwtSecurityConfig {
                 .anonymous().disable()
                 // Filters order is important!
                 .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new JwtTokenFilter(ssoServerProperties, anonymousAuthenticationHandler,
+                .addFilterBefore(new JwtTokenFilter(ssoServerProperties, ignoredPathsHandler,
                         securityContextService, jwtService, cookieService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new LoginAccessFilter(ssoServerProperties), UsernamePasswordAuthenticationFilter.class);
         log.debug("Jwt [all API except Basic authentication] configuration completed");

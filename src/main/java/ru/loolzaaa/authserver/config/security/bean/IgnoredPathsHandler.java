@@ -8,11 +8,11 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Component
-public class AnonymousAuthenticationHandler {
+public class IgnoredPathsHandler {
 
     private final SsoServerProperties ssoServerProperties;
 
-    private final List<String> anonymousPatterns = List.of("/api/refresh", "/api/refresh/ajax");
+    private final List<String> ignoredPatterns = List.of("/api/refresh", "/api/refresh/ajax");
 
     public boolean checkUri(String uri) {
         if (uri == null) {
@@ -21,7 +21,7 @@ public class AnonymousAuthenticationHandler {
         if (uri.toLowerCase().startsWith(ssoServerProperties.getRefreshUri())) {
             return true;
         }
-        for (String pattern : anonymousPatterns) {
+        for (String pattern : ignoredPatterns) {
             if (uri.toLowerCase().startsWith(pattern)) {
                 return true;
             }
@@ -29,7 +29,7 @@ public class AnonymousAuthenticationHandler {
         return false;
     }
 
-    public String[] toAntPatterns() {
-        return new String[]{ ssoServerProperties.getRefreshUri(), anonymousPatterns.get(0), anonymousPatterns.get(1)};
+    public String[] toMvcPatterns() {
+        return new String[]{ ssoServerProperties.getRefreshUri(), ignoredPatterns.get(0), ignoredPatterns.get(1)};
     }
 }
