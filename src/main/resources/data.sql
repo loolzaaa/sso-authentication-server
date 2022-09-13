@@ -2,7 +2,7 @@ INSERT INTO USERS (login, salt, config, name, enabled)
     VALUES (
         'admin',
         '1fca962b736b85bb727e9675ab1caf301d4f9b06b5c7585ac95dc7ce0b2349',
-        '{"passport":{"credentials_exp": 1658315631223,"roles":["ROLE_ADMIN"]},"example":{"roles":["ROLE_ADMIN"],"privileges":["privilege1"], "someSetting":true}}',
+        '{"passport":{"credentials_exp": 2524608000000,"roles":["ROLE_ADMIN"]},"example":{"roles":["ROLE_ADMIN"],"privileges":["privilege1"], "someSetting":true}}',
         'admin_name',
         true
 );
