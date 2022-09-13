@@ -9,6 +9,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.config.security.CookieName;
+import ru.loolzaaa.authserver.config.security.bean.IgnoredPathsHandler;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
@@ -25,6 +27,8 @@ import static org.mockito.Mockito.*;
 class JwtTokenFilterTest {
 
     final String REFRESH_TOKEN_URI = "/trefresh";
+
+    SsoServerProperties ssoServerProperties;
 
     @Mock
     SecurityContextService securityContextService;
@@ -47,11 +51,29 @@ class JwtTokenFilterTest {
 
     @BeforeEach
     void setUp() {
-        jwtTokenFilter = new JwtTokenFilter(REFRESH_TOKEN_URI, null, securityContextService, jwtService, cookieService);
+        ssoServerProperties = new SsoServerProperties();
+
+        IgnoredPathsHandler ignoredPathsHandler = new IgnoredPathsHandler(ssoServerProperties);
+
+        jwtTokenFilter = new JwtTokenFilter(ssoServerProperties, ignoredPathsHandler, securityContextService, jwtService, cookieService);
+    }
+
+    @Test
+    void shouldContinueFilteringIfRequestUriIsIgnored() throws Exception {
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn(ssoServerProperties.getRefreshUri());
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        verify(filterChain).doFilter(req, resp);
+        verifyNoMoreInteractions(filterChain);
+        verifyNoInteractions(cookieService);
     }
 
     @Test
     void shouldContinueFilteringIfAccessTokenIsNull() throws Exception {
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn("/uri");
         when(cookieService.getCookieValueByName(anyString(), any())).thenReturn(null);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
@@ -64,6 +86,8 @@ class JwtTokenFilterTest {
     void shouldUpdateSecurityContextAndContinueFilteringWhenCorrectAccessToken() throws Exception {
         final String VALID_ACCESS_TOKEN = "VALID_ACCESS_TOKEN";
         final String LOGIN = "LOGIN";
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn("/uri");
         when(cookieService.getCookieValueByName(anyString(), any())).thenReturn(VALID_ACCESS_TOKEN);
         when(jwtService.checkAccessToken(VALID_ACCESS_TOKEN)).thenReturn(LOGIN);
 
@@ -77,6 +101,8 @@ class JwtTokenFilterTest {
     @Test
     void shouldClearSecurityContextAndContinueFilteringWhenIncorrectAccessTokenAndRefreshTokenIsNull() throws Exception {
         final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn("/uri");
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
         when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(null);
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
@@ -94,6 +120,8 @@ class JwtTokenFilterTest {
         final String INVALID_REFRESH_TOKEN = "INVALID_REFRESH_TOKEN";
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
         when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(INVALID_REFRESH_TOKEN);
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn("/uri");
         when(req.getParameter(eq("_fingerprint"))).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
         when(jwtService.refreshAccessToken(req, resp, INVALID_REFRESH_TOKEN)).thenReturn(null);
@@ -112,6 +140,8 @@ class JwtTokenFilterTest {
         final String LOGIN = "LOGIN";
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
         when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn("/uri");
         when(req.getParameter(eq("_fingerprint"))).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
         when(jwtService.refreshAccessToken(req, resp, VALID_REFRESH_TOKEN)).thenReturn(jwtAuthentication);
@@ -169,6 +199,7 @@ class JwtTokenFilterTest {
         when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
         when(req.getParameter(eq("continue"))).thenReturn(null);
         when(req.getContextPath()).thenReturn(CONTEXT_PATH);
+        when(req.getRequestURI()).thenReturn(CONTEXT_PATH + "/uri");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);

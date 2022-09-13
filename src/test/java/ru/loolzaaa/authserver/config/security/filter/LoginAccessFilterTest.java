@@ -10,12 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,10 +38,12 @@ class LoginAccessFilterTest {
 
     @BeforeEach
     void setUp() {
+        SsoServerProperties ssoServerProperties = new SsoServerProperties();
+
         SecurityContextHolder.clearContext();
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        loginAccessFilter = new LoginAccessFilter(MAIN_LOGIN_PAGE);
+        loginAccessFilter = new LoginAccessFilter(ssoServerProperties);
     }
 
     @Test
