@@ -111,7 +111,7 @@ private String revokeAuthority = "REVOKE_TOKEN";
 
 ## Database User config scheme
 
-The user configuration schema can be viewed on the [[wiki page|User configuration]]
+The user configuration schema can be viewed on the [wiki page](https://github.com/loolzaaa/sso-authentication-server/wiki/User-definition-schema).
 
 ## Application profiles
 
@@ -130,7 +130,3 @@ Main active profile: `prod`.
 Additional profiles: N/A.
 
 Application properties for production (`application-prod.properties`) mode already contains database connection parameters.
-
-# Server Components
-
-...
