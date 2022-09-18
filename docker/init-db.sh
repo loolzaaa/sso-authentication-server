@@ -9,7 +9,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         salt text NOT NULL DEFAULT 'SERVICE',
         config jsonb NOT NULL,
         name text NOT NULL DEFAULT 'SERVICE',
-        enabled boolean NOT NULL DEFAULT true,
+        enabled boolean NOT NULL DEFAULT false,
         CONSTRAINT users_pkey PRIMARY KEY (id),
         CONSTRAINT users_login_key UNIQUE (login)
     );
@@ -33,7 +33,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         hash text NOT NULL
     );
 
-    INSERT INTO users (login, config)
+    INSERT INTO users (login, config, enabled)
         VALUES
             ('admin', '{
                 "passport": {
@@ -42,7 +42,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                     ],
                     "credentials_exp": 2524608000000
                 }
-            }');
+            }', true);
 
     INSERT INTO hashes VALUES ('dummy');
 EOSQL
