@@ -6,6 +6,7 @@
     <meta content="width=device-width,initial-scale=1.0" name="viewport">
     <script th:src="@{/webjars/lodash/4.17.21/lodash.js}"></script>
     <script th:src="@{/js/fingerprint2.min.js}"></script>
+    <script th:src="@{/js/script.js}"></script>
     <link th:href="@{/webjars/font-awesome/5.15.3/css/all.css}" rel="stylesheet">
     <link th:href="@{/webjars/bulma/0.9.2/css/bulma.min.css}" rel="stylesheet">
     <link th:href="@{/css/style.css}" rel="stylesheet">
@@ -30,45 +31,14 @@
         <input th:if="${param.continue != null}" name="_continue" type="hidden" th:value="${param.continue}">
     </form>
 </div>
-<script>
+<script type="text/javascript">
      document.getElementById('login_form').onsubmit = function(e) {
         e.preventDefault();
-
-        let p = new Promise((resolve, reject) => {
-            async function getHash () {
-                const options = {
-                    excludes: {
-                        plugins: true,
-                        localStorage: true,
-                        adBlock: true,
-                        screenResolution: true,
-                        availableScreenResolution: true,
-                        enumerateDevices: true,
-                        pixelRatio: true,
-                        doNotTrack: true
-                    }
-                }
-
-                try {
-                    const components = await Fingerprint2.getPromise(options);
-                    const values = components.map(component => component.value);
-                    return String(Fingerprint2.x64hash128(values.join(''), 31));
-                } catch (e) {
-                    reject(e);
-                }
-            }
-
-            if (window.requestIdleCallback) {
-                requestIdleCallback(async () => resolve(await getHash()));
-            } else {
-                setTimeout(async () => resolve(await getHash()), 500);
-            }
-        });
-
-        p.then(result => {
-            document.getElementById('fp_input').value = result;
-            document.getElementById('login_form').submit();
-        });
+        getFingerprint()
+            .then(result => {
+                document.getElementById('fp_input').value = result;
+                document.getElementById('login_form').submit();
+            });
     }
 </script>
 </body>

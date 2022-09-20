@@ -1,18 +1,170 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <meta content="width=device-width,initial-scale=1.0" name="viewport">
+    <script th:src="@{/webjars/axios/0.27.2/dist/axios.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.2.1/dist/js/bootstrap.min.js}"></script>
+    <script th:src="@{/js/fingerprint2.min.js}"></script>
+    <script th:src="@{/js/script.js}"></script>
+    <link th:href="@{/webjars/bootstrap/5.2.1/dist/css/bootstrap.min.css}" rel="stylesheet">
     <link th:href="@{/css/style.css}" rel="stylesheet">
     <link th:href="@{/favicon.ico}" rel="icon">
     <title>Authentication server</title>
 </head>
 <body>
-<h1>Authentication server main page</h1>
-<a href="admin" th:href="@{/admin}">Admin panel</a>
-<form action="#" method="post" th:action="@{/do_logout}">
-    <input type="submit" value="Logout"/>
-</form>
+<div class="container">
+    <div class="mb-3">
+        <h3>
+            <span th:text="${#authentication.principal.user.name}">Username</span>
+            <span th:text="${#authentication.principal.user.login}" style="display: none;" id="login">Login</span>
+        </h3>
+        <h5 class="lead">User profile</h5>
+    </div>
+    <div class="accordion mb-3" id="firstAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    Change password
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne"
+                 data-bs-parent="#firstAccordion">
+                <div class="accordion-body">
+                    <div class="mb-3">
+                        <label for="oldpass" class="form-label">Old password</label>
+                        <input type="password" class="form-control" id="oldpass">
+                    </div>
+                    <div class="mb-3">
+                        <label for="pass" class="form-label">New password</label>
+                        <input type="password" class="form-control" id="pass">
+                    </div>
+                    <div class="mb-3">
+                        <label for="passConfirm" class="form-label">Repeat new password</label>
+                        <input type="password" class="form-control" id="passConfirm">
+                    </div>
+                    <div class="input-group mb-3">
+                        <button class="btn btn-outline-primary" type="button" onclick="changePass()">Change Password
+                        </button>
+                        <input type="text" class="form-control" id="errorPassword" disabled>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTwo">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                    Create deputy user
+                </button>
+            </h2>
+            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
+                 data-bs-parent="#firstAccordion">
+                <div class="accordion-body">
+                    <div class="mb-3">
+                        <label for="deputyDateFrom" class="form-label">Date from</label>
+                        <input type="text" class="form-control" id="deputyDateFrom" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div class="mb-3">
+                        <label for="deputyDateTo" class="form-label">Date to</label>
+                        <input type="text" class="form-control" id="deputyDateTo" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div class="input-group mb-3">
+                        <button class="btn btn-outline-primary" type="button" onclick="createDeputy()">Create deputy
+                            user
+                        </button>
+                        <input type="text" class="form-control" id="errorDeputy" disabled>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form action="#" method="post" th:action="@{/do_logout}" class="mb-3">
+        <input class="btn btn-outline-danger form-control" type="submit" value="Logout"/>
+    </form>
+    <script type="text/javascript">
+    const instance = axios.create();
+    const username = document.getElementById('login').innerHTML;
+    function changePass() {
+        document.getElementById('errorPassword').value = '';
+        let pass = document.getElementById('pass').value;
+        let valid = pass == document.getElementById('passConfirm').value;
+        if (!valid) {
+            document.getElementById('errorPassword').value = 'Password mismatch';
+            return;
+        }
+        let params = new URLSearchParams();
+        params.append('oldPassword', document.getElementById('oldpass').value);
+        params.append('newPassword', pass);
+        instance.post(`/api/user/${username}/password/change`, params)
+            .then(resp => document.getElementById('errorPassword').value = resp.data.text)
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    document.getElementById('errorPassword').value = err.response.data.text;
+                } else {
+                    document.getElementById('errorPassword').value = 'ERROR! See console';
+                }
+            });
+    }
+    function createDeputy() {
+        let dateFrom = document.getElementById('deputyDateFrom').value;
+        let dateTo = document.getElementById('deputyDateTo').value;
+        let validFrom = dateFrom.match(/\d{4}-\d{2}-\d{2}/g) != null;
+        if (!validFrom) {
+            document.getElementById('errorDeputy').value = 'Date FROM format error (YYYY-MM-DD)';
+            return;
+        }
+        let validTo = dateTo.match(/\d{4}-\d{2}-\d{2}/g) != null;
+        if (!validTo) {
+            document.getElementById('errorDeputy').value = 'Date TO format error (YYYY-MM-DD)';
+            return;
+        }
+        let params = new URLSearchParams();
+        params.append('username', username);
+        params.append('dateFrom', Date.parse(dateFrom));
+        params.append('dateTo', Date.parse(dateTo));
+        instance.put(`/api/user/temporary`, params)
+            .then(resp => document.getElementById('errorDeputy').value = resp.data.text)
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    document.getElementById('errorDeputy').value = err.response.data.text;
+                } else {
+                    document.getElementById('errorDeputy').value = 'ERROR! See console';
+                }
+            });
+    }
+    instance.interceptors.response.use(function (response) {
+        const _csrf = document.cookie.match(new RegExp(`XSRF-TOKEN=([^;]+)`));
+        if (_csrf !== undefined && _csrf !== null) document.getElementsByName('_csrf').forEach(el => el.value = _csrf[1]);
+        return response;
+    }, async function (err) {
+        if (err?.response?.status === 403 && err.response.headers.fp_request !== undefined) {
+            const _fp = await getFingerprint();
+
+            const params = new URLSearchParams();
+            params.append('_fingerprint', _fp);
+
+            try {
+                const refreshResponse = await instance.post(err.response.headers.fp_request, params);
+                return await instance.request(err.response.config);
+            } catch (authError) {
+                if (authError.response.status === 401) {
+                    window.location.href = '/';
+                    return;
+                } else {
+                    throw authError;
+                }
+            }
+        } else {
+            throw err;
+        }
+    });
+
+    </script>
+</div>
 </body>
 </html>
