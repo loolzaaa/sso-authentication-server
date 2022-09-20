@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import ru.loolzaaa.authserver.config.security.property.BasicUsersProperties;
@@ -31,7 +32,7 @@ public class BasicSecurityConfig {
 
     @Bean
     @Qualifier("basicUserDetailsService")
-    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
+    public InMemoryUserDetailsManager inMemoryUserDetailsManager(PasswordEncoder passwordEncoder) {
         if (basicUsersProperties.getUsers().size() == 0) {
             log.warn("\n\n\tThere is no basic users in properties. Some API unavailable!\n");
         }
@@ -39,14 +40,14 @@ public class BasicSecurityConfig {
         for (BasicUsersProperties.BasicUser user : basicUsersProperties.getUsers()) {
             userDetailsList.add(User
                     .withUsername(user.getUsername())
-                    .password(user.getPassword())
+                    .password(passwordEncoder.encode(user.getPassword()))
                     .authorities(basicUsersProperties.getBasicUserAuthority())
                     .build());
             log.info("Register basic user: {}", user.getUsername());
         }
         userDetailsList.add(User
                 .withUsername(basicUsersProperties.getRevokeUsername())
-                .password(basicUsersProperties.getRevokeUsername())
+                .password(passwordEncoder.encode(basicUsersProperties.getRevokeUsername()))
                 .authorities(basicUsersProperties.getRevokeAuthority())
                 .build());
         log.info("Register revoke token basic user: {}", basicUsersProperties.getRevokeUsername());
@@ -55,11 +56,11 @@ public class BasicSecurityConfig {
 
     @Order(1)
     @Bean
-    public SecurityFilterChain basicFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain basicFilterChain(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
         final String basicMvcMatcherPattern = "/api/fast/**";
         final String basicPrepareLogoutMatcherPattern = "/api/fast/prepare_logout";
         http
-                .userDetailsService(inMemoryUserDetailsManager())
+                .userDetailsService(inMemoryUserDetailsManager(passwordEncoder))
                 .antMatcher(basicMvcMatcherPattern)
                 .csrf().disable()
                 .sessionManagement(session -> session
