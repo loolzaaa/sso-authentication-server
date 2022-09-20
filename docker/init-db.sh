@@ -41,6 +41,15 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
                         "ROLE_ADMIN"
                     ],
                     "credentials_exp": 2524608000000
+                },
+                "example": {
+                    "roles": [
+                        "ROLE_ADMIN"
+                    ],
+                    "privileges": [
+                        "privilege1"
+                    ],
+                    "someSetting":true
                 }
             }', true);
 
