@@ -68,22 +68,27 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             }
 
             if (req.getParameter("_fingerprint") == null) {
-                logger.trace("There is no fingerprint in request, redirecting to " + ssoServerProperties.getRefreshUri());
+                String acceptHeader = req.getHeader("Accept");
+                if (acceptHeader != null && acceptHeader.toLowerCase().contains("application/json")) {
+                    logger.debug("Ajax request detected. Refresh via Auth Server API");
 
-                //TODO: Save request, because now work only with GET method
-
-                // If client application NOT CONTAIN access token, it will redirect to login with continue param,
-                // but SSO application can contain access token, so it will try to refresh it
-                String continuePath = req.getParameter("continue");
-                if (continuePath == null) {
-                    resp.sendRedirect(req.getContextPath() + ssoServerProperties.getRefreshUri());
+                    String fingerprintRequestUrl = getServerUrl(req) + "/api/refresh/ajax";
+                    resp.setHeader("fp_request", fingerprintRequestUrl);
+                    resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 } else {
-                    String fullRequestUrl = UrlUtils.buildFullRequestUrl(req);
-                    String requestUrl = fullRequestUrl.substring(0, fullRequestUrl.indexOf(req.getContextPath()));
-                    String redirectURL = UriComponentsBuilder.fromHttpUrl(requestUrl + req.getContextPath() + ssoServerProperties.getRefreshUri())
-                            .queryParam("continue", continuePath)
-                            .toUriString();
-                    resp.sendRedirect(redirectURL);
+                    logger.debug("Browser request detected. Refresh via redirect to " + ssoServerProperties.getRefreshUri());
+
+                    // If client application NOT CONTAIN access token, it will redirect to login with continue param,
+                    // but SSO application can contain access token, so it will try to refresh it
+                    String continuePath = req.getParameter("continue");
+                    if (continuePath == null) {
+                        resp.sendRedirect(req.getContextPath() + ssoServerProperties.getRefreshUri());
+                    } else {
+                        String redirectURL = UriComponentsBuilder.fromHttpUrl(getServerUrl(req) + ssoServerProperties.getRefreshUri())
+                                .queryParam("continue", continuePath)
+                                .toUriString();
+                        resp.sendRedirect(redirectURL);
+                    }
                 }
                 return;
             }
@@ -101,5 +106,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             }
         }
         chain.doFilter(req, resp);
+    }
+
+    private String getServerUrl(HttpServletRequest req) {
+        String fullRequestUrl = UrlUtils.buildFullRequestUrl(req);
+        String requestUrl = fullRequestUrl.substring(0, fullRequestUrl.indexOf(req.getRequestURI()));
+        return requestUrl + req.getContextPath();
     }
 }
