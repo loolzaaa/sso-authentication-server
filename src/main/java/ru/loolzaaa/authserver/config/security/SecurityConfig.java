@@ -1,13 +1,16 @@
 package ru.loolzaaa.authserver.config.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -32,13 +35,22 @@ public class SecurityConfig implements WebSecurityCustomizer {
         }
     }
 
-    @Profile("prod")
+    @Profile("!noop")
+    @Qualifier("jwtPasswordEncoder")
     @Bean
-    PasswordEncoder passwordEncoder() {
+    PasswordEncoder jwtPasswordEncoder() {
         return new CustomPBKDF2PasswordEncoder();
     }
 
-    @Profile("dev")
+    @Profile("!noop")
+    @Primary
+    @Qualifier("basicPasswordEncoder")
+    @Bean
+    PasswordEncoder basicPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Profile("noop")
     @Bean
     PasswordEncoder noopPasswordEncoder() {
         return new NoopCustomPasswordEncoder();

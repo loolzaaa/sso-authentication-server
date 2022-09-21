@@ -38,6 +38,7 @@ public class JwtSecurityConfig {
 
     private final SsoServerProperties ssoServerProperties;
 
+    @Qualifier("jwtPasswordEncoder")
     private final PasswordEncoder passwordEncoder;
 
     @Qualifier("jwtUserDetailsService")
