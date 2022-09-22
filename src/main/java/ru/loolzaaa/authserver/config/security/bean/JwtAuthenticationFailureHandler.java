@@ -27,6 +27,7 @@ public class JwtAuthenticationFailureHandler extends SimpleUrlAuthenticationFail
             defaultFailureUrl += "&continue=" + continuePath;
         }
 
+        setAllowSessionCreation(false);
         setDefaultFailureUrl(defaultFailureUrl);
         super.onAuthenticationFailure(req, resp, ex);
     }

@@ -13,7 +13,6 @@ import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,8 +29,6 @@ class JwtAuthenticationFailureHandlerTest {
     HttpServletResponse resp;
     @Mock
     AuthenticationException authenticationException;
-    @Mock
-    HttpSession httpSession;
     @Mock
     RedirectStrategy redirectStrategy;
 
@@ -51,27 +48,26 @@ class JwtAuthenticationFailureHandlerTest {
     @Test
     void shouldRedirectToDefaultUrl() throws IOException, ServletException {
         when(req.getParameter("_continue")).thenReturn(null);
-        when(req.getSession(anyBoolean())).thenReturn(httpSession);
-        when(req.getSession()).thenReturn(httpSession);
+        when(req.getSession(anyBoolean())).thenReturn(null);
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
         jwtAuthenticationFailureHandler.onAuthenticationFailure(req, resp, authenticationException);
 
         verify(redirectStrategy).sendRedirect(any(), any(), captor.capture());
-        assertThat(captor.getValue()).isEqualTo(ssoServerProperties.getLoginPage() + "?credentialsError");
+        assertThat(captor.getValue()).startsWith(ssoServerProperties.getLoginPage() + "?credentialsError=");
     }
 
     @Test
     void shouldAppendContinueParamToDefaultUrl() throws IOException, ServletException {
         final String continuePath = "CONTINUE";
         when(req.getParameter("_continue")).thenReturn(continuePath);
-        when(req.getSession(anyBoolean())).thenReturn(httpSession);
-        when(req.getSession()).thenReturn(httpSession);
+        when(req.getSession(anyBoolean())).thenReturn(null);
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
         jwtAuthenticationFailureHandler.onAuthenticationFailure(req, resp, authenticationException);
 
         verify(redirectStrategy).sendRedirect(any(), any(), captor.capture());
-        assertThat(captor.getValue()).isEqualTo(ssoServerProperties.getLoginPage() + "?credentialsError" + "&continue=" + continuePath);
+        assertThat(captor.getValue()).startsWith(ssoServerProperties.getLoginPage() + "?credentialsError=");
+        assertThat(captor.getValue()).contains("&continue=" + continuePath);
     }
 }
