@@ -29,7 +29,7 @@ public class IgnoredPathsHandler {
         return false;
     }
 
-    public String[] toMvcPatterns() {
+    public String[] toAntPatterns() {
         return new String[]{ ssoServerProperties.getRefreshUri(), ignoredPatterns.get(0), ignoredPatterns.get(1)};
     }
 }

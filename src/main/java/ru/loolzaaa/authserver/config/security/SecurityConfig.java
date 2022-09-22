@@ -3,6 +3,7 @@ package ru.loolzaaa.authserver.config.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -30,6 +31,7 @@ public class SecurityConfig implements WebSecurityCustomizer {
 
     @Override
     public void customize(WebSecurity web) {
+        web.ignoring().requestMatchers(PathRequest.toStaticResources().atCommonLocations());
         if (activeProfile.contains("h2")) {
             web.ignoring().antMatchers("/h2-console/**");
         }

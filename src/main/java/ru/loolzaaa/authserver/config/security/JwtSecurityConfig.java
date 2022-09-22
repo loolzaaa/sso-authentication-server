@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -75,9 +74,9 @@ public class JwtSecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .mvcMatchers("/actuator/**").hasRole("ADMIN")
-                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                        .mvcMatchers(ignoredPathsHandler.toMvcPatterns()).permitAll()
+                        .antMatchers("/actuator/**").hasRole("ADMIN")
+                        .antMatchers(ssoServerProperties.getLoginPage()).permitAll()
+                        .antMatchers(ignoredPathsHandler.toAntPatterns()).permitAll()
                         .anyRequest().hasAuthority(ssoServerProperties.getApplication().getName()))
                 .formLogin(formLogin -> formLogin
                         .loginPage(ssoServerProperties.getLoginPage())
@@ -99,7 +98,7 @@ public class JwtSecurityConfig {
                 .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtTokenFilter(ssoServerProperties, ignoredPathsHandler,
                         securityContextService, jwtService, cookieService), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new LoginAccessFilter(ssoServerProperties), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(new LoginAccessFilter(ssoServerProperties, cookieService), UsernamePasswordAuthenticationFilter.class);
         log.debug("Jwt [all API except Basic authentication] configuration completed");
         return http.build();
     }
