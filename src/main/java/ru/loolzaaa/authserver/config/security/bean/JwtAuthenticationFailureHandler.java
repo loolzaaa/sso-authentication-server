@@ -20,7 +20,7 @@ public class JwtAuthenticationFailureHandler extends SimpleUrlAuthenticationFail
     @Override
     public void onAuthenticationFailure(HttpServletRequest req, HttpServletResponse resp, AuthenticationException ex)
             throws IOException, ServletException {
-        String defaultFailureUrl = ssoServerProperties.getLoginPage() + "?credentialsError";
+        String defaultFailureUrl = ssoServerProperties.getLoginPage() + "?credentialsError=" + ex.getMessage();
 
         String continuePath = req.getParameter("_continue");
         if (continuePath != null) {
