@@ -14,7 +14,11 @@
     <title>Authentication server</title>
 </head>
 <body>
-<div class="container">
+<noscript>
+    <strong>We're sorry but this app doesn't work properly without JavaScript enabled. Please enable it to
+        continue.</strong>
+</noscript>
+<div class="container mt-3">
     <div class="mb-3">
         <h3>
             <span th:text="${#authentication.principal.user.name}">Username</span>
