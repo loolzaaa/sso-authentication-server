@@ -47,7 +47,7 @@ public class BasicSecurityConfig {
         }
         userDetailsList.add(User
                 .withUsername(basicUsersProperties.getRevokeUsername())
-                .password(passwordEncoder.encode(basicUsersProperties.getRevokeUsername()))
+                .password(passwordEncoder.encode(basicUsersProperties.getRevokePassword()))
                 .authorities(basicUsersProperties.getRevokeAuthority())
                 .build());
         log.info("Register revoke token basic user: {}", basicUsersProperties.getRevokeUsername());
