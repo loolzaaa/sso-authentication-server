@@ -2,10 +2,12 @@ package ru.loolzaaa.authserver.services;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import ru.loolzaaa.authserver.config.security.JWTUtils;
@@ -15,8 +17,10 @@ import ru.loolzaaa.authserver.model.UserPrincipal;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 @RequiredArgsConstructor
 @Service
@@ -28,7 +32,7 @@ public class JWTService {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final List<String> revokedTokens = new CopyOnWriteArrayList<>();
+    private final List<RevokeToken> revokedTokens = new CopyOnWriteArrayList<>();
 
     public String authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp, Authentication authentication) {
         String fingerprint = req.getParameter("_fingerprint");
@@ -117,11 +121,11 @@ public class JWTService {
     }
 
     public void revokeToken(String token) {
-        revokedTokens.add(token);
+        revokedTokens.add(new RevokeToken(token, LocalDateTime.now()));
     }
 
     public boolean checkTokenForRevoke(String token) {
-        return revokedTokens.remove(token);
+        return revokedTokens.remove(new RevokeToken(token, null));
     }
 
     private JWTAuthentication generateJWTAuthentication(HttpServletRequest req, HttpServletResponse resp, String username) {
@@ -140,5 +144,31 @@ public class JWTService {
                 .accessExp(accessExp)
                 .refreshExp(refreshExp)
                 .build();
+    }
+
+    @Scheduled(initialDelay = 1, fixedDelay = 60, timeUnit = TimeUnit.MINUTES)
+    public void cleanRevokedTokens() {
+        LocalDateTime now = LocalDateTime.now();
+        revokedTokens.removeIf(revokeToken -> now.minusHours(1L).isAfter(revokeToken.getRevokeTime()));
+    }
+
+    @RequiredArgsConstructor
+    @Getter
+    private static class RevokeToken {
+        private final String token;
+        private final LocalDateTime revokeTime;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            RevokeToken that = (RevokeToken) o;
+            return token.equals(that.token);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(token);
+        }
     }
 }
