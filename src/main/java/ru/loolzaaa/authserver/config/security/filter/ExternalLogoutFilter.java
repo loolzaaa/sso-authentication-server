@@ -2,6 +2,8 @@ package ru.loolzaaa.authserver.config.security.filter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.web.util.UrlUtils;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import ru.loolzaaa.authserver.services.JWTService;
@@ -18,14 +20,15 @@ import java.util.Base64;
 public class ExternalLogoutFilter extends OncePerRequestFilter {
 
     private final SecurityContextService securityContextService;
+
     private final JWTService jwtService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse resp,
                                     FilterChain chain) throws ServletException, IOException {
-        //TODO: AntMatcher create?
-        String uriWithoutContextPath = req.getRequestURI().substring(req.getContextPath().length());
-        if ("/api/logout".equals(uriWithoutContextPath)) {
+        AntPathRequestMatcher externalLogoutRequestMatcher = new AntPathRequestMatcher("/api/logout");
+        RequestMatcher.MatchResult matcher = externalLogoutRequestMatcher.matcher(req);
+        if (matcher.isMatch()) {
             String token = req.getParameter("token");
             if (token != null && jwtService.checkTokenForRevoke(token)) {
                 securityContextService.clearSecurityContextHolder(req, resp);
