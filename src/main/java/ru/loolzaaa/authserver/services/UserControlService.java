@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -292,10 +293,15 @@ public class UserControlService {
 
     @Transactional
     private boolean checkUserAndDeleteHash(User user, String password) {
-        //TODO: catch user expired exception (only?), because of error if temporary user delete
         boolean isHashDeleted = false;
         if (password != null) {
-            authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));
+            try {
+                authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));
+            } catch (AccountStatusException ex) {
+                if (!user.getConfig().has(UserAttributes.TEMPORARY)) {
+                    throw ex;
+                }
+            }
             passwordEncoder.setSalt(user.getSalt());
             String hash = passwordEncoder.encode(password);
             passwordEncoder.setSalt(null);
