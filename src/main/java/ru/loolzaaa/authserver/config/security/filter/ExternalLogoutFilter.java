@@ -38,12 +38,21 @@ public class ExternalLogoutFilter extends OncePerRequestFilter {
                     try {
                         String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
                         if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
+                            logger.info("External logout. Redirect to: " + continueUri);
                             resp.sendRedirect(continueUri);
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                        logger.warn("Continue parameter is not valid Base64 scheme: " + continuePath);
+                    }
+                } else {
+                    logger.debug("Continue parameter is null");
                 }
                 return;
+            } else {
+                logger.debug("Token is null or not revoked");
             }
+        } else {
+            logger.trace("Request pattern is not match: " + req.getRequestURI());
         }
         chain.doFilter(req, resp);
     }

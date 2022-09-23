@@ -1,9 +1,11 @@
 package ru.loolzaaa.authserver.services;
 
+import io.jsonwebtoken.ClaimJwtException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
+@Log4j2
 @RequiredArgsConstructor
 @Service
 public class JWTService {
@@ -62,7 +65,7 @@ public class JWTService {
                 jwtAuthentication.getRefreshToken().toString(),
                 isRfid);
 
-        //log.info("User {}[{}] logged in.", login, req.getRemoteAddr());
+        log.info("User {}[{}] logged in. RFID: {}", user.getUsername(), req.getRemoteAddr(), isRfid);
 
         return jwtAuthentication.getAccessToken();
     }
@@ -70,8 +73,13 @@ public class JWTService {
     public String checkAccessToken(String token) {
         try {
             Jws<Claims> claims = jwtUtils.parserEnforceAccessToken(token);
-            return (String) claims.getBody().get("login");
+            String login = (String) claims.getBody().get("login");
+            log.debug("Success check token for {}", login);
+            return login;
         } catch (Exception e) {
+            if (e instanceof ClaimJwtException) {
+                log.debug("Failed check token for {}", ((ClaimJwtException) e).getClaims().get("login"));
+            }
             return null;
         }
     }
@@ -87,6 +95,7 @@ public class JWTService {
         try {
             stringObjectMap = jdbcTemplate.queryForMap(sql, refreshToken, currentFingerprint);
         } catch (DataAccessException e) {
+            log.debug("Error while get refresh token from db: {}", e.getLocalizedMessage());
             return null;
         }
 
@@ -110,6 +119,8 @@ public class JWTService {
                 jwtAuthentication.getRefreshToken().toString(),
                 isRfid);
 
+        log.debug("Refresh token for user {}[{}]. RFID: {}", username, req.getRemoteAddr(), isRfid);
+
         return jwtAuthentication;
     }
 
@@ -118,17 +129,20 @@ public class JWTService {
                 "FROM refresh_sessions, users " +
                 "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id";
         String username = DataAccessUtils.singleResult(jdbcTemplate.queryForList(sql, String.class, refreshToken));
-        //if (username == null) log.warn("Cannot find user with token [{}] in database!", token);
+        if (username == null) {
+            log.warn("Cannot find user with token [{}] in database!", refreshToken);
+        }
 
         int count = jdbcTemplate.update("DELETE FROM refresh_sessions WHERE refresh_token = ?::uuid", refreshToken);
         if (count > 0) {
-            //log.info("User [{}] logged out. Refresh token for this session successfully deleted.", login);
+            log.info("User [{}] logged out. Refresh token for this session successfully deleted.", username);
         } else {
-            //log.warn("User [{}] logged out. There is no tokens in db for this user.", login);
+            log.warn("User [{}] logged out. There is no tokens in db for this user.", username);
         }
     }
 
     public void revokeToken(String token) {
+        log.debug("Revoke token: {}", token);
         revokedTokens.add(new RevokeToken(token, LocalDateTime.now()));
     }
 
