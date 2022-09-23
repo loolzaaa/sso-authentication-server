@@ -1,15 +1,14 @@
 package ru.loolzaaa.authserver.exception;
 
+import lombok.Getter;
+
+@Getter
 public class RequestErrorException extends RuntimeException {
 
-    private Object[] objects;
+    private final Object[] objects;
 
     public RequestErrorException(String message, Object... objects) {
         super(message);
         this.objects = objects;
-    }
-
-    public Object[] getObjects() {
-        return objects;
     }
 }

@@ -8,21 +8,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.RedirectStrategy;
-import org.springframework.test.util.ReflectionTestUtils;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFailureHandlerTest {
 
-    final String mainLoginPage = "/login";
+    SsoServerProperties ssoServerProperties;
 
     @Mock
     HttpServletRequest req;
@@ -31,44 +30,44 @@ class JwtAuthenticationFailureHandlerTest {
     @Mock
     AuthenticationException authenticationException;
     @Mock
-    HttpSession httpSession;
-    @Mock
     RedirectStrategy redirectStrategy;
 
     JwtAuthenticationFailureHandler jwtAuthenticationFailureHandler;
 
     @BeforeEach
     void setUp() {
-        jwtAuthenticationFailureHandler = new JwtAuthenticationFailureHandler();
-        jwtAuthenticationFailureHandler.setRedirectStrategy(redirectStrategy);
+        final String mainLoginPage = "/login";
 
-        ReflectionTestUtils.setField(jwtAuthenticationFailureHandler, "mainLoginPage", mainLoginPage);
+        ssoServerProperties = new SsoServerProperties();
+        ssoServerProperties.setLoginPage(mainLoginPage);
+
+        jwtAuthenticationFailureHandler = new JwtAuthenticationFailureHandler(ssoServerProperties);
+        jwtAuthenticationFailureHandler.setRedirectStrategy(redirectStrategy);
     }
 
     @Test
     void shouldRedirectToDefaultUrl() throws IOException, ServletException {
         when(req.getParameter("_continue")).thenReturn(null);
-        when(req.getSession(anyBoolean())).thenReturn(httpSession);
-        when(req.getSession()).thenReturn(httpSession);
+        when(req.getSession(anyBoolean())).thenReturn(null);
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
         jwtAuthenticationFailureHandler.onAuthenticationFailure(req, resp, authenticationException);
 
         verify(redirectStrategy).sendRedirect(any(), any(), captor.capture());
-        assertThat(captor.getValue()).isEqualTo(mainLoginPage + "?credentialsError");
+        assertThat(captor.getValue()).startsWith(ssoServerProperties.getLoginPage() + "?credentialsError=");
     }
 
     @Test
     void shouldAppendContinueParamToDefaultUrl() throws IOException, ServletException {
         final String continuePath = "CONTINUE";
         when(req.getParameter("_continue")).thenReturn(continuePath);
-        when(req.getSession(anyBoolean())).thenReturn(httpSession);
-        when(req.getSession()).thenReturn(httpSession);
+        when(req.getSession(anyBoolean())).thenReturn(null);
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
         jwtAuthenticationFailureHandler.onAuthenticationFailure(req, resp, authenticationException);
 
         verify(redirectStrategy).sendRedirect(any(), any(), captor.capture());
-        assertThat(captor.getValue()).isEqualTo(mainLoginPage + "?credentialsError" + "&continue=" + continuePath);
+        assertThat(captor.getValue()).startsWith(ssoServerProperties.getLoginPage() + "?credentialsError=");
+        assertThat(captor.getValue()).contains("&continue=" + continuePath);
     }
 }

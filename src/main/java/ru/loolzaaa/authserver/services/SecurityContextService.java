@@ -6,6 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
+import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.model.User;
 import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.repositories.UserRepository;
@@ -45,7 +46,7 @@ public class SecurityContextService {
         SecurityContextHolder.getContext().setAuthentication(null);
         SecurityContextHolder.clearContext();
 
-        String refreshToken = cookieService.getCookieValueByName("_t_refresh", req.getCookies());
+        String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
         if (refreshToken != null) {
             jwtService.deleteTokenFromDatabase(refreshToken);
         }

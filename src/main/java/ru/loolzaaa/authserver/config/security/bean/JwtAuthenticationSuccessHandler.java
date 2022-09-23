@@ -28,9 +28,10 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
 
         String continuePath = req.getParameter("_continue");
         if (continuePath == null) {
+            logger.info("Authentication success. Redirect to SSO main page.");
             super.onAuthenticationSuccess(req, resp, authentication);
         } else {
-            String continueUri;
+            String continueUri = null;
             try {
                 continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
                 if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
@@ -38,11 +39,16 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
                             .queryParam("token", accessToken)
                             .queryParam("serverTime", System.currentTimeMillis())
                             .toUriString();
+                    logger.info("Authentication success. Redirect to: " + continueUri);
                     resp.sendRedirect(redirectURL);
                 } else {
+                    logger.warn("Authentication success. Redirect to SSO main page, " +
+                            "because of continue parameter is invalid Base64 scheme: " + continueUri);
                     super.onAuthenticationSuccess(req, resp, authentication);
                 }
             } catch (IllegalArgumentException e) {
+                logger.warn("Authentication success. Redirect to SSO main page, " +
+                        "because of continue parameter is invalid Base64 scheme: " + continueUri);
                 super.onAuthenticationSuccess(req, resp, authentication);
             }
         }

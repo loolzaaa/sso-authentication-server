@@ -1,6 +1,7 @@
 package ru.loolzaaa.authserver.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
+@Qualifier("jwtUserDetailsService")
 public class UserServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
