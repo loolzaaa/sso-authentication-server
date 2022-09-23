@@ -32,9 +32,13 @@ public class CookieService {
         return null;
     }
 
-    public void updateTokenCookies(HttpServletRequest req, HttpServletResponse resp, String accessToken, String refreshToken) {
+    public void updateTokenCookies(HttpServletRequest req, HttpServletResponse resp,
+                                   String accessToken, String refreshToken, boolean isRfid) {
         resp.addCookie(createCookie(CookieName.ACCESS.getName(), accessToken, req, resp));
         resp.addCookie(createCookie(CookieName.REFRESH.getName(), refreshToken, req, resp));
+        if (isRfid) {
+            resp.addCookie(createCookie(CookieName.RFID.getName(), "", req, resp));
+        }
 
         addSameSiteAttributeToAllCookies(req, resp);
     }

@@ -123,6 +123,10 @@ public class AccessController {
 
         if (!KEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
 
+        if (!StringUtils.hasText(from) | !StringUtils.hasText(login)) {
+            throw new RequestErrorException("FROM and LOGIN parameter must not be empty string");
+        }
+
         String continueUri;
         try {
             continueUri = new String(Base64.getUrlDecoder().decode(from));
@@ -134,13 +138,11 @@ public class AccessController {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
-            //FIXME: need httpOnly = false, for different views in applications
-            //TODO: use cookieService
-            //resp.addCookie(cookieService.createCookie(CookieName.RFID.getName(), "", req, resp));
 
             String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                     .queryParam("token", accessToken)
                     .queryParam("serverTime", System.currentTimeMillis())
+                    .queryParam(CookieName.RFID.getName())
                     .toUriString();
             return "redirect:" + redirectURL;
         } else {

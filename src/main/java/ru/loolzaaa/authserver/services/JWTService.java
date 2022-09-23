@@ -56,7 +56,11 @@ public class JWTService {
                 fingerprint
         );
 
-        cookieService.updateTokenCookies(req, resp, jwtAuthentication.getAccessToken(), jwtAuthentication.getRefreshToken().toString());
+        boolean isRfid = "RFID".equals(fingerprint);
+        cookieService.updateTokenCookies(req, resp,
+                jwtAuthentication.getAccessToken(),
+                jwtAuthentication.getRefreshToken().toString(),
+                isRfid);
 
         //log.info("User {}[{}] logged in.", login, req.getRemoteAddr());
 
@@ -100,7 +104,11 @@ public class JWTService {
                 refreshToken,
                 oldFingerprint);
 
-        cookieService.updateTokenCookies(req, resp, jwtAuthentication.getAccessToken(), jwtAuthentication.getRefreshToken().toString());
+        boolean isRfid = "RFID".equals(currentFingerprint);
+        cookieService.updateTokenCookies(req, resp,
+                jwtAuthentication.getAccessToken(),
+                jwtAuthentication.getRefreshToken().toString(),
+                isRfid);
 
         return jwtAuthentication;
     }

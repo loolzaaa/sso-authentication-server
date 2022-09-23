@@ -66,7 +66,8 @@ public class BasicSecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .mvcMatchers(HttpMethod.POST, basicPrepareLogoutMatcherPattern).hasAuthority(basicUsersProperties.getRevokeAuthority())
+                        .antMatchers(HttpMethod.POST, basicPrepareLogoutMatcherPattern).hasAuthority(basicUsersProperties.getRevokeAuthority())
+                        .antMatchers(HttpMethod.POST, "/api/fast/rfid").permitAll()
                         .anyRequest().hasAuthority(basicUsersProperties.getBasicUserAuthority()))
                 .httpBasic(httpBasic -> httpBasic
                         .realmName("Fast API"))
