@@ -130,3 +130,7 @@ Main active profile: `prod`.
 Additional profiles: N/A.
 
 Application properties for production (`application-prod.properties`) mode already contains database connection parameters.
+
+## RFID Authentication
+
+RFID authentication description can be viewed on the [wiki page](https://github.com/loolzaaa/sso-authentication-server/wiki/RFID-Authentication).
