@@ -11,7 +11,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '11'
-      - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots package
-      - name: Upload coverage reports to Codecov with GitHub Action
+      - name: Install dependencies
+        run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+      - name: Run tests and collect coverage
+        run: mvn -B test
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
