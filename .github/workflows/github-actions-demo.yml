@@ -1,7 +1,7 @@
-name: Java CI
-on: [push]
+name: CI Workflow
+on: [push, pull_request]
 jobs:
-  Explore-GitHub-Actions:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -13,3 +13,5 @@ jobs:
           java-version: '11'
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots package
+      - name: Upload coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v3
