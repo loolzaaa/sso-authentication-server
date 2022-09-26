@@ -1,3 +1,4 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/loolzaaa/sso-authentication-server/branch/master/graph/badge.svg?token=F7H6YNRKST)](https://codecov.io/gh/loolzaaa/sso-authentication-server)
 
 # Single Sign-On authentication server
