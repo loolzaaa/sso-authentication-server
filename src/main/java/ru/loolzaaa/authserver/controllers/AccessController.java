@@ -1,10 +1,10 @@
 package ru.loolzaaa.authserver.controllers;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.UrlUtils;
@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import ru.loolzaaa.authserver.config.security.CookieName;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.dto.RequestStatus;
 import ru.loolzaaa.authserver.dto.RequestStatusDTO;
 import ru.loolzaaa.authserver.exception.RequestErrorException;
@@ -31,10 +33,7 @@ public class AccessController {
 
     private String KEY = "49A9Tr3PAyFHaqM6XfjtUhxm59icL4Ql4xxTvPCqZs2QmNkCEJhkb1j5L9DHZaAA";
 
-    @Value("${auth.main.login.page}")
-    private String mainLoginPage;
-    @Value("${auth.rfid.activate}")
-    private boolean rfidActive;
+    private final SsoServerProperties ssoServerProperties;
 
     private final SecurityContextService securityContextService;
 
@@ -45,7 +44,7 @@ public class AccessController {
     String refreshToken(HttpServletRequest req, HttpServletResponse resp) {
         boolean isRefreshTokenValid = true;
 
-        String refreshToken = cookieService.getCookieValueByName("_t_refresh", req.getCookies());
+        String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
         if (refreshToken == null) {
             isRefreshTokenValid = false;
             securityContextService.clearSecurityContextHolder(req, resp);
@@ -62,7 +61,7 @@ public class AccessController {
 
         String continuePath = req.getParameter("_continue");
         if (continuePath == null) {
-            return !isRefreshTokenValid ? ("redirect:" + mainLoginPage) : "redirect:/";
+            return !isRefreshTokenValid ? ("redirect:" + ssoServerProperties.getLoginPage()) : "redirect:/";
         } else {
             String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
             if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
@@ -74,14 +73,14 @@ public class AccessController {
                 }
                 return "redirect:" + uriComponentsBuilder.toUriString();
             } else {
-                return !isRefreshTokenValid ? ("redirect:" + mainLoginPage) : "redirect:/";
+                return !isRefreshTokenValid ? ("redirect:" + ssoServerProperties.getLoginPage()) : "redirect:/";
             }
         }
     }
 
     @PostMapping("/refresh/ajax")
     ResponseEntity<RequestStatusDTO> refreshTokenByAjax(HttpServletRequest req, HttpServletResponse resp) {
-        String refreshToken = cookieService.getCookieValueByName("_t_refresh", req.getCookies());
+        String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
         if (refreshToken == null) {
             securityContextService.clearSecurityContextHolder(req, resp);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -111,14 +110,22 @@ public class AccessController {
 
     @PostMapping("/fast/rfid")
     String rfidAuth(HttpServletRequest req, HttpServletResponse resp) {
-        if (!rfidActive) throw new AccessDeniedException("RFID authentication disabled");
-        if (!StringUtils.hasText(KEY)) throw new AccessDeniedException("There is no valid RFID key for authentication");
+        if (!ssoServerProperties.getRfid().isActivate()) {
+            throw new AccessDeniedException("RFID authentication disabled");
+        }
+        if (!StringUtils.hasText(KEY)) {
+            throw new AccessDeniedException("There is no valid RFID key for authentication");
+        }
 
         String login = req.getParameter("login");
         String password = req.getParameter("password");
         String from = req.getParameter("from");
 
         if (!KEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
+
+        if (!StringUtils.hasText(from) | !StringUtils.hasText(login)) {
+            throw new RequestErrorException("FROM and LOGIN parameter must not be empty string");
+        }
 
         String continueUri;
         try {
@@ -131,13 +138,11 @@ public class AccessController {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
-            //FIXME: need httpOnly = false, for different views in applications
-            //TODO: use cookieService
-            //resp.addCookie(cookieService.createCookie("_t_rfid", "", req, resp));
 
             String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                     .queryParam("token", accessToken)
                     .queryParam("serverTime", System.currentTimeMillis())
+                    .queryParam(CookieName.RFID.getName())
                     .toUriString();
             return "redirect:" + redirectURL;
         } else {
@@ -145,6 +150,7 @@ public class AccessController {
         }
     }
 
+    @PreAuthorize("hasAuthority('REVOKE_TOKEN')")
     @ResponseBody
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("/fast/prepare_logout")

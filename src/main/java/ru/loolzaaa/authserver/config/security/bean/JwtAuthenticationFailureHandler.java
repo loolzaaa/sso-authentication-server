@@ -1,31 +1,35 @@
 package ru.loolzaaa.authserver.config.security.bean;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+@RequiredArgsConstructor
 @Component
 public class JwtAuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    @Value("${auth.main.login.page}")
-    private String mainLoginPage;
+    private final SsoServerProperties ssoServerProperties;
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest req, HttpServletResponse resp, AuthenticationException ex)
             throws IOException, ServletException {
-        String defaultFailureUrl = mainLoginPage + "?credentialsError";
+        String defaultFailureUrl = ssoServerProperties.getLoginPage() + "?credentialsError=" + ex.getMessage();
 
         String continuePath = req.getParameter("_continue");
         if (continuePath != null) {
             defaultFailureUrl += "&continue=" + continuePath;
         }
+        logger.info("Authentication failure. Message: " + ex.getMessage());
+        logger.info("Authentication failure. Redirect to: " + continuePath);
 
+        setAllowSessionCreation(false);
         setDefaultFailureUrl(defaultFailureUrl);
         super.onAuthenticationFailure(req, resp, ex);
     }

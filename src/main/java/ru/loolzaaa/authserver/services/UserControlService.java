@@ -4,8 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,6 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.loolzaaa.authserver.config.security.bean.CustomPBKDF2PasswordEncoder;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.dto.CreateUserRequestDTO;
 import ru.loolzaaa.authserver.dto.RequestStatusDTO;
 import ru.loolzaaa.authserver.exception.RequestErrorException;
@@ -30,14 +32,14 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+@Log4j2
 @RequiredArgsConstructor
 @Service
 public class UserControlService {
 
-    @Value("${auth.application.name}")
-    private String applicationName;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private final SsoServerProperties ssoServerProperties;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -50,11 +52,14 @@ public class UserControlService {
     public UserPrincipal getUserByUsername(String username, String appName) {
         User user = userRepository.findByLogin(username).orElse(null);
         if (user == null) {
+            log.debug("Try to receive invalid user [{}] for app [{}]", username, appName);
             throw new RequestErrorException("There is no user with login [%s]", username);
         }
         try {
+            log.trace("Return user principal [{}] for application [{}]", username, appName);
             return new UserPrincipal(user, appName);
         } catch (Exception e) {
+            log.warn("Can't create user principal: {}", username, e);
             throw new RequestErrorException(e.getMessage());
         }
     }
@@ -71,10 +76,14 @@ public class UserControlService {
                     if (userPrincipal.getAuthorities().contains(grantedAuthority)) {
                         users.add(userPrincipal);
                     }
-                } catch (IllegalArgumentException ignored) {}
+                } catch (IllegalArgumentException ignored) {
+                    log.debug("Can't create user by authority [{}] in application [{}]", authority, appName);
+                }
             }
+            log.debug("Return {} users by authority [{}] in application [{}]", users.size(), authority, appName);
             return users;
         } catch (Exception e) {
+            log.warn("Can't return users by authority [{}] in application [{}]: ", authority, appName, e);
             throw new RequestErrorException(e.getMessage());
         }
     }
@@ -87,15 +96,18 @@ public class UserControlService {
 
         if (user != null) {
             if (user.getConfig().has(app)) {
+                log.warn("Try to add [{}] application in user [{}] where it already exist", app, login);
                 throw new RequestErrorException("App [%s] for user [%s] already exist!", app, login);
             } else {
                 ((ObjectNode) user.getConfig()).set(app, newUser.getConfig());
                 userRepository.updateConfigByLogin(user.getConfig(), login);
 
+                log.info("Added [{}] application for user [{}]", app, login);
                 return RequestStatusDTO.ok("Add new app [%s] for user [%s]", app, login);
             }
         }
 
+        log.info("Try to create new user: {}. Start application: {}", login, app);
         String tempPassword = generateTempPassword();
         String salt = passwordEncoder.generateSalt();
         passwordEncoder.setSalt(salt);
@@ -104,11 +116,12 @@ public class UserControlService {
 
         String name = newUser.getName();
         if (name == null || name.length() < 3 || name.length() > 128) {
+            log.warn("Invalid name for new user: {}", login);
             throw new RequestErrorException("Name property [%s] for user [%s] must not be null and 3-128 length", name, login);
         }
 
         ObjectNode config = objectMapper.createObjectNode();
-        config.putObject(applicationName)
+        config.putObject(ssoServerProperties.getApplication().getName())
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(365)).toEpochMilli());
         if (!config.has(app)) config.set(app, newUser.getConfig());
 
@@ -117,6 +130,7 @@ public class UserControlService {
 
         jdbcTemplate.update("INSERT INTO hashes VALUES (?)", hash);
 
+        log.info("Create new user [{}] with start application: {}", login, app);
         return RequestStatusDTO.ok("User [%s] created. Temp pass: %s", login, tempPassword);
     }
 
@@ -125,6 +139,7 @@ public class UserControlService {
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
+            log.warn("Try to delete non existing user: {}", login);
             throw new RequestErrorException("There is no user with login [%s]", login);
         }
 
@@ -132,14 +147,17 @@ public class UserControlService {
         try {
             isHashDeleted = checkUserAndDeleteHash(user, password);
         } catch (BadCredentialsException e) {
+            log.warn("Incorrect password for user [{}] to delete", login);
             throw new RequestErrorException("Incorrect password for user [%s]", user.getLogin());
         } catch (Exception e) {
+            log.error("Some error while user [{}] delete process", login, e);
             throw new RequestErrorException("Some error while user [%s] delete process: %s", user.getLogin(), e.getMessage());
         }
 
         jdbcTemplate.update("DELETE FROM refresh_sessions WHERE user_id = ?", user.getId());
         userRepository.delete(user);
 
+        log.info("Delete user [{}]. Hash {} database", login, isHashDeleted ? "deleted from" : "stayed in");
         return RequestStatusDTO.ok("User [%s] deleted. Hash %s database", login, isHashDeleted ? "deleted from" : "stayed in");
     }
 
@@ -148,14 +166,17 @@ public class UserControlService {
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
+            log.warn("Try to change password for non existing user: {}", login);
             throw new RequestErrorException("There is no user with login [%s]", login);
         }
 
         try {
             checkUserAndDeleteHash(user, oldPassword);
         } catch (BadCredentialsException e) {
+            log.warn("Incorrect password for user [{}] to change password", login);
             throw new RequestErrorException("Incorrect password for user [%s]", user.getLogin());
         } catch (Exception e) {
+            log.error("Some error while user [{}] change password process", login, e);
             throw new RequestErrorException("Some error while user [%s] change password process: %s", user.getLogin(), e.getMessage());
         }
 
@@ -166,7 +187,7 @@ public class UserControlService {
 
         userRepository.updateSaltByLogin(salt, login);
 
-        ((ObjectNode) user.getConfig().get(applicationName))
+        ((ObjectNode) user.getConfig().get(ssoServerProperties.getApplication().getName()))
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(365)).toEpochMilli());
 
         if (user.getConfig().has(UserAttributes.TEMPORARY)) {
@@ -176,6 +197,7 @@ public class UserControlService {
 
         jdbcTemplate.update("INSERT INTO hashes VALUES (?)", newHash);
 
+        log.info("Password for user [{}] changed", login);
         return RequestStatusDTO.ok("Password for user [%s] changed", login);
     }
 
@@ -186,6 +208,7 @@ public class UserControlService {
             password = generateTempPassword();
         }
         changeUserPassword(login, null, password);
+        log.info("Password for user [{}] reset", login);
         return RequestStatusDTO.ok("Password for user [%s] reset. New password: %s",
                 login, newPassword == null ? password : "[]");
     }
@@ -195,40 +218,47 @@ public class UserControlService {
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
+            log.warn("Try to change config for non existing user: {}", login);
             throw new RequestErrorException("There is no user with login [%s]", login);
         }
 
         JsonNode userConfig = user.getConfig();
         if (!userConfig.has(app)) {
+            log.warn("Try to change non existing config [{}] for user: {}", app, login);
             throw new RequestErrorException("There is no [%s] config for user [%s]", app, login);
         }
 
         ((ObjectNode) user.getConfig()).set(app, appConfig);
         userRepository.updateConfigByLogin(user.getConfig(), login);
 
+        log.info("Application [{}] config was changed for user [{}]", app, login);
         return RequestStatusDTO.ok("User [%s] configuration for [%s] changed", login, app);
     }
 
     @Transactional
     public RequestStatusDTO deleteApplicationConfigForUser(String login, String app) {
-        if (applicationName.equals(app)) {
-            throw new RequestErrorException("Cannot delete %s configuration", applicationName);
+        if (ssoServerProperties.getApplication().getName().equals(app)) {
+            log.error("Try to delete {} config for user: {}", ssoServerProperties.getApplication().getName(), login);
+            throw new RequestErrorException("Cannot delete %s configuration", ssoServerProperties.getApplication().getName());
         }
 
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
+            log.warn("Try to delete config for non existing user: {}", login);
             throw new RequestErrorException("There is no user with login [%s]", login);
         }
 
         JsonNode userConfig = user.getConfig();
         if (!userConfig.has(app)) {
+            log.warn("Try to delete non existing config [{}] for user: {}", app, login);
             throw new RequestErrorException("There is no [%s] config for user [%s]", app, login);
         }
 
         ((ObjectNode) user.getConfig()).remove(app);
         userRepository.updateConfigByLogin(user.getConfig(), login);
 
+        log.info("Application [{}] config was deleted for user [{}]", app, login);
         return RequestStatusDTO.ok("User [%s] configuration for [%s] removed", login, app);
     }
 
@@ -241,12 +271,15 @@ public class UserControlService {
         User dTemporaryUser = userRepository.findByLogin(dTemporaryLogin).orElse(null);
 
         if (temporaryUser == null) {
+            log.warn("Try to create temporary user for non existing user: {}", temporaryLogin);
             throw new RequestErrorException("There is no original user [%s]", temporaryLogin);
         }
         if (temporaryUser.getConfig().has(UserAttributes.TEMPORARY)) {
+            log.warn("Try to create temporary user for ALREADY temporary user: {}", temporaryLogin);
             throw new RequestErrorException("Temporary users can't create other temporary users");
         }
         if (dTemporaryUser != null) {
+            log.warn("Try to create already exists temporary user: {}", dTemporaryLogin);
             throw new RequestErrorException("Temporary user [%s] already exist", dTemporaryLogin);
         }
 
@@ -257,6 +290,7 @@ public class UserControlService {
         if (dateFromLdt.isBefore(now) || dateFromLdt.isAfter(dateToLdt) ||
                 dateFromLdt.isEqual(dateToLdt) || dateToLdt.isEqual(now) ||
                 dateToLdt.isBefore(now)) {
+            log.debug("Try to create temporary user [{}] with wrong dates", dTemporaryLogin);
             throw new RequestErrorException("Wrong dates for temporary user");
         }
 
@@ -272,7 +306,7 @@ public class UserControlService {
         temporaryNode.put("originTabNumber", temporaryLogin);
         ((ObjectNode) temporaryUser.getConfig()).set(UserAttributes.TEMPORARY, temporaryNode);
 
-        ((ObjectNode) temporaryUser.getConfig().get(applicationName))
+        ((ObjectNode) temporaryUser.getConfig().get(ssoServerProperties.getApplication().getName()))
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(90)).toEpochMilli());
 
         dTemporaryUser = User.builder()
@@ -288,15 +322,21 @@ public class UserControlService {
 
         //TODO: Some notifications?
 
+        log.info("Temporary user [{}] created for user [{}]", dTemporaryLogin, temporaryLogin);
         return RequestStatusDTO.ok("Temporary user [%s] created. Temporary password: %s", dTemporaryLogin, dTemporaryPassword);
     }
 
     @Transactional
     private boolean checkUserAndDeleteHash(User user, String password) {
-        //TODO: catch user expired exception (only?), because of error if temporary user delete
         boolean isHashDeleted = false;
         if (password != null) {
-            authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));
+            try {
+                authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));
+            } catch (AccountStatusException ex) {
+                if (!user.getConfig().has(UserAttributes.TEMPORARY)) {
+                    throw ex;
+                }
+            }
             passwordEncoder.setSalt(user.getSalt());
             String hash = passwordEncoder.encode(password);
             passwordEncoder.setSalt(null);

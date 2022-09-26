@@ -1,202 +1,65 @@
 package ru.loolzaaa.authserver.config.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-import ru.loolzaaa.authserver.config.security.bean.*;
-import ru.loolzaaa.authserver.config.security.filter.ExternalLogoutFilter;
-import ru.loolzaaa.authserver.config.security.filter.JwtTokenFilter;
-import ru.loolzaaa.authserver.config.security.filter.LoginAccessFilter;
-import ru.loolzaaa.authserver.model.UserPrincipal;
-import ru.loolzaaa.authserver.services.CookieService;
-import ru.loolzaaa.authserver.services.JWTService;
-import ru.loolzaaa.authserver.services.SecurityContextService;
+import ru.loolzaaa.authserver.config.security.bean.CustomPBKDF2PasswordEncoder;
+import ru.loolzaaa.authserver.config.security.bean.NoopCustomPasswordEncoder;
 
 import java.util.List;
 
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
+@EnableMethodSecurity
 @Configuration
-public class SecurityConfig {
+public class SecurityConfig implements WebSecurityCustomizer {
 
-    @RequiredArgsConstructor
-    @Order(1)
-    @Configuration
-    public static class BasicConfiguration extends WebSecurityConfigurerAdapter {
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
 
-        @Value("${auth.basic.login}")
-        private String basicLogin;
-        @Value("${auth.basic.password}")
-        private String basicPassword;
-        @Value("${auth.basic.authority}")
-        private String basicAuthority;
-
-        @Value("${auth.basic.external.login}")
-        private String basicExternalLogin;
-        @Value("${auth.basic.external.password}")
-        private String basicExternalPassword;
-
-        private final PasswordEncoder passwordEncoder;
-
-        @Override
-        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-            auth
-                    .inMemoryAuthentication()
-                        .withUser(basicLogin)
-                            .password(passwordEncoder.encode(basicPassword))
-                            .authorities(basicAuthority)
-                    .and()
-                        .withUser(basicExternalLogin)
-                            .password(passwordEncoder.encode(basicExternalPassword))
-                            .authorities(basicAuthority);
-        }
-
-        @Override
-        protected void configure(HttpSecurity http) throws Exception {
-            http
-                    .antMatcher("/api/fast/**")
-                    .csrf()
-                        .disable()
-                    .sessionManagement()
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                    .and()
-                        .authorizeRequests()
-                        .anyRequest()
-                            .hasAuthority(basicAuthority)
-                    .and()
-                        .httpBasic()
-                            .realmName("Fast API");
+    @Override
+    public void customize(WebSecurity web) {
+        web.ignoring().requestMatchers(PathRequest.toStaticResources().atCommonLocations());
+        if (activeProfile.contains("h2")) {
+            web.ignoring().antMatchers("/h2-console/**");
         }
     }
 
-    @RequiredArgsConstructor
-    @Order(2)
-    @Configuration
-    public static class WebConfiguration extends WebSecurityConfigurerAdapter {
-
-        @Value("${spring.profiles.active:}")
-        private String activeProfile;
-        @Value("${auth.application.name}")
-        private String applicationName;
-        @Value("${auth.refresh.token.uri}")
-        private String refreshTokenURI;
-        @Value("${auth.main.login.page}")
-        private String mainLoginPage;
-
-        private final PasswordEncoder passwordEncoder;
-
-        private final UserDetailsService userDetailsService;
-
-        private final JwtAuthenticationSuccessHandler jwtAuthenticationSuccessHandler;
-        private final JwtAuthenticationFailureHandler jwtAuthenticationFailureHandler;
-        private final JwtLogoutHandler jwtLogoutHandler;
-
-        private final JWTService jwtService;
-        private final CookieService cookieService;
-        private final SecurityContextService securityContextService;
-
-        @Override
-        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-            auth.authenticationProvider(authenticationProvider());
-
-            // Set current application name from properties for request authorizing
-            UserPrincipal.setApplicationName(applicationName);
-        }
-
-        @Override
-        protected void configure(HttpSecurity http) throws Exception {
-            http
-                    .csrf()
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .and()
-                    .cors()
-                    .and()
-                        .sessionManagement()
-                            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                    .and()
-                        .authorizeRequests()
-                            .antMatchers("/actuator/**")
-                                .hasRole("ADMIN")
-                            .anyRequest()
-                                .hasAuthority(applicationName)
-                    .and()
-                        .formLogin()
-                            .loginPage(mainLoginPage)
-                            .loginProcessingUrl("/do_login")
-                            .failureHandler(jwtAuthenticationFailureHandler)
-                            .successHandler(jwtAuthenticationSuccessHandler)
-                            .permitAll()
-                    .and()
-                        .logout()
-                            .logoutRequestMatcher(new AntPathRequestMatcher("/do_logout", "POST"))
-                            .logoutSuccessUrl(mainLoginPage + "?successLogout")
-                            .addLogoutHandler(jwtLogoutHandler)
-                            .deleteCookies("JSESSIONID", "_t_access", "_t_refresh", "_t_rfid")
-                            .invalidateHttpSession(true)
-                            .clearAuthentication(true)
-                            .permitAll()
-                    .and()
-                        .httpBasic()
-                            .disable()
-                    // Filters order is important!
-                    .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
-                    .addFilterBefore(new JwtTokenFilter(refreshTokenURI, securityContextService, jwtService, cookieService),
-                            UsernamePasswordAuthenticationFilter.class)
-                    .addFilterAfter(new LoginAccessFilter(mainLoginPage), UsernamePasswordAuthenticationFilter.class);
-        }
-
-        @Override
-        public void configure(WebSecurity web) throws Exception {
-            web
-                    .ignoring()
-                        .antMatchers("/webjars/**", "/js/**", "/css/**", "/images/**", "/favicon.*")
-                        .antMatchers(refreshTokenURI, "/api/refresh", "/api/refresh/ajax");
-
-            if (activeProfile.contains("dev")) {
-                web.ignoring().antMatchers("/h2-console/**");
-            }
-        }
-
-        @Bean
-        AuthenticationProvider authenticationProvider() {
-            CustomDaoAuthenticationProvider authenticationProvider = new CustomDaoAuthenticationProvider();
-            authenticationProvider.setPasswordEncoder(passwordEncoder);
-            authenticationProvider.setUserDetailsService(userDetailsService);
-            return authenticationProvider;
-        }
-    }
-
-    @Profile("prod")
+    @Profile("!noop")
+    @Qualifier("jwtPasswordEncoder")
     @Bean
-    PasswordEncoder passwordEncoder() {
+    PasswordEncoder jwtPasswordEncoder() {
         return new CustomPBKDF2PasswordEncoder();
     }
 
-    @Profile("dev")
+    @Profile("!noop")
+    @Primary
+    @Qualifier("basicPasswordEncoder")
+    @Bean
+    PasswordEncoder basicPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Profile("noop")
     @Bean
     PasswordEncoder noopPasswordEncoder() {
         return new NoopCustomPasswordEncoder();
     }
 
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
@@ -204,6 +67,6 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "HEAD", "POST", "PATCH"));
         config.addAllowedHeader("*");
         source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
+        return source;
     }
 }

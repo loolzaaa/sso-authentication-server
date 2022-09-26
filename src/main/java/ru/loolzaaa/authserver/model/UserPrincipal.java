@@ -3,6 +3,7 @@ package ru.loolzaaa.authserver.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,13 +16,14 @@ import java.util.List;
 import java.util.Objects;
 
 
+@Log4j2
 public class UserPrincipal implements UserDetails {
 
-    private static String applicationName = "passport"; // Change it in SecurityConfig
+    private static String applicationName;
 
     private final User user;
 
-    private List<GrantedAuthority> authorities = new ArrayList<>();
+    private final List<GrantedAuthority> authorities = new ArrayList<>();
 
     private boolean accountNonExpired = true;
     private boolean accountNonLocked = true;
@@ -41,10 +43,12 @@ public class UserPrincipal implements UserDetails {
                 }
                 if (authNode.has(UserAttributes.CREDENTIALS_EXP)) {
                     if (Instant.ofEpochMilli(authNode.get(UserAttributes.CREDENTIALS_EXP).asLong()).isBefore(Instant.now())) {
+                        log.info("User [{}] credentials is expired", user.getLogin());
                         this.credentialsNonExpired = false;
                     }
                 }
             } else {
+                log.info("User [{}] is locked", user.getLogin());
                 this.accountNonLocked = false;
             }
 
@@ -53,10 +57,12 @@ public class UserPrincipal implements UserDetails {
                 LocalDate dateFrom = LocalDate.parse(userConf.get(UserAttributes.TEMPORARY).get("dateFrom").asText());
                 LocalDate dateTo = LocalDate.parse(userConf.get(UserAttributes.TEMPORARY).get("dateTo").asText());
                 if (dateFrom.isAfter(LocalDate.now()) || dateTo.isBefore(LocalDate.now())) {
+                    log.info("User [{}] temporary account is expired", user.getLogin());
                     this.accountNonExpired = false;
                 }
             }
         } else {
+            log.warn("User [{}] does not contain config", user.getLogin());
             this.accountNonLocked = false;
         }
     }

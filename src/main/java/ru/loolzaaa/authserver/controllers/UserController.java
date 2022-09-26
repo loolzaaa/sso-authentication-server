@@ -22,20 +22,20 @@ public class UserController {
 
     private final UserControlService userControlService;
 
-    @GetMapping(value = "/fast/user/get/{username}", produces = "application/json")
+    @GetMapping(value = {"/user/{username}", "/fast/user/{username}"}, produces = "application/json")
     UserPrincipal getUserByUsername(@PathVariable("username") String username,
                                     @RequestParam(value = "app", required = false) String app) {
         return userControlService.getUserByUsername(username, app);
     }
 
-    @GetMapping(value = "/fast/users", produces = "application/json")
+    @GetMapping(value = {"/users", "/fast/users"}, produces = "application/json")
     List<UserPrincipal> getUsersByAuthority(@RequestParam(value = "app") String app,
                                             @RequestParam("authority") String authority) {
         return userControlService.getUsersByAuthority(app, authority);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping(value = "/user/create", consumes = "application/json", produces = "application/json")
+    @PutMapping(value = "/user", consumes = "application/json", produces = "application/json")
     ResponseEntity<RequestStatusDTO> createUser(@RequestParam("app") String app,
                                                 @Valid @RequestBody CreateUserRequestDTO user,
                                                 BindingResult bindingResult) {
@@ -47,7 +47,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping(value = "/user/{username}/delete", produces = "application/json")
+    @DeleteMapping(value = "/user/{username}", produces = "application/json")
     ResponseEntity<RequestStatusDTO> deleteUser(@PathVariable("username") String username,
                                                 @RequestParam(name = "password", required = false) String password) {
         RequestStatusDTO requestStatusDTO = userControlService.deleteUser(username, password);
@@ -84,13 +84,13 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping(value = "/user/{username}/config/{app}/delete", produces = "application/json")
+    @DeleteMapping(value = "/user/{username}/config/{app}", produces = "application/json")
     ResponseEntity<RequestStatusDTO> deleteUserConfig(@PathVariable("username") String username, @PathVariable("app") String app) {
         RequestStatusDTO requestStatusDTO = userControlService.deleteApplicationConfigForUser(username, app);
         return ResponseEntity.status(requestStatusDTO.getStatusCode()).body(requestStatusDTO);
     }
 
-    @PutMapping(value = "/user/temporary/create", produces = "application/json")
+    @PutMapping(value = "/user/temporary", produces = "application/json")
     ResponseEntity<RequestStatusDTO> createTemporaryUser(@RequestParam("username") String username,
                                                          @RequestParam("dateFrom") long dateFrom,
                                                          @RequestParam("dateTo") long dateTo) {
