@@ -37,11 +37,11 @@ class JwtLogoutHandlerTest {
 
     @Test
     void shouldInvokeLogoutService() {
-        doNothing().when(logoutService).logout(any(), any());
+        doNothing().when(logoutService).logout(any());
 
         jwtLogoutHandler.logout(req, resp, authentication);
 
-        verify(logoutService).logout(any(), any());
+        verify(logoutService).logout(any());
         verifyNoMoreInteractions(logoutService);
     }
 }

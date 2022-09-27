@@ -15,9 +15,9 @@ public class CustomPBKDF2PasswordEncoder implements PasswordEncoder {
 
     private final Log logger = LogFactory.getLog(this.getClass());
 
-    private final int ITERATIONS = 1000;
+    private static final int ITERATIONS = 1000;
 
-    private final String LOCAL_PARAM = "0CE2C3B9373A978CDB5D71D404FD867B75B358D7C5F6EC5AB8D95D3295CDC005";
+    private static final String LOCAL_PARAM = "0CE2C3B9373A978CDB5D71D404FD867B75B358D7C5F6EC5AB8D95D3295CDC005";
 
     private String salt;
 
@@ -72,9 +72,9 @@ public class CustomPBKDF2PasswordEncoder implements PasswordEncoder {
     public String generateSalt() {
         try {
             SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
-            byte[] salt = new byte[31];
-            sr.nextBytes(salt);
-            return toHex(salt);
+            byte[] saltByteArr = new byte[31];
+            sr.nextBytes(saltByteArr);
+            return toHex(saltByteArr);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException(e);
         }

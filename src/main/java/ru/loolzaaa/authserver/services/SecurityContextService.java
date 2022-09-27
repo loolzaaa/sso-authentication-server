@@ -24,7 +24,7 @@ public class SecurityContextService {
     private final CookieService cookieService;
     private final JWTService jwtService;
 
-    public void updateSecurityContextHolder(HttpServletRequest req, HttpServletResponse resp, String login) {
+    public void updateSecurityContextHolder(HttpServletRequest req, String login) {
         User user = userRepository.findByLogin(login).orElseThrow(() -> new UsernameNotFoundException(login));
         UserPrincipal userDetails = new UserPrincipal(user);
 

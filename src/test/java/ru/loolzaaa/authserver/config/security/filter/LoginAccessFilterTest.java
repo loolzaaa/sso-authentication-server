@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -103,7 +104,7 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(null);
+        when(servletRequest.getParameter("continue")).thenReturn(null);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -120,7 +121,7 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(CONTINUE_PATH);
+        when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
         RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
         when(servletRequest.getRequestDispatcher(anyString())).thenReturn(requestDispatcher);
 
@@ -140,7 +141,7 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(CONTINUE_PATH);
+        when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -156,7 +157,7 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(CONTINUE_PATH);
+        when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -166,71 +167,20 @@ class LoginAccessFilterTest {
         verifyNoMoreInteractions(servletResponse);
     }
 
-    @Test
-    void shouldSetStatus307AndRedirectToRootIfAuthenticatedAndRequestToLoginAndContinuePathIsNull() throws Exception {
+    @ParameterizedTest
+    @CsvSource(value = {
+            "null, 123",
+            "/some/sitr, null",
+            "abcd+efgh, token",
+            "L3Rlc3QvYXBp, token",
+    }, nullValues={"null"})
+    void shouldSetStatus307AndRedirectToRootIfAuthenticatedAndRequestToLoginAnd(String continueParam, String token) throws Exception {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(null);
+        when(servletRequest.getParameter("continue")).thenReturn(continueParam);
         when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
-        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn("123");
-        ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
-
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
-
-        verify(servletResponse).setStatus(HttpStatus.TEMPORARY_REDIRECT.value());
-        verify(servletResponse).setHeader(eq("Location"), url.capture());
-        assertThat(url.getValue()).isEqualTo("/");
-        verify(chain).doFilter(servletRequest, servletResponse);
-        verifyNoMoreInteractions(chain);
-    }
-
-    @Test
-    void shouldSetStatus307AndRedirectToRootIfAuthenticatedAndRequestToLoginAndAccessTokenIsNull() throws Exception {
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
-        when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn("/some/sitr");
-        when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
-        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(null);
-        ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
-
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
-
-        verify(servletResponse).setStatus(HttpStatus.TEMPORARY_REDIRECT.value());
-        verify(servletResponse).setHeader(eq("Location"), url.capture());
-        assertThat(url.getValue()).isEqualTo("/");
-        verify(chain).doFilter(servletRequest, servletResponse);
-        verifyNoMoreInteractions(chain);
-    }
-
-    @Test
-    void shouldSetStatus307AndRedirectToRootIfAuthenticatedAndRequestToLoginAndContinuePathInvalidScheme() throws Exception {
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
-        when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn("abcd+efgh");
-        when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
-        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn("token");
-        ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
-
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
-
-        verify(servletResponse).setStatus(HttpStatus.TEMPORARY_REDIRECT.value());
-        verify(servletResponse).setHeader(eq("Location"), url.capture());
-        assertThat(url.getValue()).isEqualTo("/");
-        verify(chain).doFilter(servletRequest, servletResponse);
-        verifyNoMoreInteractions(chain);
-    }
-
-    @Test
-    void shouldSetStatus307AndRedirectToRootIfAuthenticatedAndRequestToLoginAndContinuePathInvalidAbsolute() throws Exception {
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
-        when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn("L3Rlc3QvYXBp");
-        when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
-        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn("token");
+        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(token);
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
@@ -250,7 +200,7 @@ class LoginAccessFilterTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(ENCODED_URL);
+        when(servletRequest.getParameter("continue")).thenReturn(ENCODED_URL);
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(TOKEN);
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
 

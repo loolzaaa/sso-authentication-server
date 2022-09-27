@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @TestProfiles
 @SpringBootTest
-public class BasicSecurityTests {
+class BasicSecurityTests {
 
     @Autowired
     WebApplicationContext context;

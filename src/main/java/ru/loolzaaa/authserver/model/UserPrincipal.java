@@ -41,11 +41,9 @@ public class UserPrincipal implements UserDetails {
                 if (authNode.has(UserAttributes.ROLES)) {
                     authNode.get(UserAttributes.ROLES).forEach(role -> this.authorities.add(new SimpleGrantedAuthority(role.asText())));
                 }
-                if (authNode.has(UserAttributes.CREDENTIALS_EXP)) {
-                    if (Instant.ofEpochMilli(authNode.get(UserAttributes.CREDENTIALS_EXP).asLong()).isBefore(Instant.now())) {
-                        log.info("User [{}] credentials is expired", user.getLogin());
-                        this.credentialsNonExpired = false;
-                    }
+                if (authNode.has(UserAttributes.CREDENTIALS_EXP) && isUserCredentialsExpired(authNode)) {
+                    log.info("User [{}] credentials is expired", user.getLogin());
+                    this.credentialsNonExpired = false;
                 }
             } else {
                 log.info("User [{}] is locked", user.getLogin());
@@ -162,5 +160,9 @@ public class UserPrincipal implements UserDetails {
     @Override
     public int hashCode() {
         return Objects.hash(user);
+    }
+
+    private boolean isUserCredentialsExpired(JsonNode authNode) {
+        return Instant.ofEpochMilli(authNode.get(UserAttributes.CREDENTIALS_EXP).asLong()).isBefore(Instant.now());
     }
 }
