@@ -328,7 +328,6 @@ public class UserControlService {
         return RequestStatusDTO.ok("Temporary user [%s] created. Temporary password: %s", dTemporaryLogin, dTemporaryPassword);
     }
 
-    @Transactional
     private boolean checkUserAndDeleteHash(User user, String password) {
         boolean isHashDeleted = false;
         if (password != null) {

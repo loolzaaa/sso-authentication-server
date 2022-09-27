@@ -123,7 +123,7 @@ public class AccessController {
 
         if (!KEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
 
-        if (!StringUtils.hasText(from) | !StringUtils.hasText(login)) {
+        if (!StringUtils.hasText(from) || !StringUtils.hasText(login)) {
             throw new RequestErrorException("FROM and LOGIN parameter must not be empty string");
         }
 
