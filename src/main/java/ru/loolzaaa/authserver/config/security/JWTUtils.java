@@ -13,10 +13,10 @@ import java.util.Map;
 @Component
 public class JWTUtils {
 
-    private final String accessSecretKey = "dUYzUFY4UVN6MkpXenpKbThzaFhmd0U2eElOdFlzZmQzZGN4Sk8xTTA5RDBWR014RElpTElkNndtTmYyaDRkMQ==";
+    private static final String accessSecretKey = "dUYzUFY4UVN6MkpXenpKbThzaFhmd0U2eElOdFlzZmQzZGN4Sk8xTTA5RDBWR014RElpTElkNndtTmYyaDRkMQ==";
 
-    private final int ACCESS_TOKEN_TTL = 5 * 6 * 1000; // 5 Minutes (30 sec)
-    private final int REFRESH_TOKEN_TTL = 10 * 60 * 60 * 1000; // 10 Hours
+    private static final int ACCESS_TOKEN_TTL = 5 * 6 * 1000; // 5 Minutes (30 sec)
+    private static final int REFRESH_TOKEN_TTL = 10 * 60 * 60 * 1000; // 10 Hours
 
     public String buildAccessToken(Date issuedAt, long exp, Map<String, Object> params) {
         return Jwts.builder()

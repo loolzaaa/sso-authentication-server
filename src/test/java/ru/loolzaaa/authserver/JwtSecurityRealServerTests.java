@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @TestProfiles
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class JwtSecurityRealServerTests {
+class JwtSecurityRealServerTests {
 
     @LocalServerPort
     int localPort;

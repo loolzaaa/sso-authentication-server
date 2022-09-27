@@ -103,7 +103,7 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(null);
+        when(servletRequest.getParameter("continue")).thenReturn(null);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -120,7 +120,7 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(CONTINUE_PATH);
+        when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
         RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
         when(servletRequest.getRequestDispatcher(anyString())).thenReturn(requestDispatcher);
 
@@ -140,7 +140,7 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(CONTINUE_PATH);
+        when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -156,7 +156,7 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(CONTINUE_PATH);
+        when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -171,7 +171,7 @@ class LoginAccessFilterTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(null);
+        when(servletRequest.getParameter("continue")).thenReturn(null);
         when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn("123");
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
@@ -190,7 +190,7 @@ class LoginAccessFilterTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn("/some/sitr");
+        when(servletRequest.getParameter("continue")).thenReturn("/some/sitr");
         when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(null);
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
@@ -209,7 +209,7 @@ class LoginAccessFilterTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn("abcd+efgh");
+        when(servletRequest.getParameter("continue")).thenReturn("abcd+efgh");
         when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn("token");
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
@@ -228,7 +228,7 @@ class LoginAccessFilterTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn("L3Rlc3QvYXBp");
+        when(servletRequest.getParameter("continue")).thenReturn("L3Rlc3QvYXBp");
         when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn("token");
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
@@ -250,7 +250,7 @@ class LoginAccessFilterTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter(eq("continue"))).thenReturn(ENCODED_URL);
+        when(servletRequest.getParameter("continue")).thenReturn(ENCODED_URL);
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(TOKEN);
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
 

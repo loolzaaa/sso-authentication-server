@@ -45,9 +45,7 @@ public class CookieService {
 
     public void clearCookies(HttpServletRequest req, HttpServletResponse resp) {
         if (req.getCookies() == null) return;
-        Arrays.stream(req.getCookies()).forEach(cookie -> {
-            clearCookieByName(req, resp, cookie.getName());
-        });
+        Arrays.stream(req.getCookies()).forEach(cookie -> clearCookieByName(req, resp, cookie.getName()));
         addSameSiteAttributeToAllCookies(req, resp);
     }
 

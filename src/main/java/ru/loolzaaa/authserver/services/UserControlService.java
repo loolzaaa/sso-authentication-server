@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 @Service
 public class UserControlService {
 
+    private final Random random = new Random();
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final SsoServerProperties ssoServerProperties;
@@ -348,7 +350,7 @@ public class UserControlService {
     }
 
     private String generateTempPassword() {
-        return "temp" + (int)(Math.random() * 1000);
+        return "temp" + random.nextInt(1000);
     }
 
     private String generatePasswordForTemporaryUser() {
