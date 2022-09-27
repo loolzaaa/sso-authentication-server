@@ -1,3 +1,6 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/loolzaaa/sso-authentication-server/branch/master/graph/badge.svg?token=F7H6YNRKST)](https://codecov.io/gh/loolzaaa/sso-authentication-server)
+
 # Single Sign-On authentication server
 
 This Single Sign-On (SSO) is server based on Spring Security. The main authentication routine happens through a standard login form. Further authentication occurs through Json Web Tokens (JWT) tokens, which are checked through a custom filter. In addition, there are a number of APIs that are accessed through Basic authentication with predefined users in the application configuration. All other components of the system are based on standard Spring Security beans with minor changes.
