@@ -72,9 +72,9 @@ public class CustomPBKDF2PasswordEncoder implements PasswordEncoder {
     public String generateSalt() {
         try {
             SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
-            byte[] salt = new byte[31];
-            sr.nextBytes(salt);
-            return toHex(salt);
+            byte[] saltByteArr = new byte[31];
+            sr.nextBytes(saltByteArr);
+            return toHex(saltByteArr);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException(e);
         }

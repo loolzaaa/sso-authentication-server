@@ -34,19 +34,19 @@ public class CookieService {
 
     public void updateTokenCookies(HttpServletRequest req, HttpServletResponse resp,
                                    String accessToken, String refreshToken, boolean isRfid) {
-        resp.addCookie(createCookie(CookieName.ACCESS.getName(), accessToken, req, resp));
-        resp.addCookie(createCookie(CookieName.REFRESH.getName(), refreshToken, req, resp));
+        resp.addCookie(createCookie(CookieName.ACCESS.getName(), accessToken, req));
+        resp.addCookie(createCookie(CookieName.REFRESH.getName(), refreshToken, req));
         if (isRfid) {
-            resp.addCookie(createCookie(CookieName.RFID.getName(), "", req, resp));
+            resp.addCookie(createCookie(CookieName.RFID.getName(), "", req));
         }
 
-        addSameSiteAttributeToAllCookies(req, resp);
+        addSameSiteAttributeToAllCookies(resp);
     }
 
     public void clearCookies(HttpServletRequest req, HttpServletResponse resp) {
         if (req.getCookies() == null) return;
         Arrays.stream(req.getCookies()).forEach(cookie -> clearCookieByName(req, resp, cookie.getName()));
-        addSameSiteAttributeToAllCookies(req, resp);
+        addSameSiteAttributeToAllCookies(resp);
     }
 
     public void clearCookieByName(HttpServletRequest req, HttpServletResponse resp, String name) {
@@ -59,7 +59,7 @@ public class CookieService {
     }
 
     // This method used only for passport cookie creation
-    public Cookie createCookie(String name, String value, HttpServletRequest req, HttpServletResponse resp) {
+    public Cookie createCookie(String name, String value, HttpServletRequest req) {
         Cookie cookie = new Cookie(name, value);
         cookie.setHttpOnly(true);
         cookie.setSecure(req.isSecure());
@@ -67,7 +67,7 @@ public class CookieService {
         return cookie;
     }
 
-    private void addSameSiteAttributeToAllCookies(HttpServletRequest req, HttpServletResponse resp) {
+    private void addSameSiteAttributeToAllCookies(HttpServletResponse resp) {
         Collection<String> headers = resp.getHeaders(HttpHeaders.SET_COOKIE);
         boolean firstHeader = true;
         for (String header : headers) {

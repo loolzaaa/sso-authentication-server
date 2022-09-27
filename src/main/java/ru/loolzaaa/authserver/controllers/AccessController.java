@@ -134,7 +134,7 @@ public class AccessController {
             throw new RequestErrorException("Invalid Base64 scheme for FROM parameter for RFID authentication");
         }
         if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-            securityContextService.updateSecurityContextHolder(req, resp, login);
+            securityContextService.updateSecurityContextHolder(req, login);
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");

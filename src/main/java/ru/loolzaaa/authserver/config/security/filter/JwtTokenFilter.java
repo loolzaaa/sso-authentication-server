@@ -55,7 +55,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (login != null) {
             logger.debug(String.format("Access token for user [%s] validated. Update SecurityContext", login));
 
-            securityContextService.updateSecurityContextHolder(req, resp, login);
+            securityContextService.updateSecurityContextHolder(req, login);
         } else {
             logger.debug("Invalid access token, try to refresh it");
 
@@ -98,7 +98,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 login = jwtAuthentication.getUsername();
                 logger.debug(String.format("Refresh token for user [%s] validated and updated. Update SecurityContext", login));
 
-                securityContextService.updateSecurityContextHolder(req, resp, login);
+                securityContextService.updateSecurityContextHolder(req, login);
             } else {
                 logger.debug("Invalid refresh token. Clear SecurityContext");
 

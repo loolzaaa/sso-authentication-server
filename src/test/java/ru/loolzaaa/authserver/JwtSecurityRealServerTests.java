@@ -72,7 +72,7 @@ class JwtSecurityRealServerTests {
                 String.class);
 
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertThat(response.getBody()).contains("Example Domain");
     }
 
@@ -91,7 +91,7 @@ class JwtSecurityRealServerTests {
                 String.class);
 
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertThat(response.getBody()).contains("<h5 class=\"lead\">User profile</h5>");
     }
 
@@ -113,7 +113,7 @@ class JwtSecurityRealServerTests {
                 String.class);
 
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertThat(response.getBody()).contains("<label for=\"username\" class=\"form-label\">Username</label>");
     }
 
@@ -127,7 +127,7 @@ class JwtSecurityRealServerTests {
                 String.class);
 
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test
@@ -143,7 +143,7 @@ class JwtSecurityRealServerTests {
                 String.class);
 
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertThat(response.getBody()).contains("Example Domain");
     }
 }

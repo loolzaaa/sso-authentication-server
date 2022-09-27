@@ -91,7 +91,7 @@ class JwtTokenFilterTest {
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
 
-        verify(securityContextService).updateSecurityContextHolder(req, resp, LOGIN);
+        verify(securityContextService).updateSecurityContextHolder(req, LOGIN);
         verify(filterChain).doFilter(req, resp);
         verifyNoMoreInteractions(securityContextService);
         verifyNoMoreInteractions(filterChain);
@@ -150,7 +150,7 @@ class JwtTokenFilterTest {
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
 
-        verify(securityContextService).updateSecurityContextHolder(req, resp, LOGIN);
+        verify(securityContextService).updateSecurityContextHolder(req, LOGIN);
         verify(filterChain).doFilter(req, resp);
         verifyNoMoreInteractions(securityContextService);
         verifyNoMoreInteractions(filterChain);

@@ -22,7 +22,8 @@ import javax.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,7 +57,7 @@ class SecurityContextServiceTest {
         ReflectionTestUtils.setField(user, "login", LOGIN);
         when(userRepository.findByLogin(LOGIN)).thenReturn(Optional.of(user));
 
-        securityContextService.updateSecurityContextHolder(req, resp, LOGIN);
+        securityContextService.updateSecurityContextHolder(req, LOGIN);
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         assertThat(authentication)
@@ -82,7 +83,7 @@ class SecurityContextServiceTest {
     void throwExceptionIfUserNotFound() {
         when(userRepository.findByLogin(anyString())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> securityContextService.updateSecurityContextHolder(req, resp, LOGIN))
+        assertThatThrownBy(() -> securityContextService.updateSecurityContextHolder(req, LOGIN))
                 .isInstanceOf(UsernameNotFoundException.class);
     }
 
