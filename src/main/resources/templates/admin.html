@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width,initial-scale=1.0" name="viewport">
+    <script th:src="@{/webjars/axios/0.27.2/dist/axios.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.2.1/dist/js/bootstrap.min.js}"></script>
+    <script th:src="@{/js/fingerprint2.min.js}"></script>
+    <script th:src="@{/js/script.js}"></script>
+    <link th:href="@{/webjars/bootstrap/5.2.1/dist/css/bootstrap.min.css}" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/favicon.ico}" rel="icon">
+    <title>Authentication server</title>
+</head>
+<body>
+<noscript>
+    <strong>We're sorry but this app doesn't work properly without JavaScript enabled. Please enable it to
+        continue.</strong>
+</noscript>
+<div class="container mt-3">
+    <div class="mb-3">
+        <h3>Admin panel</h3>
+    </div>
+    <div class="container border rounded my-3 p-3">
+        <h5>Get user information</h5>
+        <div class="row">
+            <div class="col">
+                <div class="mb-3">
+                    <label for="usernameInput1" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="usernameInput1">
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="appInput1" class="form-label">Application (optional)</label>
+                    <input type="text" class="form-control" id="appInput1">
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="d-grid mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary" type="button" onclick="getUserInfo()">Get</button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div>
+                    <label for="userInfo" class="form-label">User info</label>
+                    <textarea class="form-control" id="userInfo" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-grid">
+        <a href="/" class="btn btn-secondary" type="button">Back to main page</a>
+    </div>
+    <script type="text/javascript">
+    const instance = axios.create();
+    function getUserInfo() {
+        document.getElementById('userInfo').value = '';
+        let username = document.getElementById('usernameInput1').value;
+        let app = document.getElementById('appInput1').value;
+        let valid = username != '';
+        if (!valid) {
+            alert('Username must not be empty');
+            return;
+        }
+        let url = `/api/user/${username}`
+        if (app) {
+            url += '?app=' + app;
+        }
+        instance.get(url)
+            .then(resp => document.getElementById('userInfo').value = JSON.stringify(resp.data))
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    alert(err.response.data.text);
+                } else {
+                    alert('ERROR! See console');
+                }
+            });
+    }
+    instance.interceptors.response.use(function (response) {
+        const _csrf = document.cookie.match(new RegExp(`XSRF-TOKEN=([^;]+)`));
+        if (_csrf !== undefined && _csrf !== null) document.getElementsByName('_csrf').forEach(el => el.value = _csrf[1]);
+        return response;
+    }, async function (err) {
+        if (err?.response?.status === 403 && err.response.headers.fp_request !== undefined) {
+            const _fp = await getFingerprint();
+
+            const params = new URLSearchParams();
+            params.append('_fingerprint', _fp);
+
+            try {
+                const refreshResponse = await instance.post(err.response.headers.fp_request, params);
+                return await instance.request(err.response.config);
+            } catch (authError) {
+                if (authError.response.status === 401) {
+                    window.location.href = '/';
+                    return;
+                } else {
+                    throw authError;
+                }
+            }
+        } else {
+            throw err;
+        }
+    });
+
+    </script>
+</div>
+</body>
+</html>
