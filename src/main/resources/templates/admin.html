@@ -84,6 +84,29 @@
             </div>
         </div>
     </div>
+    <div class="container border rounded my-3 p-3">
+        <h5>Reset user password</h5>
+        <div class="row">
+            <div class="col">
+                <div class="mb-3">
+                    <label for="usernameInput3" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="usernameInput3">
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="passwordInput3" class="form-label">New password</label>
+                    <input type="text" class="form-control" id="passwordInput3">
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="d-grid mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-danger" type="button" onclick="resetUserPassword()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="d-grid">
         <a href="/" class="btn btn-secondary" type="button">Back to main page</a>
     </div>
@@ -129,6 +152,36 @@
         }
         instance.get(`/api/users?app=${app}&authority=${authority}`)
             .then(resp => document.getElementById('authorityUsers').value = resp.data.map(u => u.user.login))
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    alert(err.response.data.text);
+                } else {
+                    alert('ERROR! See console');
+                }
+            });
+    }
+    function resetUserPassword() {
+        let username = document.getElementById('usernameInput3').value;
+        let password = document.getElementById('passwordInput3').value;
+        let valid1 = username != '';
+        let valid2 = password != '';
+        if (!valid1) {
+            alert('Username must not be empty');
+            return;
+        }
+        if (!valid2) {
+            alert('New password must not be empty');
+            return;
+        }
+        let confirmed = confirm("Are you sure you want to reset the user's password?");
+        if (!confirmed) {
+            return;
+        }
+        let params = new URLSearchParams();
+        params.append('newPassword', password);
+        instance.post(`/api/user/${username}/password/reset`, params)
+            .then(resp => alert(resp.data.text))
             .catch(err => {
                 console.log(err);
                 if (err?.response?.data?.text) {
