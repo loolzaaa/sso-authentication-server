@@ -353,8 +353,7 @@ public class UserControlService {
     }
 
     private String generatePasswordForTemporaryUser() {
-        Random r = new Random();
-        return r.ints(8, 97, 123)
+        return random.ints(8, 97, 123)
                 .mapToObj(value -> String.valueOf((char) value)).collect(Collectors.joining());
     }
 }
