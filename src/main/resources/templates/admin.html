@@ -53,6 +53,37 @@
             </div>
         </div>
     </div>
+    <div class="container border rounded my-3 p-3">
+        <h5>Get users by authority</h5>
+        <div class="row">
+            <div class="col">
+                <div class="mb-3">
+                    <label for="appInput2" class="form-label">Application</label>
+                    <input type="text" class="form-control" id="appInput2">
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="authorityInput2" class="form-label">Authority</label>
+                    <input type="text" class="form-control" id="authorityInput2">
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="d-grid mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary" type="button" onclick="getUsersByAuthority()">Get</button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div>
+                    <label for="userInfo" class="form-label">Users info</label>
+                    <textarea class="form-control" id="authorityUsers" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="d-grid">
         <a href="/" class="btn btn-secondary" type="button">Back to main page</a>
     </div>
@@ -73,6 +104,31 @@
         }
         instance.get(url)
             .then(resp => document.getElementById('userInfo').value = JSON.stringify(resp.data))
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    alert(err.response.data.text);
+                } else {
+                    alert('ERROR! See console');
+                }
+            });
+    }
+    function getUsersByAuthority() {
+        document.getElementById('authorityUsers').value = '';
+        let app = document.getElementById('appInput2').value;
+        let authority = document.getElementById('authorityInput2').value;
+        let valid1 = app != '';
+        let valid2 = authority != '';
+        if (!valid1) {
+            alert('Application must not be empty');
+            return;
+        }
+        if (!valid2) {
+            alert('Authority must not be empty');
+            return;
+        }
+        instance.get(`/api/users?app=${app}&authority=${authority}`)
+            .then(resp => document.getElementById('authorityUsers').value = resp.data.map(u => u.user.login))
             .catch(err => {
                 console.log(err);
                 if (err?.response?.data?.text) {
