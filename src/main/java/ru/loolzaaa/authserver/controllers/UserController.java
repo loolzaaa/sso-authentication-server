@@ -59,6 +59,15 @@ public class UserController {
         return ResponseEntity.status(requestStatusDTO.getStatusCode()).body(requestStatusDTO);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping(value = "/user/{username}/lock", produces = "application/json")
+    ResponseEntity<RequestStatusDTO> changeUserLockStatus(@PathVariable("username") String username,
+                                                          @RequestParam(value = "enabled", required = false) Boolean enabled,
+                                                          @RequestParam(value = "lock", required = false) Boolean lock) {
+        RequestStatusDTO requestStatusDTO = userControlService.changeUserLockStatus(username, enabled, lock);
+        return ResponseEntity.status(requestStatusDTO.getStatusCode()).body(requestStatusDTO);
+    }
+
     @PostMapping(value = "/user/{username}/password/change", produces = "application/json")
     ResponseEntity<RequestStatusDTO> changeUserPassword(@PathVariable("username") String username,
                                                         @RequestParam("oldPassword") String oldPassword,

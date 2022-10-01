@@ -107,6 +107,43 @@
             </div>
         </div>
     </div>
+    <div class="container border rounded my-3 p-3">
+        <h5>Update user enabled/lock flags</h5>
+        <div class="row">
+            <div class="col">
+                <div class="mb-3">
+                    <label for="usernameInput4" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="usernameInput4">
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="userEnabledSelect" class="form-label">Enabled</label>
+                    <select class="form-select" aria-label="Default select example" id="userEnabledSelect">
+                        <option selected>Open this select menu</option>
+                        <option value="1">True</option>
+                        <option value="0">False</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="userLockSelect" class="form-label">Lock</label>
+                    <select class="form-select" aria-label="Default select example" id="userLockSelect">
+                        <option selected>Open this select menu</option>
+                        <option value="1">True</option>
+                        <option value="0">False</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="d-grid mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-warning" type="button" onclick="changeUserLockStatus()">Change</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="d-grid">
         <a href="/" class="btn btn-secondary" type="button">Back to main page</a>
     </div>
@@ -181,6 +218,39 @@
         let params = new URLSearchParams();
         params.append('newPassword', password);
         instance.post(`/api/user/${username}/password/reset`, params)
+            .then(resp => alert(resp.data.text))
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    alert(err.response.data.text);
+                } else {
+                    alert('ERROR! See console');
+                }
+            });
+    }
+    function changeUserLockStatus() {
+        let username = document.getElementById('usernameInput4').value;
+        let enabled = document.getElementById('userEnabledSelect').value;
+        let lock = document.getElementById('userLockSelect').value;
+        let valid1 = username != '';
+        let valid2 = ((enabled == '0' || enabled == '1') && lock != '0' && lock != '1') ||
+                     ((lock == '0' || lock == '1') && enabled != '0' && enabled != '1');
+        if (!valid1) {
+            alert('Username must not be empty');
+            return;
+        }
+        if (!valid2) {
+            alert('Only one flag can update');
+            return;
+        }
+        let params = new URLSearchParams();
+        if (enabled == '0' || enabled == '1') {
+            params.append('enabled', enabled == '1');
+        }
+        if (lock == '0' || lock == '1') {
+            params.append('lock', lock == '1');
+        }
+        instance.patch(`/api/user/${username}/lock`, params)
             .then(resp => alert(resp.data.text))
             .catch(err => {
                 console.log(err);

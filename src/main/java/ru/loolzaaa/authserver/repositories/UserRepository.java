@@ -15,6 +15,10 @@ public interface UserRepository extends CrudRepository<User, Long> {
     Optional<User> findByLogin(String username);
 
     @Modifying
+    @Query("UPDATE users SET enabled = :enabled WHERE login = :login")
+    void updateEnabledByLogin(@Param("enabled") boolean enabled, @Param("login") String login);
+
+    @Modifying
     @Query("UPDATE users SET config = :config::jsonb WHERE login = :login")
     void updateConfigByLogin(@Param("config") JsonNode config, @Param("login") String login);
 

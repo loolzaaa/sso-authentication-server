@@ -164,6 +164,40 @@ public class UserControlService {
     }
 
     @Transactional
+    public RequestStatusDTO changeUserLockStatus(String login, Boolean enabled, Boolean lock) {
+        if (enabled == null && lock == null) {
+            log.warn("Try to change NONE of enabled/lock flags for user: {}", login);
+            throw new RequestErrorException("Try to change NONE of enabled/lock flags for user: [%s]", login);
+        }
+        if (enabled != null && lock != null) {
+            log.warn("Try to change BOTH of enabled/lock flags for user: {}", login);
+            throw new RequestErrorException("Try to change BOTH of enabled/lock flags for user: [%s]", login);
+        }
+
+        User user = userRepository.findByLogin(login).orElse(null);
+
+        if (user == null) {
+            log.warn("Try to lock non existing user: {}", login);
+            throw new RequestErrorException("There is no user with login [%s]", login);
+        }
+
+        StringBuilder answer = new StringBuilder("User [%s] ");
+        if (enabled != null) {
+            userRepository.updateEnabledByLogin(enabled, login);
+            log.info("User [{}] {}", login, enabled ? "enabled" : "disabled");
+            answer.append(enabled ? "enabled" : "disabled");
+        }
+        if (lock != null) {
+            JsonNode userConfig = user.getConfig();
+            ((ObjectNode) userConfig.get(ssoServerProperties.getApplication().getName())).put(UserAttributes.LOCK, lock);
+            userRepository.updateConfigByLogin(userConfig, login);
+            log.info("User [{}] {}", login, lock ? "locked" : "unlocked");
+            answer.append(lock ? "locked" : "unlocked");
+        }
+        return RequestStatusDTO.ok(answer.toString(), login);
+    }
+
+    @Transactional
     public RequestStatusDTO changeUserPassword(String login, String oldPassword, String newPassword) {
         User user = userRepository.findByLogin(login).orElse(null);
 

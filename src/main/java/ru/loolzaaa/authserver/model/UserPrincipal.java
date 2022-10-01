@@ -45,6 +45,9 @@ public class UserPrincipal implements UserDetails {
                     log.info("User [{}] credentials is expired", user.getLogin());
                     this.credentialsNonExpired = false;
                 }
+                if (authNode.has(UserAttributes.LOCK)) {
+                    this.accountNonLocked = !authNode.get(UserAttributes.LOCK).asBoolean();
+                }
             } else {
                 log.info("User [{}] is locked", user.getLogin());
                 this.accountNonLocked = false;

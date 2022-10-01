@@ -8,4 +8,5 @@ public final class UserAttributes {
     public static final String PRIVILEGES = "privileges";
     public static final String CREDENTIALS_EXP = "credentials_exp";
     public static final String TEMPORARY = "temporary";
+    public static final String LOCK = "lock";
 }
