@@ -123,7 +123,7 @@ public class AccessController {
 
         if (!KEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
 
-        if (!StringUtils.hasText(from) | !StringUtils.hasText(login)) {
+        if (!StringUtils.hasText(from) || !StringUtils.hasText(login)) {
             throw new RequestErrorException("FROM and LOGIN parameter must not be empty string");
         }
 
@@ -134,7 +134,7 @@ public class AccessController {
             throw new RequestErrorException("Invalid Base64 scheme for FROM parameter for RFID authentication");
         }
         if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-            securityContextService.updateSecurityContextHolder(req, resp, login);
+            securityContextService.updateSecurityContextHolder(req, login);
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");

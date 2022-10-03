@@ -41,7 +41,7 @@ class LogoutServiceTest {
         when(req.getCookies()).thenReturn(new Cookie[0]);
         when(cookieService.getCookieValueByName(anyString(), any())).thenReturn(null);
 
-        logoutService.logout(req, resp);
+        logoutService.logout(req);
 
         verifyNoInteractions(jwtService);
     }
@@ -53,7 +53,7 @@ class LogoutServiceTest {
         when(cookieService.getCookieValueByName(anyString(), any())).thenReturn(TOKEN);
         ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
 
-        logoutService.logout(req, resp);
+        logoutService.logout(req);
 
         verify(jwtService).deleteTokenFromDatabase(tokenCaptor.capture());
         assertEquals(tokenCaptor.getValue(), TOKEN);

@@ -17,6 +17,6 @@ public class JwtLogoutHandler implements LogoutHandler {
 
     @Override
     public void logout(HttpServletRequest req, HttpServletResponse resp, Authentication auth) {
-        logoutService.logout(req, resp);
+        logoutService.logout(req);
     }
 }

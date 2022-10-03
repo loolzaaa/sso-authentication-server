@@ -91,7 +91,7 @@ class JwtTokenFilterTest {
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
 
-        verify(securityContextService).updateSecurityContextHolder(req, resp, LOGIN);
+        verify(securityContextService).updateSecurityContextHolder(req, LOGIN);
         verify(filterChain).doFilter(req, resp);
         verifyNoMoreInteractions(securityContextService);
         verifyNoMoreInteractions(filterChain);
@@ -122,7 +122,7 @@ class JwtTokenFilterTest {
         when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(INVALID_REFRESH_TOKEN);
         when(req.getContextPath()).thenReturn("");
         when(req.getRequestURI()).thenReturn("/uri");
-        when(req.getParameter(eq("_fingerprint"))).thenReturn("FINGERPRINT");
+        when(req.getParameter("_fingerprint")).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
         when(jwtService.refreshAccessToken(req, resp, INVALID_REFRESH_TOKEN)).thenReturn(null);
 
@@ -143,14 +143,14 @@ class JwtTokenFilterTest {
         when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
         when(req.getContextPath()).thenReturn("");
         when(req.getRequestURI()).thenReturn("/uri");
-        when(req.getParameter(eq("_fingerprint"))).thenReturn("FINGERPRINT");
+        when(req.getParameter("_fingerprint")).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
         when(jwtService.refreshAccessToken(req, resp, VALID_REFRESH_TOKEN)).thenReturn(jwtAuthentication);
         when(jwtAuthentication.getUsername()).thenReturn(LOGIN);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
 
-        verify(securityContextService).updateSecurityContextHolder(req, resp, LOGIN);
+        verify(securityContextService).updateSecurityContextHolder(req, LOGIN);
         verify(filterChain).doFilter(req, resp);
         verifyNoMoreInteractions(securityContextService);
         verifyNoMoreInteractions(filterChain);
@@ -165,14 +165,14 @@ class JwtTokenFilterTest {
         ArgumentCaptor<String> fingerprintHeaderCaptor = ArgumentCaptor.forClass(String.class);
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
         when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
-        when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
+        when(req.getParameter("_fingerprint")).thenReturn(null);
         when(req.getContextPath()).thenReturn(CONTEXT_PATH);
         when(req.getScheme()).thenReturn("http");
         when(req.getServerName()).thenReturn("some-site.com");
         when(req.getServerPort()).thenReturn(8080);
         when(req.getRequestURI()).thenReturn(CONTEXT_PATH + "/some-uri");
         when(req.getQueryString()).thenReturn("");
-        when(req.getHeader(eq("Accept"))).thenReturn(AJAX_HEADER);
+        when(req.getHeader("Accept")).thenReturn(AJAX_HEADER);
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
@@ -192,11 +192,11 @@ class JwtTokenFilterTest {
         ArgumentCaptor<String> redirectUrlCaptor = ArgumentCaptor.forClass(String.class);
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
         when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
-        when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
-        when(req.getParameter(eq("continue"))).thenReturn(null);
+        when(req.getParameter("_fingerprint")).thenReturn(null);
+        when(req.getParameter("continue")).thenReturn(null);
         when(req.getContextPath()).thenReturn(CONTEXT_PATH);
         when(req.getRequestURI()).thenReturn(CONTEXT_PATH + "/some-uri");
-        when(req.getHeader(eq("Accept"))).thenReturn(BROWSER_HEADER);
+        when(req.getHeader("Accept")).thenReturn(BROWSER_HEADER);
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
@@ -218,15 +218,15 @@ class JwtTokenFilterTest {
         ArgumentCaptor<String> redirectUrlCaptor = ArgumentCaptor.forClass(String.class);
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
         when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
-        when(req.getParameter(eq("_fingerprint"))).thenReturn(null);
-        when(req.getParameter(eq("continue"))).thenReturn(CONTINUE_PATH);
+        when(req.getParameter("_fingerprint")).thenReturn(null);
+        when(req.getParameter("continue")).thenReturn(CONTINUE_PATH);
         when(req.getContextPath()).thenReturn(CONTEXT_PATH);
         when(req.getScheme()).thenReturn("http");
         when(req.getServerName()).thenReturn("some-site.com");
         when(req.getServerPort()).thenReturn(8080);
         when(req.getRequestURI()).thenReturn(CONTEXT_PATH + "/some-uri");
         when(req.getQueryString()).thenReturn("");
-        when(req.getHeader(eq("Accept"))).thenReturn(BROWSER_HEADER);
+        when(req.getHeader("Accept")).thenReturn(BROWSER_HEADER);
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);

@@ -1,0 +1,11 @@
+version: "3.7"
+
+services:
+  sso-postgres:
+    image: sso-postgres
+    ports:
+      - "9898:5432"
+  sso-app:
+    image: sso-app
+    ports:
+      - "9999:9999"

@@ -46,7 +46,7 @@ public class JWTService {
                                     Authentication authentication, String fingerprint) {
         UserPrincipal user = (UserPrincipal) authentication.getPrincipal();
 
-        JWTAuthentication jwtAuthentication = generateJWTAuthentication(req, resp, user.getUsername());
+        JWTAuthentication jwtAuthentication = generateJWTAuthentication(user.getUsername());
 
         String sql = "INSERT INTO refresh_sessions " +
                 "(user_id, refresh_token, expires_in, fingerprint) " +
@@ -76,10 +76,10 @@ public class JWTService {
             String login = (String) claims.getBody().get("login");
             log.debug("Success check token for {}", login);
             return login;
+        } catch (ClaimJwtException e) {
+            log.debug("Failed check token for {}", e.getClaims().get("login"));
+            return null;
         } catch (Exception e) {
-            if (e instanceof ClaimJwtException) {
-                log.debug("Failed check token for {}", ((ClaimJwtException) e).getClaims().get("login"));
-            }
             return null;
         }
     }
@@ -102,7 +102,7 @@ public class JWTService {
         String username = (String) stringObjectMap.get("login");
         String oldFingerprint = (String) stringObjectMap.get("fingerprint");
 
-        JWTAuthentication jwtAuthentication = generateJWTAuthentication(req, resp, username);
+        JWTAuthentication jwtAuthentication = generateJWTAuthentication(username);
 
         jdbcTemplate.update("UPDATE refresh_sessions " +
                         "SET refresh_token = ?::uuid, expires_in = ?, fingerprint = ? " +
@@ -150,7 +150,7 @@ public class JWTService {
         return revokedTokens.remove(new RevokeToken(token, null));
     }
 
-    private JWTAuthentication generateJWTAuthentication(HttpServletRequest req, HttpServletResponse resp, String username) {
+    private JWTAuthentication generateJWTAuthentication(String username) {
         Map<String, Object> params = new HashMap<>();
         params.put("login", username);
         Date now = new Date();

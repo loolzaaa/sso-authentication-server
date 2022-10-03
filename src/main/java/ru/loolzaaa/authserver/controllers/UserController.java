@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.loolzaaa.authserver.dto.CreateUserRequestDTO;
@@ -19,6 +22,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class UserController {
+
+    private static final GrantedAuthority adminGrantedAuthority = new SimpleGrantedAuthority("ROLE_ADMIN");
 
     private final UserControlService userControlService;
 
@@ -51,6 +56,15 @@ public class UserController {
     ResponseEntity<RequestStatusDTO> deleteUser(@PathVariable("username") String username,
                                                 @RequestParam(name = "password", required = false) String password) {
         RequestStatusDTO requestStatusDTO = userControlService.deleteUser(username, password);
+        return ResponseEntity.status(requestStatusDTO.getStatusCode()).body(requestStatusDTO);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping(value = "/user/{username}/lock", produces = "application/json")
+    ResponseEntity<RequestStatusDTO> changeUserLockStatus(@PathVariable("username") String username,
+                                                          @RequestParam(value = "enabled", required = false) Boolean enabled,
+                                                          @RequestParam(value = "lock", required = false) Boolean lock) {
+        RequestStatusDTO requestStatusDTO = userControlService.changeUserLockStatus(username, enabled, lock);
         return ResponseEntity.status(requestStatusDTO.getStatusCode()).body(requestStatusDTO);
     }
 
@@ -91,10 +105,23 @@ public class UserController {
     }
 
     @PutMapping(value = "/user/temporary", produces = "application/json")
-    ResponseEntity<RequestStatusDTO> createTemporaryUser(@RequestParam("username") String username,
+    ResponseEntity<RequestStatusDTO> createTemporaryUser(Authentication authentication,
+                                                         @RequestParam("username") String username,
                                                          @RequestParam("dateFrom") long dateFrom,
                                                          @RequestParam("dateTo") long dateTo) {
+        if (!isUserPermitToCreateTemporaryUser(authentication, username)) {
+            throw new RequestErrorException("User can create temporary user only for himself");
+        }
         RequestStatusDTO requestStatusDTO = userControlService.createTemporaryUser(username, dateFrom, dateTo);
         return ResponseEntity.status(requestStatusDTO.getStatusCode()).body(requestStatusDTO);
+    }
+
+    private boolean isUserPermitToCreateTemporaryUser(Authentication authentication, String username) {
+        boolean isUserAdmin = authentication.getAuthorities().contains(adminGrantedAuthority);
+        UserPrincipal userPrincipal = null;
+        if (authentication.getPrincipal() instanceof UserPrincipal) {
+            userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        }
+        return isUserAdmin || (userPrincipal != null && userPrincipal.getUser().getLogin().equals(username));
     }
 }

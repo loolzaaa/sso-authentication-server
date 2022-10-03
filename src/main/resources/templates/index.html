@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -84,6 +84,9 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div sec:authorize="hasRole('ADMIN')" class="d-grid mb-3">
+        <a href="/admin" class="btn btn-warning" type="button">Admin panel</a>
     </div>
     <form action="#" method="post" th:action="@{/do_logout}" class="mb-3">
         <input class="btn btn-outline-danger form-control" type="submit" value="Logout"/>
