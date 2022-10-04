@@ -74,7 +74,7 @@ public class JwtSecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .antMatchers("/actuator/**").hasRole("ADMIN")
+                        .antMatchers("/actuator/**", "/admin").hasRole("ADMIN")
                         .antMatchers(ssoServerProperties.getLoginPage()).permitAll()
                         .antMatchers(ignoredPathsHandler.toAntPatterns()).permitAll()
                         .anyRequest().hasAuthority(ssoServerProperties.getApplication().getName()))

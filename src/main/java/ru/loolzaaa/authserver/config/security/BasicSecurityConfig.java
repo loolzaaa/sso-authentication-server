@@ -30,9 +30,12 @@ public class BasicSecurityConfig {
 
     private final BasicUsersProperties basicUsersProperties;
 
+    @Qualifier("basicPasswordEncoder")
+    private final PasswordEncoder passwordEncoder;
+
     @Bean
     @Qualifier("basicUserDetailsService")
-    public InMemoryUserDetailsManager inMemoryUserDetailsManager(PasswordEncoder passwordEncoder) {
+    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
         if (basicUsersProperties.getUsers().isEmpty()) {
             log.warn("\n\n\tThere is no basic users in properties. Some API unavailable!\n");
         }
@@ -56,11 +59,11 @@ public class BasicSecurityConfig {
 
     @Order(1)
     @Bean
-    public SecurityFilterChain basicFilterChain(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
+    public SecurityFilterChain basicFilterChain(HttpSecurity http) throws Exception {
         final String basicMvcMatcherPattern = "/api/fast/**";
         final String basicPrepareLogoutMatcherPattern = "/api/fast/prepare_logout";
         http
-                .userDetailsService(inMemoryUserDetailsManager(passwordEncoder))
+                .userDetailsService(inMemoryUserDetailsManager())
                 .antMatcher(basicMvcMatcherPattern)
                 .csrf().disable()
                 .sessionManagement(session -> session

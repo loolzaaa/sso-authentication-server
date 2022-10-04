@@ -15,6 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/").setViewName("index");
+        registry.addViewController("/admin").setViewName("admin");
         registry.addViewController(ssoServerProperties.getLoginPage()).setViewName("login");
         registry.addViewController(ssoServerProperties.getRefreshUri()).setViewName("trefresh");
     }

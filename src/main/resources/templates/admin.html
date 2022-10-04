@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width,initial-scale=1.0" name="viewport">
+    <script th:src="@{/webjars/axios/0.27.2/dist/axios.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.2.1/dist/js/bootstrap.min.js}"></script>
+    <script th:src="@{/js/fingerprint2.min.js}"></script>
+    <script th:src="@{/js/script.js}"></script>
+    <link th:href="@{/webjars/bootstrap/5.2.1/dist/css/bootstrap.min.css}" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/favicon.ico}" rel="icon">
+    <title>Authentication server</title>
+</head>
+<body>
+<noscript>
+    <strong>We're sorry but this app doesn't work properly without JavaScript enabled. Please enable it to
+        continue.</strong>
+</noscript>
+<div class="container mt-3">
+    <div class="mb-3">
+        <h3>Admin panel</h3>
+    </div>
+    <div class="container border rounded my-3 p-3">
+        <h5>Get user information</h5>
+        <div class="row">
+            <div class="col">
+                <div class="mb-3">
+                    <label for="usernameInput1" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="usernameInput1">
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="appInput1" class="form-label">Application (optional)</label>
+                    <input type="text" class="form-control" id="appInput1">
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="d-grid mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary" type="button" onclick="getUserInfo()">Get</button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div>
+                    <label for="userInfo" class="form-label">User info</label>
+                    <textarea class="form-control" id="userInfo" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container border rounded my-3 p-3">
+        <h5>Get users by authority</h5>
+        <div class="row">
+            <div class="col">
+                <div class="mb-3">
+                    <label for="appInput2" class="form-label">Application</label>
+                    <input type="text" class="form-control" id="appInput2">
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="authorityInput2" class="form-label">Authority</label>
+                    <input type="text" class="form-control" id="authorityInput2">
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="d-grid mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary" type="button" onclick="getUsersByAuthority()">Get</button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div>
+                    <label for="userInfo" class="form-label">Users info</label>
+                    <textarea class="form-control" id="authorityUsers" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container border rounded my-3 p-3">
+        <h5>Reset user password</h5>
+        <div class="row">
+            <div class="col">
+                <div class="mb-3">
+                    <label for="usernameInput3" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="usernameInput3">
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="passwordInput3" class="form-label">New password</label>
+                    <input type="text" class="form-control" id="passwordInput3">
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="d-grid mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-danger" type="button" onclick="resetUserPassword()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container border rounded my-3 p-3">
+        <h5>Update user enabled/lock flags</h5>
+        <div class="row">
+            <div class="col">
+                <div class="mb-3">
+                    <label for="usernameInput4" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="usernameInput4">
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="userEnabledSelect" class="form-label">Enabled</label>
+                    <select class="form-select" aria-label="Default select example" id="userEnabledSelect">
+                        <option selected>Open this select menu</option>
+                        <option value="1">True</option>
+                        <option value="0">False</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3">
+                    <label for="userLockSelect" class="form-label">Lock</label>
+                    <select class="form-select" aria-label="Default select example" id="userLockSelect">
+                        <option selected>Open this select menu</option>
+                        <option value="1">True</option>
+                        <option value="0">False</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="d-grid mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-warning" type="button" onclick="changeUserLockStatus()">Change</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-grid">
+        <a href="/" class="btn btn-secondary" type="button">Back to main page</a>
+    </div>
+    <script type="text/javascript">
+    const instance = axios.create();
+    function getUserInfo() {
+        document.getElementById('userInfo').value = '';
+        let username = document.getElementById('usernameInput1').value;
+        let app = document.getElementById('appInput1').value;
+        let valid = username != '';
+        if (!valid) {
+            alert('Username must not be empty');
+            return;
+        }
+        let url = `/api/user/${username}`
+        if (app) {
+            url += '?app=' + app;
+        }
+        instance.get(url)
+            .then(resp => document.getElementById('userInfo').value = JSON.stringify(resp.data))
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    alert(err.response.data.text);
+                } else {
+                    alert('ERROR! See console');
+                }
+            });
+    }
+    function getUsersByAuthority() {
+        document.getElementById('authorityUsers').value = '';
+        let app = document.getElementById('appInput2').value;
+        let authority = document.getElementById('authorityInput2').value;
+        let valid1 = app != '';
+        let valid2 = authority != '';
+        if (!valid1) {
+            alert('Application must not be empty');
+            return;
+        }
+        if (!valid2) {
+            alert('Authority must not be empty');
+            return;
+        }
+        instance.get(`/api/users?app=${app}&authority=${authority}`)
+            .then(resp => document.getElementById('authorityUsers').value = resp.data.map(u => u.user.login))
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    alert(err.response.data.text);
+                } else {
+                    alert('ERROR! See console');
+                }
+            });
+    }
+    function resetUserPassword() {
+        let username = document.getElementById('usernameInput3').value;
+        let password = document.getElementById('passwordInput3').value;
+        let valid1 = username != '';
+        let valid2 = password != '';
+        if (!valid1) {
+            alert('Username must not be empty');
+            return;
+        }
+        if (!valid2) {
+            alert('New password must not be empty');
+            return;
+        }
+        let confirmed = confirm("Are you sure you want to reset the user's password?");
+        if (!confirmed) {
+            return;
+        }
+        let params = new URLSearchParams();
+        params.append('newPassword', password);
+        instance.post(`/api/user/${username}/password/reset`, params)
+            .then(resp => alert(resp.data.text))
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    alert(err.response.data.text);
+                } else {
+                    alert('ERROR! See console');
+                }
+            });
+    }
+    function changeUserLockStatus() {
+        let username = document.getElementById('usernameInput4').value;
+        let enabled = document.getElementById('userEnabledSelect').value;
+        let lock = document.getElementById('userLockSelect').value;
+        let valid1 = username != '';
+        let valid2 = ((enabled == '0' || enabled == '1') && lock != '0' && lock != '1') ||
+                     ((lock == '0' || lock == '1') && enabled != '0' && enabled != '1');
+        if (!valid1) {
+            alert('Username must not be empty');
+            return;
+        }
+        if (!valid2) {
+            alert('Only one flag can update');
+            return;
+        }
+        let params = new URLSearchParams();
+        if (enabled == '0' || enabled == '1') {
+            params.append('enabled', enabled == '1');
+        }
+        if (lock == '0' || lock == '1') {
+            params.append('lock', lock == '1');
+        }
+        instance.patch(`/api/user/${username}/lock`, params)
+            .then(resp => alert(resp.data.text))
+            .catch(err => {
+                console.log(err);
+                if (err?.response?.data?.text) {
+                    alert(err.response.data.text);
+                } else {
+                    alert('ERROR! See console');
+                }
+            });
+    }
+    instance.interceptors.response.use(function (response) {
+        const _csrf = document.cookie.match(new RegExp(`XSRF-TOKEN=([^;]+)`));
+        if (_csrf !== undefined && _csrf !== null) document.getElementsByName('_csrf').forEach(el => el.value = _csrf[1]);
+        return response;
+    }, async function (err) {
+        if (err?.response?.status === 403 && err.response.headers.fp_request !== undefined) {
+            const _fp = await getFingerprint();
+
+            const params = new URLSearchParams();
+            params.append('_fingerprint', _fp);
+
+            try {
+                const refreshResponse = await instance.post(err.response.headers.fp_request, params);
+                return await instance.request(err.response.config);
+            } catch (authError) {
+                if (authError.response.status === 401) {
+                    window.location.href = '/';
+                    return;
+                } else {
+                    throw authError;
+                }
+            }
+        } else {
+            throw err;
+        }
+    });
+
+    </script>
+</div>
+</body>
+</html>
