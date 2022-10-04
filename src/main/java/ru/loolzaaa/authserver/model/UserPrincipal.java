@@ -33,7 +33,7 @@ public class UserPrincipal implements UserDetails {
     public UserPrincipal(User user) {
         this.user = user;
 
-        JsonNode userConf = user.getConfig();
+        JsonNode userConf = user.getJsonConfig();
         if (userConf != null) {
             userConf.fieldNames().forEachRemaining(s -> authorities.add(new SimpleGrantedAuthority(s)));
             if (userConf.has(applicationName)) {
@@ -72,7 +72,7 @@ public class UserPrincipal implements UserDetails {
     public UserPrincipal(User user, String app) {
         this(user);
 
-        JsonNode userConf = user.getConfig();
+        JsonNode userConf = user.getJsonConfig();
         if (userConf != null) {
             if (app != null) {
                 JsonNode appConfig = userConf.get(app);
@@ -85,7 +85,7 @@ public class UserPrincipal implements UserDetails {
                         appConfig.get(UserAttributes.PRIVILEGES).forEach(privilege -> this.authorities.add(new SimpleGrantedAuthority(privilege.asText())));
                     }
                     ((ObjectNode) appConfig).remove(List.of(UserAttributes.ROLES, UserAttributes.PRIVILEGES));
-                    user.setConfig(appConfig);
+                    user.setConfig(new UserConfigWrapper(appConfig));
                 } else throw new IllegalArgumentException(String.format("There is no application [%s] for user [%s]", app, this.user.getLogin()));
             }
         } else throw new IllegalArgumentException(String.format("There is no config for user [%s]", this.user.getLogin()));

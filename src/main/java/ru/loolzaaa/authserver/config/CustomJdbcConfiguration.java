@@ -10,6 +10,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.jdbc.repository.config.AbstractJdbcConfiguration;
+import ru.loolzaaa.authserver.model.UserConfigWrapper;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -24,19 +25,20 @@ public class CustomJdbcConfiguration extends AbstractJdbcConfiguration {
     @Override
     protected List<?> userConverters() {
         return Arrays.asList(
-                new JsonNodeToJsonConverter(),
-                new JsonToJsonNodeConverter(),
-                new StringToJsonNodeConverter(),
-                new JsonNodeToStringConverter()
+                new UserConfigWrapperToJsonConverter(),
+                new JsonToUserConfigWrapperConverter(),
+                new StringToUserConfigWrapperConverter(),
+                new UserConfigWrapperToStringConverter()
         );
     }
 
     @ReadingConverter
-    class JsonToJsonNodeConverter implements Converter<PGobject, JsonNode> {
+    class JsonToUserConfigWrapperConverter implements Converter<PGobject, UserConfigWrapper> {
         @Override
-        public JsonNode convert(PGobject json) {
+        public UserConfigWrapper convert(PGobject json) {
             try {
-                return objectMapper.readTree(json.getValue());
+                JsonNode jsonNode = objectMapper.readTree(json.getValue());
+                return new UserConfigWrapper(jsonNode);
             } catch (JsonProcessingException | NullPointerException e) {
                 e.printStackTrace();
             }
@@ -45,13 +47,13 @@ public class CustomJdbcConfiguration extends AbstractJdbcConfiguration {
     }
 
     @WritingConverter
-    class JsonNodeToJsonConverter implements Converter<JsonNode, PGobject> {
+    class UserConfigWrapperToJsonConverter implements Converter<UserConfigWrapper, PGobject> {
         @Override
-        public PGobject convert(JsonNode jsonNode) {
+        public PGobject convert(UserConfigWrapper configWrapper) {
             PGobject json = new PGobject();
             json.setType("jsonb");
             try {
-                json.setValue(objectMapper.writeValueAsString(jsonNode));
+                json.setValue(objectMapper.writeValueAsString(configWrapper.getConfig()));
             } catch (SQLException | JsonProcessingException e) {
                 e.printStackTrace();
             }
@@ -60,11 +62,12 @@ public class CustomJdbcConfiguration extends AbstractJdbcConfiguration {
     }
 
     @ReadingConverter
-    class StringToJsonNodeConverter implements Converter<String, JsonNode> {
+    class StringToUserConfigWrapperConverter implements Converter<String, UserConfigWrapper> {
         @Override
-        public JsonNode convert(String s) {
+        public UserConfigWrapper convert(String s) {
             try {
-                return objectMapper.readTree(s);
+                JsonNode jsonNode = objectMapper.readTree(s);
+                return new UserConfigWrapper(jsonNode);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
@@ -73,11 +76,11 @@ public class CustomJdbcConfiguration extends AbstractJdbcConfiguration {
     }
 
     @WritingConverter
-    class JsonNodeToStringConverter implements Converter<JsonNode, String> {
+    class UserConfigWrapperToStringConverter implements Converter<UserConfigWrapper, String> {
         @Override
-        public String convert(JsonNode jsonNode) {
+        public String convert(UserConfigWrapper configWrapper) {
             try {
-                return objectMapper.writeValueAsString(jsonNode);
+                return objectMapper.writeValueAsString(configWrapper.getConfig());
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
