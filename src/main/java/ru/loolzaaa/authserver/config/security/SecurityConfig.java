@@ -44,7 +44,6 @@ public class SecurityConfig implements WebSecurityCustomizer {
         return new CustomPBKDF2PasswordEncoder();
     }
 
-    @Profile("!noop")
     @Primary
     @Qualifier("basicPasswordEncoder")
     @Bean
@@ -53,6 +52,7 @@ public class SecurityConfig implements WebSecurityCustomizer {
     }
 
     @Profile("noop")
+    @Qualifier("jwtPasswordEncoder")
     @Bean
     PasswordEncoder noopPasswordEncoder() {
         return new NoopCustomPasswordEncoder();
