@@ -48,7 +48,6 @@ class UserServiceImplTest {
     @Test
     void shouldReturnUserDetailsWithoutHashes() {
         when(userRepository.findByLogin(anyString())).thenReturn(Optional.of(user));
-        when(user.getConfig()).thenReturn(null);
         when(user.isEnabled()).thenReturn(false);
 
         UserDetails userDetails = userService.loadUserByUsername("valid");
@@ -60,7 +59,6 @@ class UserServiceImplTest {
     @Test
     void shouldReturnUserDetailsWithHashes() {
         when(userRepository.findByLogin(anyString())).thenReturn(Optional.of(user));
-        when(user.getConfig()).thenReturn(null);
         when(user.isEnabled()).thenReturn(true);
 
         UserDetails userDetails = userService.loadUserByUsername("valid");

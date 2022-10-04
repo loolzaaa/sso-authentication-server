@@ -20,6 +20,7 @@ import ru.loolzaaa.authserver.dto.RequestStatusDTO;
 import ru.loolzaaa.authserver.exception.RequestErrorException;
 import ru.loolzaaa.authserver.model.User;
 import ru.loolzaaa.authserver.model.UserAttributes;
+import ru.loolzaaa.authserver.model.UserConfigWrapper;
 import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.repositories.UserRepository;
 
@@ -97,11 +98,11 @@ public class UserControlService {
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user != null) {
-            if (user.getConfig().has(app)) {
+            if (user.getJsonConfig().has(app)) {
                 log.warn("Try to add [{}] application in user [{}] where it already exist", app, login);
                 throw new RequestErrorException("App [%s] for user [%s] already exist!", app, login);
             } else {
-                ((ObjectNode) user.getConfig()).set(app, newUser.getConfig());
+                ((ObjectNode) user.getJsonConfig()).set(app, newUser.getConfig());
                 userRepository.updateConfigByLogin(user.getConfig(), login);
 
                 log.info("Added [{}] application for user [{}]", app, login);
@@ -127,7 +128,13 @@ public class UserControlService {
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(365)).toEpochMilli());
         if (!config.has(app)) config.set(app, newUser.getConfig());
 
-        user = User.builder().login(login).salt(salt).config(config).name(name).enabled(true).build();
+        user = User.builder()
+                .login(login)
+                .salt(salt)
+                .config(new UserConfigWrapper(config))
+                .name(name)
+                .enabled(true)
+                .build();
         userRepository.save(user);
 
         jdbcTemplate.update("INSERT INTO hashes VALUES (?)", hash);
@@ -188,9 +195,9 @@ public class UserControlService {
             answer.append(enabled ? "enabled" : "disabled");
         }
         if (lock != null) {
-            JsonNode userConfig = user.getConfig();
+            JsonNode userConfig = user.getJsonConfig();
             ((ObjectNode) userConfig.get(ssoServerProperties.getApplication().getName())).put(UserAttributes.LOCK, lock);
-            userRepository.updateConfigByLogin(userConfig, login);
+            userRepository.updateConfigByLogin(user.getConfig(), login);
             log.info("User [{}] {}", login, lock ? "locked" : "unlocked");
             answer.append(lock ? "locked" : "unlocked");
         }
@@ -223,11 +230,11 @@ public class UserControlService {
 
         userRepository.updateSaltByLogin(salt, login);
 
-        ((ObjectNode) user.getConfig().get(ssoServerProperties.getApplication().getName()))
+        ((ObjectNode) user.getJsonConfig().get(ssoServerProperties.getApplication().getName()))
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(365)).toEpochMilli());
 
-        if (user.getConfig().has(UserAttributes.TEMPORARY)) {
-            ((ObjectNode) user.getConfig().get(UserAttributes.TEMPORARY)).put("pass", newPassword);
+        if (user.getJsonConfig().has(UserAttributes.TEMPORARY)) {
+            ((ObjectNode) user.getJsonConfig().get(UserAttributes.TEMPORARY)).put("pass", newPassword);
             userRepository.updateConfigByLogin(user.getConfig(), login);
         }
 
@@ -258,13 +265,13 @@ public class UserControlService {
             throw new RequestErrorException("There is no user with login [%s]", login);
         }
 
-        JsonNode userConfig = user.getConfig();
+        JsonNode userConfig = user.getJsonConfig();
         if (!userConfig.has(app)) {
             log.warn("Try to change non existing config [{}] for user: {}", app, login);
             throw new RequestErrorException("There is no [%s] config for user [%s]", app, login);
         }
 
-        ((ObjectNode) user.getConfig()).set(app, appConfig);
+        ((ObjectNode) user.getJsonConfig()).set(app, appConfig);
         userRepository.updateConfigByLogin(user.getConfig(), login);
 
         log.info("Application [{}] config was changed for user [{}]", app, login);
@@ -285,13 +292,13 @@ public class UserControlService {
             throw new RequestErrorException("There is no user with login [%s]", login);
         }
 
-        JsonNode userConfig = user.getConfig();
+        JsonNode userConfig = user.getJsonConfig();
         if (!userConfig.has(app)) {
             log.warn("Try to delete non existing config [{}] for user: {}", app, login);
             throw new RequestErrorException("There is no [%s] config for user [%s]", app, login);
         }
 
-        ((ObjectNode) user.getConfig()).remove(app);
+        ((ObjectNode) user.getJsonConfig()).remove(app);
         userRepository.updateConfigByLogin(user.getConfig(), login);
 
         log.info("Application [{}] config was deleted for user [{}]", app, login);
@@ -310,7 +317,7 @@ public class UserControlService {
             log.warn("Try to create temporary user for non existing user: {}", temporaryLogin);
             throw new RequestErrorException("There is no original user [%s]", temporaryLogin);
         }
-        if (temporaryUser.getConfig().has(UserAttributes.TEMPORARY)) {
+        if (temporaryUser.getJsonConfig().has(UserAttributes.TEMPORARY)) {
             log.warn("Try to create temporary user for ALREADY temporary user: {}", temporaryLogin);
             throw new RequestErrorException("Temporary users can't create other temporary users");
         }
@@ -340,9 +347,9 @@ public class UserControlService {
         temporaryNode.put("dateTo", dateToLdt.toLocalDate().toString());
         temporaryNode.put("pass", dTemporaryPassword);
         temporaryNode.put("originTabNumber", temporaryLogin);
-        ((ObjectNode) temporaryUser.getConfig()).set(UserAttributes.TEMPORARY, temporaryNode);
+        ((ObjectNode) temporaryUser.getJsonConfig()).set(UserAttributes.TEMPORARY, temporaryNode);
 
-        ((ObjectNode) temporaryUser.getConfig().get(ssoServerProperties.getApplication().getName()))
+        ((ObjectNode) temporaryUser.getJsonConfig().get(ssoServerProperties.getApplication().getName()))
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(90)).toEpochMilli());
 
         dTemporaryUser = User.builder()
@@ -368,7 +375,7 @@ public class UserControlService {
             try {
                 authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));
             } catch (AccountStatusException ex) {
-                if (!user.getConfig().has(UserAttributes.TEMPORARY)) {
+                if (!user.getJsonConfig().has(UserAttributes.TEMPORARY)) {
                     throw ex;
                 }
             }

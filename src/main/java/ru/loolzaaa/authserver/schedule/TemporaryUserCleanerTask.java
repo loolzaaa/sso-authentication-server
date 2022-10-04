@@ -15,7 +15,7 @@ import ru.loolzaaa.authserver.services.UserControlService;
 
 import java.util.concurrent.Callable;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ public class TemporaryUserCleanerTask implements Callable<Integer> {
         for (User u : users) {
             UserPrincipal userPrincipal = new UserPrincipal(u);
             if (!userPrincipal.isAccountNonExpired()) {
-                String pass = u.getConfig().get(UserAttributes.TEMPORARY).get("pass").asText();
+                String pass = u.getJsonConfig().get(UserAttributes.TEMPORARY).get("pass").asText();
                 try {
                     RequestStatusDTO result = userControlService.deleteUser(u.getLogin(), pass);
                     deleteUserCounter++;

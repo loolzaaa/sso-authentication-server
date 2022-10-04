@@ -1,5 +1,6 @@
 package ru.loolzaaa.authserver.model;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
@@ -24,7 +25,7 @@ public class User {
     private String login;
     @JsonIgnore
     private String salt;
-    private JsonNode config;
+    private UserConfigWrapper config;
     private String name;
     private boolean enabled;
     @JsonIgnore
@@ -32,12 +33,17 @@ public class User {
     private List<String> hashes = new LinkedList<>();
 
     @Builder
-    public User(String login, String salt, JsonNode config, String name, boolean enabled) {
+    public User(String login, String salt, UserConfigWrapper config, String name, boolean enabled) {
         this.login = login;
         this.salt = salt;
         this.config = config;
         this.name = name;
         this.enabled = enabled;
+    }
+
+    @JsonGetter("config")
+    public JsonNode getJsonConfig() {
+        return config.getConfig();
     }
 
     @Override
