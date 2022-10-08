@@ -133,7 +133,8 @@ The user configuration schema can be viewed on the [wiki page](https://github.co
 
 ## Application profiles
 
-The application must be launched with one of two profiles: `dev`, `prod`.
+The application must be launched with one of two profiles: `dev`, `prod`.  
+Optional profile: `noop`.
 
 ### Developer mode
 
@@ -148,6 +149,11 @@ Main active profile: `prod`.
 Additional profiles: N/A.
 
 Application properties for production (`application-prod.properties`) mode already contains database connection parameters.
+
+### Password encoder for development
+
+If you run application with optional profile `noop`, then special password encoder will be active.  
+It is always match any password for **JWT API request matchers**.
 
 ## RFID Authentication
 
