@@ -2,10 +2,33 @@ version: "3.7"
 
 services:
   sso-postgres:
+    build:
+      dockerfile: Dockerfile-db
     image: sso-postgres
+    container_name: sso-postgres
     ports:
       - "9898:5432"
+    networks:
+      - sso
+
   sso-app:
+    build:
+      dockerfile: Dockerfile-app
     image: sso-app
+    container_name: sso-app
     ports:
       - "9999:9999"
+    command:
+      - "--spring.profiles.active=prod,noop"
+    environment:
+      - SSO_BASENAME=sso
+      - SSO_BASEURL=sso-postgres:5432
+      - SSO_BASEUSER=sso
+      - SSO_BASEPASSWORD=sso
+    depends_on:
+      - sso-postgres
+    networks:
+      - sso
+
+networks:
+  sso:
