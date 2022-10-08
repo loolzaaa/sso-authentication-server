@@ -68,7 +68,8 @@ public class JwtSecurityConfig {
 
         http
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers(new AntPathRequestMatcher("/api/refresh/ajax", "POST")))
                 .cors()
                 .and()
                 .sessionManagement(session -> session
