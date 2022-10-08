@@ -19,7 +19,7 @@ services:
     ports:
       - "9999:9999"
     command:
-      - "--spring.profiles.active=prod,noop"
+      - "--spring.profiles.active=prod,noop,ssl"
     environment:
       - SSO_BASENAME=sso
       - SSO_BASEURL=sso-postgres:5432
