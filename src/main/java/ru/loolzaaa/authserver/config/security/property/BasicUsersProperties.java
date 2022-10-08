@@ -19,6 +19,11 @@ public class BasicUsersProperties {
     private String revokePassword = "REVOKE_TOKEN_USER_PASSWORD";
     private String revokeAuthority = "REVOKE_TOKEN";
 
+    private boolean actuatorEnable = false;
+    private String actuatorUsername = "actuator";
+    private String actuatorPassword = "1234";
+    private String actuatorAuthority = "ACTUATOR_ADMIN";
+
     @Getter
     @Setter
     public static class BasicUser {

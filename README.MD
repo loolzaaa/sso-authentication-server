@@ -100,16 +100,31 @@ sso.server.cookie.same-site=Lax
 # between external applications
 sso.server.basic.users[0].username=SERVICE
 sso.server.basic.users[0].password=PASSWORD
+
+# Enable Spring Actuator endpoints
+# Default: false
+sso.server.basic.actuatorEnable=true
 ```
 **Note:** all basic users must have `BasicUsersProperties.basicUserAuthority` authority for access.
 
 ### External application logout
 
-In addition, the application defines a user to revoke JWT tokens when external applications logout.
+In addition, the application defines a user to revoke JWT tokens when external applications logout.  
+This properties available under `sso.server.basic.<property-name>`.
 ```Java
 private String revokeUsername = "REVOKE_TOKEN_USER";
 private String revokePassword = "REVOKE_TOKEN_USER_PASSWORD";
 private String revokeAuthority = "REVOKE_TOKEN";
+```
+
+### Actuator endpoint access
+
+Actuator endpoints available (if enable, see server configuration) under Basic Authentication for special user.  
+This properties available under `sso.server.basic.<property-name>`.
+```Java
+private String actuatorUsername = "actuator";
+private String actuatorPassword = "1234";
+private String actuatorAuthority = "ACTUATOR_ADMIN";
 ```
 
 ## Database User config scheme
