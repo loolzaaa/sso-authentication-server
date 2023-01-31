@@ -68,13 +68,14 @@ public class JwtSecurityConfig {
 
         http
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers(new AntPathRequestMatcher("/api/refresh/ajax", "POST")))
                 .cors()
                 .and()
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .antMatchers("/actuator/**", "/admin").hasRole("ADMIN")
+                        .antMatchers("/admin").hasRole("ADMIN")
                         .antMatchers(ssoServerProperties.getLoginPage()).permitAll()
                         .antMatchers(ignoredPathsHandler.toAntPatterns()).permitAll()
                         .anyRequest().hasAuthority(ssoServerProperties.getApplication().getName()))

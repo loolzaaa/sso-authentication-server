@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,8 @@ import ru.loolzaaa.authserver.config.security.property.BasicUsersProperties;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @RequiredArgsConstructor
 @EnableConfigurationProperties(BasicUsersProperties.class)
@@ -39,7 +42,7 @@ public class BasicSecurityConfig {
         if (basicUsersProperties.getUsers().isEmpty()) {
             log.warn("\n\n\tThere is no basic users in properties. Some API unavailable!\n");
         }
-        List<UserDetails> userDetailsList = new ArrayList<>(basicUsersProperties.getUsers().size() + 1);
+        List<UserDetails> userDetailsList = new ArrayList<>(basicUsersProperties.getUsers().size() + 2);
         for (BasicUsersProperties.BasicUser user : basicUsersProperties.getUsers()) {
             userDetailsList.add(User
                     .withUsername(user.getUsername())
@@ -54,6 +57,14 @@ public class BasicSecurityConfig {
                 .authorities(basicUsersProperties.getRevokeAuthority())
                 .build());
         log.info("Register revoke token basic user: {}", basicUsersProperties.getRevokeUsername());
+        if (basicUsersProperties.isActuatorEnable()) {
+            userDetailsList.add(User
+                    .withUsername(basicUsersProperties.getActuatorUsername())
+                    .password(passwordEncoder.encode(basicUsersProperties.getActuatorPassword()))
+                    .authorities("ROLE_" + basicUsersProperties.getActuatorAuthority())
+                    .build());
+            log.info("Register actuator admin user: {}", basicUsersProperties.getActuatorUsername());
+        }
         return new InMemoryUserDetailsManager(userDetailsList);
     }
 
@@ -79,6 +90,23 @@ public class BasicSecurityConfig {
         log.debug("JWT logout for other applications can be prepared via POST {} with '{}' authority",
                 basicPrepareLogoutMatcherPattern, basicUsersProperties.getRevokeAuthority());
         log.debug("All basic API can be accessed with '{}' authority", basicUsersProperties.getBasicUserAuthority());
+        return http.build();
+    }
+
+    @Order(2)
+    @Bean
+    public SecurityFilterChain actuatorFilterChain(HttpSecurity http) throws Exception {
+        http
+                .userDetailsService(inMemoryUserDetailsManager())
+                .requestMatcher(EndpointRequest.toAnyEndpoint())
+                .csrf().disable()
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authorize -> authorize
+                        .anyRequest().hasRole(basicUsersProperties.getActuatorAuthority()))
+                .httpBasic(withDefaults());
+        log.debug("Actuator [{}] configuration completed", EndpointRequest.toAnyEndpoint());
+        log.debug("All actuator API can be accessed with '{}' role", basicUsersProperties.getActuatorAuthority());
         return http.build();
     }
 }

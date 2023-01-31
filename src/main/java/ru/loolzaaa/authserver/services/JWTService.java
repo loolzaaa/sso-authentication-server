@@ -77,9 +77,10 @@ public class JWTService {
             log.debug("Success check token for {}", login);
             return login;
         } catch (ClaimJwtException e) {
-            log.debug("Failed check token for {}", e.getClaims().get("login"));
+            log.debug("Failed check token for {}. Error: {}", e.getClaims().get("login"), e.getMessage());
             return null;
         } catch (Exception e) {
+            log.warn("Unknown JWT validation error: {}", e.getMessage());
             return null;
         }
     }
