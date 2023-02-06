@@ -11,7 +11,7 @@
     <link th:href="@{/webjars/bootstrap/5.2.1/dist/css/bootstrap.min.css}" rel="stylesheet">
     <link th:href="@{/css/style.css}" rel="stylesheet">
     <link th:href="@{/favicon.ico}" rel="icon">
-    <title>Authentication server</title>
+    <title th:text="#{index.title}">User profile</title>
 </head>
 <body>
 <noscript>
@@ -24,33 +24,36 @@
             <span th:text="${#authentication.principal.user.name}">Username</span>
             <span th:text="${#authentication.principal.user.login}" style="display: none;" id="login">Login</span>
         </h3>
-        <h5 class="lead">User profile</h5>
+        <h5 class="lead" th:text="#{index.title}">User profile</h5>
     </div>
     <div class="accordion mb-3" id="firstAccordion">
         <div class="accordion-item">
             <h2 class="accordion-header" id="headingOne">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                         data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                    Change password
+                    <span th:text="#{index.changePassword}">Change password</span>
                 </button>
             </h2>
             <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne"
                  data-bs-parent="#firstAccordion">
                 <div class="accordion-body">
                     <div class="mb-3">
-                        <label for="oldpass" class="form-label">Old password</label>
+                        <label for="oldpass" class="form-label" th:text="#{index.changePassword.old}">Old
+                            password</label>
                         <input type="password" class="form-control" id="oldpass">
                     </div>
                     <div class="mb-3">
-                        <label for="pass" class="form-label">New password</label>
+                        <label for="pass" class="form-label" th:text="#{index.changePassword.new}">New password</label>
                         <input type="password" class="form-control" id="pass">
                     </div>
                     <div class="mb-3">
-                        <label for="passConfirm" class="form-label">Repeat new password</label>
+                        <label for="passConfirm" class="form-label" th:text="#{index.changePassword.repeat}">Repeat new
+                            password</label>
                         <input type="password" class="form-control" id="passConfirm">
                     </div>
                     <div class="input-group mb-3">
-                        <button class="btn btn-outline-primary" type="button" onclick="changePass()">Change Password
+                        <button class="btn btn-outline-primary" type="button" onclick="changePass()"
+                                th:text="#{index.changePassword.btn}">Change Password
                         </button>
                         <input type="text" class="form-control" id="errorPassword" disabled>
                     </div>
@@ -61,22 +64,25 @@
             <h2 class="accordion-header" id="headingTwo">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                         data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                    Create deputy user
+                    <span th:text="#{index.createDeputyUser}">Create deputy user</span>
                 </button>
             </h2>
             <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
                  data-bs-parent="#firstAccordion">
                 <div class="accordion-body">
                     <div class="mb-3">
-                        <label for="deputyDateFrom" class="form-label">Date from</label>
+                        <label for="deputyDateFrom" class="form-label" th:text="#{index.createDeputyUser.from}">Date
+                            from</label>
                         <input type="text" class="form-control" id="deputyDateFrom" placeholder="YYYY-MM-DD">
                     </div>
                     <div class="mb-3">
-                        <label for="deputyDateTo" class="form-label">Date to</label>
+                        <label for="deputyDateTo" class="form-label" th:text="#{index.createDeputyUser.to}">Date
+                            to</label>
                         <input type="text" class="form-control" id="deputyDateTo" placeholder="YYYY-MM-DD">
                     </div>
                     <div class="input-group mb-3">
-                        <button class="btn btn-outline-primary" type="button" onclick="createDeputy()">Create deputy
+                        <button class="btn btn-outline-primary" type="button" onclick="createDeputy()"
+                                th:text="#{index.createDeputyUser.btn}">Create deputy
                             user
                         </button>
                         <input type="text" class="form-control" id="errorDeputy" disabled>
@@ -86,12 +92,13 @@
         </div>
     </div>
     <div sec:authorize="hasRole('ADMIN')" class="d-grid mb-3">
-        <a href="/admin" class="btn btn-warning" type="button">Admin panel</a>
+        <a href="/admin" class="btn btn-warning" type="button" th:text="#{index.adminPanel.btn}">Admin panel</a>
     </div>
     <form action="#" method="post" th:action="@{/do_logout}" class="mb-3">
-        <input class="btn btn-outline-danger form-control" type="submit" value="Logout"/>
+        <input class="btn btn-outline-danger form-control" type="submit" th:value="#{index.logout.btn}"
+               value="Logout"/>
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" th:inline="javascript">
     const instance = axios.create();
     const username = document.getElementById('login').innerHTML;
     function changePass() {
@@ -99,7 +106,7 @@
         let pass = document.getElementById('pass').value;
         let valid = pass == document.getElementById('passConfirm').value;
         if (!valid) {
-            document.getElementById('errorPassword').value = 'Password mismatch';
+            document.getElementById('errorPassword').value = /*[[#{index.changePassword.validError}]]*/ 'Password mismatch';
             return;
         }
         let params = new URLSearchParams();
@@ -112,7 +119,7 @@
                 if (err?.response?.data?.text) {
                     document.getElementById('errorPassword').value = err.response.data.text;
                 } else {
-                    document.getElementById('errorPassword').value = 'ERROR! See console';
+                    document.getElementById('errorPassword').value = /*[[#{index.consoleError}]]*/ 'ERROR! See console';
                 }
             });
     }
@@ -121,12 +128,12 @@
         let dateTo = document.getElementById('deputyDateTo').value;
         let validFrom = dateFrom.match(/\d{4}-\d{2}-\d{2}/g) != null;
         if (!validFrom) {
-            document.getElementById('errorDeputy').value = 'Date FROM format error (YYYY-MM-DD)';
+            document.getElementById('errorDeputy').value = /*[[#{index.createDeputyUser.dateFromValidError}]]*/ 'Date FROM format error (YYYY-MM-DD)';
             return;
         }
         let validTo = dateTo.match(/\d{4}-\d{2}-\d{2}/g) != null;
         if (!validTo) {
-            document.getElementById('errorDeputy').value = 'Date TO format error (YYYY-MM-DD)';
+            document.getElementById('errorDeputy').value = /*[[#{index.createDeputyUser.dateToValidError}]]*/ 'Date TO format error (YYYY-MM-DD)';
             return;
         }
         let params = new URLSearchParams();
@@ -140,7 +147,7 @@
                 if (err?.response?.data?.text) {
                     document.getElementById('errorDeputy').value = err.response.data.text;
                 } else {
-                    document.getElementById('errorDeputy').value = 'ERROR! See console';
+                    document.getElementById('errorDeputy').value = /*[[#{index.consoleError}]]*/ 'ERROR! See console';
                 }
             });
     }
@@ -170,7 +177,6 @@
             throw err;
         }
     });
-
     </script>
 </div>
 </body>

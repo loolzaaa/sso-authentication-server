@@ -104,8 +104,9 @@ public class AccessController {
                     );
         }
 
-        return ResponseEntity.ok().body(RequestStatusDTO.ok("{\"token\":\"%s\",\"serverTime\":%d}",
-                jwtAuthentication.getAccessToken(), System.currentTimeMillis()));
+        String body = String.format("{\"token\":\"%s\",\"serverTime\":%d}",
+                jwtAuthentication.getAccessToken(), System.currentTimeMillis());
+        return ResponseEntity.ok().body(RequestStatusDTO.ok(body));
     }
 
     @PostMapping("/fast/rfid")

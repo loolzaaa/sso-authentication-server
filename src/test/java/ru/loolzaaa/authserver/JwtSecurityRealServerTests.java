@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.MessageSource;
 import org.springframework.http.*;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.JWTUtils;
@@ -38,6 +39,9 @@ class JwtSecurityRealServerTests {
 
     @Autowired
     JWTUtils jwtUtils;
+
+    @Autowired
+    MessageSource messageSource;
 
     String accessToken;
     UUID refreshToken;
@@ -79,6 +83,7 @@ class JwtSecurityRealServerTests {
     @Test
     void shouldRedirectFromLoginToMainPageIfServerHasValidAccessToken() {
         final String SSO_URL = String.format("http://localhost:%d%s", localPort, ssoServerProperties.getLoginPage());
+        final String expectedText = messageSource.getMessage("index.title", null, Locale.US);
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.COOKIE, CookieName.ACCESS.getName() + "=" + accessToken);
@@ -92,7 +97,7 @@ class JwtSecurityRealServerTests {
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertThat(response.getBody()).contains("<h5 class=\"lead\">User profile</h5>");
+        assertThat(response.getBody()).contains(String.format("<h5 class=\"lead\">%s</h5>", expectedText));
     }
 
     @Test

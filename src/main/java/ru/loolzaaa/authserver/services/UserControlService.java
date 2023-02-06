@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -30,6 +31,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -44,6 +46,8 @@ public class UserControlService {
 
     private final SsoServerProperties ssoServerProperties;
 
+    private final MessageSource messageSource;
+
     private final JdbcTemplate jdbcTemplate;
 
     private final UserRepository userRepository;
@@ -52,22 +56,24 @@ public class UserControlService {
 
     private final CustomPBKDF2PasswordEncoder passwordEncoder;
 
-    public UserPrincipal getUserByUsername(String username, String appName) {
+    public UserPrincipal getUserByUsername(String username, String appName, Locale l) {
         User user = userRepository.findByLogin(username).orElse(null);
         if (user == null) {
             log.debug("Try to receive invalid user [{}] for app [{}]", username, appName);
-            throw new RequestErrorException("There is no user with login [%s]", username);
+            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{username}, l);
+            throw new RequestErrorException(message);
         }
         try {
             log.trace("Return user principal [{}] for application [{}]", username, appName);
             return new UserPrincipal(user, appName);
         } catch (Exception e) {
             log.warn("Can't create user principal: {}", username, e);
-            throw new RequestErrorException(e.getMessage());
+            String message = messageSource.getMessage("userControl.common.error", new Object[]{e.getMessage()}, l);
+            throw new RequestErrorException(message);
         }
     }
 
-    public List<UserPrincipal> getUsersByAuthority(String appName, String authority) {
+    public List<UserPrincipal> getUsersByAuthority(String appName, String authority, Locale l) {
         Iterable<User> allUsers = userRepository.findAll();
         SimpleGrantedAuthority grantedAuthority = new SimpleGrantedAuthority(authority);
         List<UserPrincipal> users = new ArrayList<>();
@@ -87,12 +93,13 @@ public class UserControlService {
             return users;
         } catch (Exception e) {
             log.warn("Can't return users by authority [{}] in application [{}]: ", authority, appName, e);
-            throw new RequestErrorException(e.getMessage());
+            String message = messageSource.getMessage("userControl.common.error", new Object[]{e.getMessage()}, l);
+            throw new RequestErrorException(message);
         }
     }
 
     @Transactional
-    public RequestStatusDTO createUser(String app, CreateUserRequestDTO newUser) {
+    public RequestStatusDTO createUser(String app, CreateUserRequestDTO newUser, Locale l) {
         String login = newUser.getLogin();
 
         User user = userRepository.findByLogin(login).orElse(null);
@@ -100,13 +107,15 @@ public class UserControlService {
         if (user != null) {
             if (user.getJsonConfig().has(app)) {
                 log.warn("Try to add [{}] application in user [{}] where it already exist", app, login);
-                throw new RequestErrorException("App [%s] for user [%s] already exist!", app, login);
+                String message = messageSource.getMessage("userControl.create.appExistError", new Object[]{app, login}, l);
+                throw new RequestErrorException(message);
             } else {
                 ((ObjectNode) user.getJsonConfig()).set(app, newUser.getConfig());
                 userRepository.updateConfigByLogin(user.getConfig(), login);
 
                 log.info("Added [{}] application for user [{}]", app, login);
-                return RequestStatusDTO.ok("Add new app [%s] for user [%s]", app, login);
+                String message = messageSource.getMessage("userControl.create.appAddOk", new Object[]{app, login}, l);
+                return RequestStatusDTO.ok(message);
             }
         }
 
@@ -120,7 +129,8 @@ public class UserControlService {
         String name = newUser.getName();
         if (name == null || name.length() < 3 || name.length() > 128) {
             log.warn("Invalid name for new user: {}", login);
-            throw new RequestErrorException("Name property [%s] for user [%s] must not be null and 3-128 length", name, login);
+            String message = messageSource.getMessage("userControl.create.invalidUsername", new Object[]{name, login}, l);
+            throw new RequestErrorException(message);
         }
 
         ObjectNode config = objectMapper.createObjectNode();
@@ -140,16 +150,18 @@ public class UserControlService {
         jdbcTemplate.update("INSERT INTO hashes VALUES (?)", hash);
 
         log.info("Create new user [{}] with start application: {}", login, app);
-        return RequestStatusDTO.ok("User [%s] created. Temp pass: %s", login, tempPassword);
+        String message = messageSource.getMessage("userControl.create.success", new Object[]{login, tempPassword}, l);
+        return RequestStatusDTO.ok(message);
     }
 
     @Transactional
-    public RequestStatusDTO deleteUser(String login, String password) {
+    public RequestStatusDTO deleteUser(String login, String password, Locale l) {
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
             log.warn("Try to delete non existing user: {}", login);
-            throw new RequestErrorException("There is no user with login [%s]", login);
+            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            throw new RequestErrorException(message);
         }
 
         boolean isHashDeleted;
@@ -157,70 +169,80 @@ public class UserControlService {
             isHashDeleted = checkUserAndDeleteHash(user, password);
         } catch (BadCredentialsException e) {
             log.warn("Incorrect password for user [{}] to delete", login);
-            throw new RequestErrorException("Incorrect password for user [%s]", user.getLogin());
+            String message = messageSource.getMessage("userControl.delete.incorrectPassword", new Object[]{user.getLogin()}, l);
+            throw new RequestErrorException(message);
         } catch (Exception e) {
             log.error("Some error while user [{}] delete process", login, e);
-            throw new RequestErrorException("Some error while user [%s] delete process: %s", user.getLogin(), e.getMessage());
+            String message = messageSource.getMessage("userControl.delete.error", new Object[]{user.getLogin(), e.getMessage()}, l);
+            throw new RequestErrorException(message);
         }
 
         jdbcTemplate.update("DELETE FROM refresh_sessions WHERE user_id = ?", user.getId());
         userRepository.delete(user);
 
-        log.info("Delete user [{}]. Hash {} database", login, isHashDeleted ? "deleted from" : "stayed in");
-        return RequestStatusDTO.ok("User [%s] deleted. Hash %s database", login, isHashDeleted ? "deleted from" : "stayed in");
+        String hashStatus = messageSource.getMessage("userControl.delete.hash" + (isHashDeleted ? "Del" : "Stay"), null, l);
+        log.info("Delete user [{}]. Hash {} database", login, hashStatus);
+        String message = messageSource.getMessage("userControl.delete.success", new Object[]{login, hashStatus}, l);
+        return RequestStatusDTO.ok(message);
     }
 
     @Transactional
-    public RequestStatusDTO changeUserLockStatus(String login, Boolean enabled, Boolean lock) {
+    public RequestStatusDTO changeUserLockStatus(String login, Boolean enabled, Boolean lock, Locale l) {
         if (enabled == null && lock == null) {
             log.warn("Try to change NONE of enabled/lock flags for user: {}", login);
-            throw new RequestErrorException("Try to change NONE of enabled/lock flags for user: [%s]", login);
+            String message = messageSource.getMessage("userControl.lock.none", new Object[]{login}, l);
+            throw new RequestErrorException(message);
         }
         if (enabled != null && lock != null) {
             log.warn("Try to change BOTH of enabled/lock flags for user: {}", login);
-            throw new RequestErrorException("Try to change BOTH of enabled/lock flags for user: [%s]", login);
+            String message = messageSource.getMessage("userControl.lock.both", new Object[]{login}, l);
+            throw new RequestErrorException(message);
         }
 
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
             log.warn("Try to lock non existing user: {}", login);
-            throw new RequestErrorException("There is no user with login [%s]", login);
+            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            throw new RequestErrorException(message);
         }
 
-        StringBuilder answer = new StringBuilder("User [%s] ");
+        String message = null;
         if (enabled != null) {
             userRepository.updateEnabledByLogin(enabled, login);
             log.info("User [{}] {}", login, enabled ? "enabled" : "disabled");
-            answer.append(enabled ? "enabled" : "disabled");
+            message = messageSource.getMessage("userControl.lock." + (enabled ? "enabled" : "disabled"), new Object[]{login}, l);
         }
         if (lock != null) {
             JsonNode userConfig = user.getJsonConfig();
             ((ObjectNode) userConfig.get(ssoServerProperties.getApplication().getName())).put(UserAttributes.LOCK, lock);
             userRepository.updateConfigByLogin(user.getConfig(), login);
             log.info("User [{}] {}", login, lock ? "locked" : "unlocked");
-            answer.append(lock ? "locked" : "unlocked");
+            message = messageSource.getMessage("userControl.lock." + (lock ? "locked" : "unlocked"), new Object[]{login}, l);
         }
-        return RequestStatusDTO.ok(answer.toString(), login);
+        return RequestStatusDTO.ok(message);
     }
 
     @Transactional
-    public RequestStatusDTO changeUserPassword(String login, String oldPassword, String newPassword) {
+    public RequestStatusDTO changeUserPassword(String login, String oldPassword, String newPassword, Locale l) {
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
             log.warn("Try to change password for non existing user: {}", login);
-            throw new RequestErrorException("There is no user with login [%s]", login);
+            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            throw new RequestErrorException(message);
         }
 
         try {
             checkUserAndDeleteHash(user, oldPassword);
         } catch (BadCredentialsException e) {
             log.warn("Incorrect password for user [{}] to change password", login);
-            throw new RequestErrorException("Incorrect password for user [%s]", user.getLogin());
+            String message = messageSource.getMessage("userControl.changePassword.incorrectPassword", new Object[]{user.getLogin()}, l);
+            throw new RequestErrorException(message);
         } catch (Exception e) {
             log.error("Some error while user [{}] change password process", login, e);
-            throw new RequestErrorException("Some error while user [%s] change password process: %s", user.getLogin(), e.getMessage());
+            String message = messageSource.getMessage("userControl.changePassword.error", new Object[]{user.getLogin(), e.getMessage()}, l);
+            throw new RequestErrorException(message);
         }
 
         String salt = passwordEncoder.generateSalt();
@@ -241,72 +263,82 @@ public class UserControlService {
         jdbcTemplate.update("INSERT INTO hashes VALUES (?)", newHash);
 
         log.info("Password for user [{}] changed", login);
-        return RequestStatusDTO.ok("Password for user [%s] changed", login);
+        String message = messageSource.getMessage("userControl.changePassword.success", new Object[]{login}, l);
+        return RequestStatusDTO.ok(message);
     }
 
     @Transactional
-    public RequestStatusDTO resetUserPassword(String login, String newPassword) {
+    public RequestStatusDTO resetUserPassword(String login, String newPassword, Locale l) {
         String password = newPassword;
         if (newPassword == null) {
             password = generateTempPassword();
         }
-        changeUserPassword(login, null, password);
+        changeUserPassword(login, null, password, l);
         log.info("Password for user [{}] reset", login);
-        return RequestStatusDTO.ok("Password for user [%s] reset. New password: %s",
-                login, newPassword == null ? password : "[]");
+        String message = messageSource.getMessage("userControl.resetPassword.success",
+                new Object[]{login, newPassword == null ? password : "[]"}, l);
+        return RequestStatusDTO.ok(message);
     }
 
     @Transactional
-    public RequestStatusDTO changeApplicationConfigForUser(String login, String app, JsonNode appConfig) {
+    public RequestStatusDTO changeApplicationConfigForUser(String login, String app, JsonNode appConfig, Locale l) {
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
             log.warn("Try to change config for non existing user: {}", login);
-            throw new RequestErrorException("There is no user with login [%s]", login);
+            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            throw new RequestErrorException(message);
         }
 
         JsonNode userConfig = user.getJsonConfig();
         if (!userConfig.has(app)) {
             log.warn("Try to change non existing config [{}] for user: {}", app, login);
-            throw new RequestErrorException("There is no [%s] config for user [%s]", app, login);
+            String message = messageSource.getMessage("userControl.configNotFound", new Object[]{app, login}, l);
+            throw new RequestErrorException(message);
         }
 
         ((ObjectNode) user.getJsonConfig()).set(app, appConfig);
         userRepository.updateConfigByLogin(user.getConfig(), login);
 
         log.info("Application [{}] config was changed for user [{}]", app, login);
-        return RequestStatusDTO.ok("User [%s] configuration for [%s] changed", login, app);
+        String message = messageSource.getMessage("userControl.changeConfig.success", new Object[]{login, app}, l);
+        return RequestStatusDTO.ok(message);
     }
 
     @Transactional
-    public RequestStatusDTO deleteApplicationConfigForUser(String login, String app) {
+    public RequestStatusDTO deleteApplicationConfigForUser(String login, String app, Locale l) {
         if (ssoServerProperties.getApplication().getName().equals(app)) {
             log.error("Try to delete {} config for user: {}", ssoServerProperties.getApplication().getName(), login);
-            throw new RequestErrorException("Cannot delete %s configuration", ssoServerProperties.getApplication().getName());
+            String message = messageSource.getMessage("userControl.deleteConfig.error",
+                    new Object[]{ssoServerProperties.getApplication().getName()}, l);
+            throw new RequestErrorException(message);
         }
 
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
             log.warn("Try to delete config for non existing user: {}", login);
-            throw new RequestErrorException("There is no user with login [%s]", login);
+            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            throw new RequestErrorException(message);
         }
 
         JsonNode userConfig = user.getJsonConfig();
         if (!userConfig.has(app)) {
             log.warn("Try to delete non existing config [{}] for user: {}", app, login);
-            throw new RequestErrorException("There is no [%s] config for user [%s]", app, login);
+            String message = messageSource.getMessage("userControl.configNotFound", new Object[]{app, login}, l);
+            throw new RequestErrorException(message);
         }
 
         ((ObjectNode) user.getJsonConfig()).remove(app);
         userRepository.updateConfigByLogin(user.getConfig(), login);
 
         log.info("Application [{}] config was deleted for user [{}]", app, login);
-        return RequestStatusDTO.ok("User [%s] configuration for [%s] removed", login, app);
+        String message = messageSource.getMessage("userControl.deleteConfig.success", new Object[]{login, app}, l);
+        return RequestStatusDTO.ok(message);
     }
 
     @Transactional
-    public RequestStatusDTO createTemporaryUser(String temporaryLogin, long dateFrom, long dateTo) {
+    public RequestStatusDTO createTemporaryUser(String temporaryLogin, long dateFrom, long dateTo, Locale l) {
         String dTemporaryLogin = "d_" + temporaryLogin;
         String dTemporaryPassword = generatePasswordForTemporaryUser();
 
@@ -315,15 +347,18 @@ public class UserControlService {
 
         if (temporaryUser == null) {
             log.warn("Try to create temporary user for non existing user: {}", temporaryLogin);
-            throw new RequestErrorException("There is no original user [%s]", temporaryLogin);
+            String message = messageSource.getMessage("userControl.temporary.userNotFound", new Object[]{temporaryLogin}, l);
+            throw new RequestErrorException(message);
         }
         if (temporaryUser.getJsonConfig().has(UserAttributes.TEMPORARY)) {
             log.warn("Try to create temporary user for ALREADY temporary user: {}", temporaryLogin);
-            throw new RequestErrorException("Temporary users can't create other temporary users");
+            String message = messageSource.getMessage("userControl.temporary.tempCreateTemp", null, l);
+            throw new RequestErrorException(message);
         }
         if (dTemporaryUser != null) {
             log.warn("Try to create already exists temporary user: {}", dTemporaryLogin);
-            throw new RequestErrorException("Temporary user [%s] already exist", dTemporaryLogin);
+            String message = messageSource.getMessage("userControl.temporary.alreadyExist", new Object[]{dTemporaryLogin}, l);
+            throw new RequestErrorException(message);
         }
 
         LocalDateTime dateFromLdt = new Timestamp(dateFrom).toLocalDateTime();
@@ -334,7 +369,8 @@ public class UserControlService {
                 dateFromLdt.isEqual(dateToLdt) || dateToLdt.isEqual(now) ||
                 dateToLdt.isBefore(now)) {
             log.debug("Try to create temporary user [{}] with wrong dates", dTemporaryLogin);
-            throw new RequestErrorException("Wrong dates for temporary user");
+            String message = messageSource.getMessage("userControl.temporary.datesError", null, l);
+            throw new RequestErrorException(message);
         }
 
         String salt = passwordEncoder.generateSalt();
@@ -366,7 +402,9 @@ public class UserControlService {
         //TODO: Some notifications?
 
         log.info("Temporary user [{}] created for user [{}]", dTemporaryLogin, temporaryLogin);
-        return RequestStatusDTO.ok("Temporary user [%s] created. Temporary password: %s", dTemporaryLogin, dTemporaryPassword);
+        String message = messageSource.getMessage("userControl.temporary.success",
+                new Object[]{dTemporaryLogin, dTemporaryPassword}, l);
+        return RequestStatusDTO.ok(message);
     }
 
     private boolean checkUserAndDeleteHash(User user, String password) {

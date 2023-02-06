@@ -13,9 +13,8 @@ import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.repositories.UserRepository;
 import ru.loolzaaa.authserver.services.UserControlService;
 
+import java.util.Locale;
 import java.util.concurrent.Callable;
-
-import static java.lang.String.format;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -37,11 +36,11 @@ public class TemporaryUserCleanerTask implements Callable<Integer> {
             if (!userPrincipal.isAccountNonExpired()) {
                 String pass = u.getJsonConfig().get(UserAttributes.TEMPORARY).get("pass").asText();
                 try {
-                    RequestStatusDTO result = userControlService.deleteUser(u.getLogin(), pass);
+                    RequestStatusDTO result = userControlService.deleteUser(u.getLogin(), pass, Locale.US);
                     deleteUserCounter++;
                     log.info(result.getText());
                 } catch (RequestErrorException e) {
-                    log.error(format(e.getMessage(), e.getObjects()));
+                    log.error(e.getMessage());
                 } catch (Exception e) {
                     log.error(e);
                 }
