@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.dto.RequestStatusDTO;
 import ru.loolzaaa.authserver.exception.RequestErrorException;
 import ru.loolzaaa.authserver.model.User;
@@ -22,6 +23,8 @@ import java.util.concurrent.Callable;
 @Profile("prod")
 public class TemporaryUserCleanerTask implements Callable<Integer> {
 
+    private final SsoServerProperties ssoServerProperties;
+
     private final UserRepository userRepository;
 
     private final UserControlService userControlService;
@@ -29,12 +32,13 @@ public class TemporaryUserCleanerTask implements Callable<Integer> {
     @Scheduled(cron = "0 0 0 * * *")
     @Override
     public Integer call() {
+        String appName = ssoServerProperties.getApplication().getName();
         int deleteUserCounter = 0;
         Iterable<User> users = userRepository.findAll();
         for (User u : users) {
             UserPrincipal userPrincipal = new UserPrincipal(u);
             if (!userPrincipal.isAccountNonExpired()) {
-                String pass = u.getJsonConfig().get(UserAttributes.TEMPORARY).get("pass").asText();
+                String pass = u.getJsonConfig().get(appName).get(UserAttributes.TEMPORARY).get("pass").asText();
                 try {
                     RequestStatusDTO result = userControlService.deleteUser(u.getLogin(), pass, Locale.US);
                     deleteUserCounter++;

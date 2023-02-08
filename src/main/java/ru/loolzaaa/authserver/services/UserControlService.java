@@ -225,6 +225,7 @@ public class UserControlService {
 
     @Transactional
     public RequestStatusDTO changeUserPassword(String login, String oldPassword, String newPassword, Locale l) {
+        String appName = ssoServerProperties.getApplication().getName();
         User user = userRepository.findByLogin(login).orElse(null);
 
         if (user == null) {
@@ -252,11 +253,12 @@ public class UserControlService {
 
         userRepository.updateSaltByLogin(salt, login);
 
-        ((ObjectNode) user.getJsonConfig().get(ssoServerProperties.getApplication().getName()))
+        ((ObjectNode) user.getJsonConfig().get(appName))
                 .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(365)).toEpochMilli());
 
-        if (user.getJsonConfig().has(UserAttributes.TEMPORARY)) {
-            ((ObjectNode) user.getJsonConfig().get(UserAttributes.TEMPORARY)).put("pass", newPassword);
+        if (user.getJsonConfig().get(appName).has(UserAttributes.TEMPORARY)) {
+            ((ObjectNode) user.getJsonConfig().get(appName).get(UserAttributes.TEMPORARY))
+                    .put("pass", newPassword);
             userRepository.updateConfigByLogin(user.getConfig(), login);
         }
 
@@ -339,6 +341,7 @@ public class UserControlService {
 
     @Transactional
     public RequestStatusDTO createTemporaryUser(String temporaryLogin, long dateFrom, long dateTo, Locale l) {
+        String appName = ssoServerProperties.getApplication().getName();
         String dTemporaryLogin = "d_" + temporaryLogin;
         String dTemporaryPassword = generatePasswordForTemporaryUser();
 
@@ -350,7 +353,7 @@ public class UserControlService {
             String message = messageSource.getMessage("userControl.temporary.userNotFound", new Object[]{temporaryLogin}, l);
             throw new RequestErrorException(message);
         }
-        if (temporaryUser.getJsonConfig().has(UserAttributes.TEMPORARY)) {
+        if (temporaryUser.getJsonConfig().get(appName).has(UserAttributes.TEMPORARY)) {
             log.warn("Try to create temporary user for ALREADY temporary user: {}", temporaryLogin);
             String message = messageSource.getMessage("userControl.temporary.tempCreateTemp", null, l);
             throw new RequestErrorException(message);
@@ -364,6 +367,7 @@ public class UserControlService {
         LocalDateTime dateFromLdt = new Timestamp(dateFrom).toLocalDateTime();
         LocalDateTime dateToLdt = new Timestamp(dateTo).toLocalDateTime();
         LocalDateTime now = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        Duration dateDiff = Duration.between(dateFromLdt, dateToLdt);
 
         if (dateFromLdt.isBefore(now) || dateFromLdt.isAfter(dateToLdt) ||
                 dateFromLdt.isEqual(dateToLdt) || dateToLdt.isEqual(now) ||
@@ -383,10 +387,11 @@ public class UserControlService {
         temporaryNode.put("dateTo", dateToLdt.toLocalDate().toString());
         temporaryNode.put("pass", dTemporaryPassword);
         temporaryNode.put("originTabNumber", temporaryLogin);
-        ((ObjectNode) temporaryUser.getJsonConfig()).set(UserAttributes.TEMPORARY, temporaryNode);
+        ((ObjectNode) temporaryUser.getJsonConfig().get(appName))
+                .set(UserAttributes.TEMPORARY, temporaryNode);
 
-        ((ObjectNode) temporaryUser.getJsonConfig().get(ssoServerProperties.getApplication().getName()))
-                .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(Duration.ofDays(90)).toEpochMilli());
+        ((ObjectNode) temporaryUser.getJsonConfig().get(appName))
+                .put(UserAttributes.CREDENTIALS_EXP, Instant.now().plus(dateDiff).toEpochMilli());
 
         dTemporaryUser = User.builder()
                 .login(dTemporaryLogin)
@@ -413,7 +418,8 @@ public class UserControlService {
             try {
                 authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));
             } catch (AccountStatusException ex) {
-                if (!user.getJsonConfig().has(UserAttributes.TEMPORARY)) {
+                JsonNode userConfig = user.getJsonConfig().get(ssoServerProperties.getApplication().getName());
+                if (!userConfig.has(UserAttributes.TEMPORARY)) {
                     throw ex;
                 }
             }
