@@ -159,10 +159,11 @@
         </div>
     </div>
     <div class="d-grid mb-3">
-        <a href="/" class="btn btn-secondary" type="button" th:text="#{admin.backToMainMenu}">Back to main page</a>
+        <a th:href="@{/}" class="btn btn-secondary" type="button" th:text="#{admin.backToMainMenu}">Back to main page</a>
     </div>
     <script type="text/javascript" th:inline="javascript">
-    const instance = axios.create();
+    const contextPath = /*[[@{/}]]*/ "/";
+    const instance = axios.create({ baseURL: contextPath });
     function getUserInfo() {
         document.getElementById('userInfo').value = '';
         let username = document.getElementById('usernameInput1').value;
@@ -291,7 +292,7 @@
                 return await instance.request(err.response.config);
             } catch (authError) {
                 if (authError.response.status === 401) {
-                    window.location.href = '/';
+                    window.location.href = contextPath;
                     return;
                 } else {
                     throw authError;
