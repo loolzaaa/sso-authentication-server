@@ -53,7 +53,7 @@ public class AccessController {
 
         JWTAuthentication jwtAuthentication = null;
         if (isRefreshTokenValid) {
-            jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
+            jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
             if (jwtAuthentication == null) {
                 isRefreshTokenValid = false;
                 securityContextService.clearSecurityContextHolder(req, resp);
@@ -94,7 +94,7 @@ public class AccessController {
                     );
         }
 
-        JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
+        JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
         if (jwtAuthentication == null) {
             securityContextService.clearSecurityContextHolder(req, resp);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

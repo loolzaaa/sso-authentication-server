@@ -2,7 +2,6 @@ package ru.loolzaaa.authserver.services;
 
 import io.jsonwebtoken.ClaimJwtException;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -11,10 +10,13 @@ import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import ru.loolzaaa.authserver.config.security.JWTUtils;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
+import ru.loolzaaa.authserver.model.User;
 import ru.loolzaaa.authserver.model.UserPrincipal;
+import ru.loolzaaa.authserver.repositories.UserRepository;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -35,18 +38,18 @@ public class JWTService {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final List<RevokeToken> revokedTokens = new CopyOnWriteArrayList<>();
+    private final UserRepository userRepository;
 
-    public String authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp, Authentication authentication) {
-        String fingerprint = req.getParameter("_fingerprint");
-        return authenticateWithJWT(req, resp, authentication, fingerprint);
-    }
+    private final List<RevokeToken> revokedTokens = new CopyOnWriteArrayList<>();
 
     public String authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp,
                                     Authentication authentication, String fingerprint) {
         UserPrincipal user = (UserPrincipal) authentication.getPrincipal();
+        List<String> authorities = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
 
-        JWTAuthentication jwtAuthentication = generateJWTAuthentication(user.getUsername());
+        JWTAuthentication jwtAuthentication = generateJWTAuthentication(user.getUsername(), authorities);
 
         String sql = "INSERT INTO refresh_sessions " +
                 "(user_id, refresh_token, expires_in, fingerprint) " +
@@ -70,22 +73,39 @@ public class JWTService {
         return jwtAuthentication.getAccessToken();
     }
 
+    public String authenticateWithJWT(HttpServletRequest req, Authentication authentication, String applicationName) {
+        UserPrincipal user = (UserPrincipal) authentication.getPrincipal();
+        user = new UserPrincipal(user.getUser(), applicationName);
+        List<String> authorities = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("login", user.getUsername());
+        params.put("authorities", authorities);
+        Date now = new Date();
+        long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl();
+        String accessToken = jwtUtils.buildAccessToken(now, accessExp, params);
+
+        log.info("Authenticate user {}[{}] for application: {}", user.getUsername(), req.getRemoteAddr(), applicationName);
+
+        return accessToken;
+    }
+
     public String checkAccessToken(String token) {
-        try {
-            Jws<Claims> claims = jwtUtils.parserEnforceAccessToken(token);
-            String login = (String) claims.getBody().get("login");
+        Claims claims = parseTokenClaims(token, false);
+        String login = getLoginFromClaims(claims);
+        if (login != null) {
             log.debug("Success check token for {}", login);
             return login;
-        } catch (ClaimJwtException e) {
-            log.debug("Failed check token for {}. Error: {}", e.getClaims().get("login"), e.getMessage());
-            return null;
-        } catch (Exception e) {
-            log.warn("Unknown JWT validation error: {}", e.getMessage());
+        } else {
             return null;
         }
     }
 
-    public JWTAuthentication refreshAccessToken(HttpServletRequest req, HttpServletResponse resp, String refreshToken) {
+    public JWTAuthentication refreshAccessToken(HttpServletRequest req, HttpServletResponse resp,
+                                                String oldAccessToken, String refreshToken) {
+        String currentApplication = req.getParameter("_app");
         String currentFingerprint = req.getParameter("_fingerprint");
 
         String sql = "SELECT login, fingerprint " +
@@ -103,7 +123,20 @@ public class JWTService {
         String username = (String) stringObjectMap.get("login");
         String oldFingerprint = (String) stringObjectMap.get("fingerprint");
 
-        JWTAuthentication jwtAuthentication = generateJWTAuthentication(username);
+        Claims claims = parseTokenClaims(oldAccessToken, true);
+        String login = getLoginFromClaims(claims);
+        if (!username.equals(login)) {
+            log.error("Incorrect login in access token claim. Expected: {}, Actual: {}", username, login);
+            return null;
+        }
+
+        Object authorities = claims.get("authorities");
+        if (authorities == null) {
+            log.warn("There is no authorities in access token for {}", username);
+            return null;
+        }
+
+        JWTAuthentication jwtAuthentication = generateJWTAuthentication(username, authorities);
 
         jdbcTemplate.update("UPDATE refresh_sessions " +
                         "SET refresh_token = ?::uuid, expires_in = ?, fingerprint = ? " +
@@ -119,6 +152,16 @@ public class JWTService {
                 jwtAuthentication.getAccessToken(),
                 jwtAuthentication.getRefreshToken().toString(),
                 isRfid);
+
+        if (currentApplication != null) {
+            User user = userRepository.findByLogin(username).orElse(null);
+            UserPrincipal userPrincipal = new UserPrincipal(user, currentApplication);
+            authorities = userPrincipal.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+
+            jwtAuthentication = generateJWTAuthentication(username, authorities);
+        }
 
         log.debug("Refresh token for user {}[{}]. RFID: {}", username, req.getRemoteAddr(), isRfid);
 
@@ -151,9 +194,10 @@ public class JWTService {
         return revokedTokens.remove(new RevokeToken(token, null));
     }
 
-    private JWTAuthentication generateJWTAuthentication(String username) {
+    private JWTAuthentication generateJWTAuthentication(String username, Object authorities) {
         Map<String, Object> params = new HashMap<>();
         params.put("login", username);
+        params.put("authorities", authorities);
         Date now = new Date();
         long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl();
         long refreshExp = now.getTime() + jwtUtils.getRefreshTokenTtl();
@@ -167,6 +211,29 @@ public class JWTService {
                 .accessExp(accessExp)
                 .refreshExp(refreshExp)
                 .build();
+    }
+
+    private Claims parseTokenClaims(String token, boolean ignoreClaimException) {
+        try {
+            return jwtUtils.parserEnforceAccessToken(token).getBody();
+        } catch (ClaimJwtException e) {
+            if (ignoreClaimException) {
+                return e.getClaims();
+            } else {
+                log.debug("Failed check token for {}. Error: {}", e.getClaims().get("login"), e.getMessage());
+                return null;
+            }
+        }  catch (Exception e) {
+            log.warn("Unknown JWT validation error: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private String getLoginFromClaims(Claims claims) {
+        if (claims == null) {
+            return null;
+        }
+        return claims.get("login", String.class);
     }
 
     @Scheduled(initialDelay = 1, fixedDelay = 60, timeUnit = TimeUnit.MINUTES)

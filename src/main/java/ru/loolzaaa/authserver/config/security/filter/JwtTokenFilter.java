@@ -93,7 +93,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 return;
             }
 
-            JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
+            JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
             if (jwtAuthentication != null) {
                 login = jwtAuthentication.getUsername();
                 logger.debug(String.format("Refresh token for user [%s] validated and updated. Update SecurityContext", login));
