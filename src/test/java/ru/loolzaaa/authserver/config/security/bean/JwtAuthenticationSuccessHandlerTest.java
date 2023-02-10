@@ -41,34 +41,51 @@ class JwtAuthenticationSuccessHandlerTest {
     void setUp() {
         successHandler = new JwtAuthenticationSuccessHandler(jwtService);
 
-        when(jwtService.authenticateWithJWT(req, resp, authentication)).thenReturn(TOKEN);
+        when(jwtService.authenticateWithJWT(eq(req), eq(resp), eq(authentication), anyString())).thenReturn(TOKEN);
+        lenient().when(jwtService.authenticateWithJWT(eq(req), eq(authentication), anyString())).thenReturn(TOKEN);
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"", ".invalid-base64-string-because-of-start-dot"})
     void shouldUseSuperClassMethodWhenContinuePathIsNullOrNotBase64(String path) throws Exception {
+        final String fingerprint = "FP";
         if ("".equals(path)) path = null;
+        when(req.getParameter("_app")).thenReturn(null);
         when(req.getParameter("_continue")).thenReturn(path);
+        when(req.getParameter("_fingerprint")).thenReturn(fingerprint);
 
         successHandler.onAuthenticationSuccess(req, resp, authentication);
+
+        verify(jwtService).authenticateWithJWT(req, resp, authentication, fingerprint);
     }
 
     @ParameterizedTest
     @MethodSource("getInvalidUrls")
     void shouldUseSuperClassMethodWhenContinuePathIsEmptyOrInvalid(String path) throws Exception {
+        final String fingerprint = "FP";
+        when(req.getParameter("_app")).thenReturn("APP");
         when(req.getParameter("_continue")).thenReturn(path);
+        when(req.getParameter("_fingerprint")).thenReturn(fingerprint);
 
         successHandler.onAuthenticationSuccess(req, resp, authentication);
+
+        verify(jwtService).authenticateWithJWT(req, resp, authentication, fingerprint);
     }
 
     @ParameterizedTest
     @MethodSource("getValidUrls")
     void shouldRedirectWhenContinuePathIsValid(String path) throws Exception {
+        final String app = "APP";
+        final String fingerprint = "FP";
+        when(req.getParameter("_app")).thenReturn(app);
         when(req.getParameter("_continue")).thenReturn(path);
+        when(req.getParameter("_fingerprint")).thenReturn(fingerprint);
         ArgumentCaptor<String> redirectURLCapture = ArgumentCaptor.forClass(String.class);
 
         successHandler.onAuthenticationSuccess(req, resp, authentication);
 
+        verify(jwtService).authenticateWithJWT(req, resp, authentication, fingerprint);
+        verify(jwtService).authenticateWithJWT(req, authentication, app);
         verify(resp).sendRedirect(redirectURLCapture.capture());
         String redirectURL = redirectURLCapture.getValue();
         assertThat(redirectURL)

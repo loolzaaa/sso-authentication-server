@@ -3,6 +3,8 @@ package ru.loolzaaa.authserver.config.security.bean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,7 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,9 +47,11 @@ class JwtAuthenticationFailureHandlerTest {
         jwtAuthenticationFailureHandler.setRedirectStrategy(redirectStrategy);
     }
 
-    @Test
-    void shouldRedirectToDefaultUrl() throws IOException, ServletException {
-        when(req.getParameter("_continue")).thenReturn(null);
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1})
+    void shouldRedirectToDefaultUrl(int op) throws IOException, ServletException {
+        when(req.getParameter("_app")).thenReturn(op == 0 ? null : "APP");
+        when(req.getParameter("_continue")).thenReturn(op == 0 ? "CONTRINUE" : null);
         when(req.getSession(anyBoolean())).thenReturn(null);
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
@@ -59,7 +63,9 @@ class JwtAuthenticationFailureHandlerTest {
 
     @Test
     void shouldAppendContinueParamToDefaultUrl() throws IOException, ServletException {
+        final String app = "APP";
         final String continuePath = "CONTINUE";
+        when(req.getParameter("_app")).thenReturn(app);
         when(req.getParameter("_continue")).thenReturn(continuePath);
         when(req.getSession(anyBoolean())).thenReturn(null);
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);

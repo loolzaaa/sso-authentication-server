@@ -36,9 +36,12 @@ public class TemporaryUserCleanerTask implements Callable<Integer> {
         int deleteUserCounter = 0;
         Iterable<User> users = userRepository.findAll();
         for (User u : users) {
+            String pass = null;
+            if (u.getJsonConfig().get(appName).has(UserAttributes.TEMPORARY)) {
+                pass = u.getJsonConfig().get(appName).get(UserAttributes.TEMPORARY).get("pass").asText();
+            }
             UserPrincipal userPrincipal = new UserPrincipal(u);
             if (!userPrincipal.isAccountNonExpired()) {
-                String pass = u.getJsonConfig().get(appName).get(UserAttributes.TEMPORARY).get("pass").asText();
                 try {
                     RequestStatusDTO result = userControlService.deleteUser(u.getLogin(), pass, Locale.US);
                     deleteUserCounter++;
