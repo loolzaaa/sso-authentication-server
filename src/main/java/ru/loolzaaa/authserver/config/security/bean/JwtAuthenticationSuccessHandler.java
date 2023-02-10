@@ -13,6 +13,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @RequiredArgsConstructor
@@ -24,17 +26,23 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
     @Override
     public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse resp, Authentication authentication)
             throws IOException, ServletException {
-        String accessToken = jwtService.authenticateWithJWT(req, resp, authentication);
+        String appParameter = req.getParameter("_app");
+        String continueParameter = req.getParameter("_continue");
+        String fingerprintParameter = req.getParameter("_fingerprint");
 
-        String continuePath = req.getParameter("_continue");
-        if (continuePath == null) {
+        jwtService.authenticateWithJWT(req, resp, authentication, fingerprintParameter);
+
+        if (appParameter == null || continueParameter == null) {
             logger.info("Authentication success. Redirect to SSO main page.");
             super.onAuthenticationSuccess(req, resp, authentication);
         } else {
+            String appName;
             String continueUri = null;
             try {
-                continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
+                appName = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
+                continueUri = new String(Base64.getUrlDecoder().decode(continueParameter));
                 if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
+                    String accessToken = jwtService.authenticateWithJWT(req, authentication, appName);
                     String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                             .queryParam("token", accessToken)
                             .queryParam("serverTime", System.currentTimeMillis())

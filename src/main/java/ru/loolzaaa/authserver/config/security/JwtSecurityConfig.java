@@ -99,7 +99,7 @@ public class JwtSecurityConfig {
                 .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtTokenFilter(ssoServerProperties, ignoredPathsHandler,
                         securityContextService, jwtService, cookieService), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new LoginAccessFilter(ssoServerProperties, cookieService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(new LoginAccessFilter(ssoServerProperties, cookieService, jwtService), UsernamePasswordAuthenticationFilter.class);
         log.debug("Jwt [all API except Basic authentication] configuration completed");
         return http.build();
     }

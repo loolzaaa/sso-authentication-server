@@ -22,9 +22,10 @@ public class JwtAuthenticationFailureHandler extends SimpleUrlAuthenticationFail
             throws IOException, ServletException {
         String defaultFailureUrl = ssoServerProperties.getLoginPage() + "?credentialsError=" + ex.getMessage();
 
+        String appParameter = req.getParameter("_app");
         String continuePath = req.getParameter("_continue");
-        if (continuePath != null) {
-            defaultFailureUrl += "&continue=" + continuePath;
+        if (appParameter != null && continuePath != null) {
+            defaultFailureUrl += "&app=" + appParameter + "&continue=" + continuePath;
         }
         logger.info("Authentication failure. Message: " + ex.getMessage());
         logger.info("Authentication failure. Redirect to: " + continuePath);
