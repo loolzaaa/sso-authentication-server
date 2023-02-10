@@ -157,14 +157,19 @@
         if (_csrf !== undefined && _csrf !== null) document.getElementsByName('_csrf').forEach(el => el.value = _csrf[1]);
         return response;
     }, async function (err) {
-        if (err?.response?.status === 403 && err.response.headers.fp_request !== undefined) {
+        if (err?.response?.status === 403) {
+            let headers = Object.entries(err.response.headers);
+            let xSsoFpHeader = headers.find(el => el[0].toUpperCase() === 'X-SSO-FP');
             const _fp = await getFingerprint();
 
             const params = new URLSearchParams();
             params.append('_fingerprint', _fp);
+            if (!xSsoFpHeader) {
+                throw new Error('Forbidden but without fingerprint request url');
+            }
 
             try {
-                const refreshResponse = await instance.post(err.response.headers.fp_request, params);
+                const refreshResponse = await instance.post(xSsoFpHeader[1], params);
                 return await instance.request(err.response.config);
             } catch (authError) {
                 if (authError.response.status === 401) {

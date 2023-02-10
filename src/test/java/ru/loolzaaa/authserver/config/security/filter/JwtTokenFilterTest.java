@@ -178,7 +178,7 @@ class JwtTokenFilterTest {
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
 
         verify(resp).setStatus(HttpServletResponse.SC_FORBIDDEN);
-        verify(resp).setHeader(eq("fp_request"), fingerprintHeaderCaptor.capture());
+        verify(resp).setHeader(eq("X-SSO-FP"), fingerprintHeaderCaptor.capture());
         assertThat(fingerprintHeaderCaptor.getValue()).isEqualTo("http://some-site.com:8080" + CONTEXT_PATH + "/api/refresh/ajax");
         verifyNoInteractions(filterChain);
     }

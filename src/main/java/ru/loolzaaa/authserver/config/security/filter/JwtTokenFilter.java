@@ -73,7 +73,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     logger.debug("Ajax request detected. Refresh via Auth Server API");
 
                     String fingerprintRequestUrl = getServerUrl(req) + "/api/refresh/ajax";
-                    resp.setHeader("fp_request", fingerprintRequestUrl);
+                    resp.setHeader("X-SSO-FP", fingerprintRequestUrl);
                     resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 } else {
                     logger.debug("Browser request detected. Refresh via redirect to " + ssoServerProperties.getRefreshUri());
