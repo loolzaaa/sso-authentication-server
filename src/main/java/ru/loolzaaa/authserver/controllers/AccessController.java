@@ -44,8 +44,9 @@ public class AccessController {
     String refreshToken(HttpServletRequest req, HttpServletResponse resp) {
         boolean isRefreshTokenValid = true;
 
+        String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), req.getCookies());
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
-        if (refreshToken == null) {
+        if (accessToken == null || refreshToken == null) {
             isRefreshTokenValid = false;
             securityContextService.clearSecurityContextHolder(req, resp);
         }
@@ -80,8 +81,9 @@ public class AccessController {
 
     @PostMapping("/refresh/ajax")
     ResponseEntity<RequestStatusDTO> refreshTokenByAjax(HttpServletRequest req, HttpServletResponse resp) {
+        String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), req.getCookies());
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
-        if (refreshToken == null) {
+        if (accessToken == null || refreshToken == null) {
             securityContextService.clearSecurityContextHolder(req, resp);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(RequestStatusDTO.builder()
