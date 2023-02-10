@@ -123,6 +123,7 @@ public class AccessController {
         String login = req.getParameter("login");
         String password = req.getParameter("password");
         String from = req.getParameter("from");
+        String app = req.getParameter("app");
 
         if (!KEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
 
@@ -141,6 +142,14 @@ public class AccessController {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
+
+            try {
+                if (app != null) {
+                    accessToken = jwtService.authenticateWithJWT(req, authentication, app);
+                }
+            } catch (Exception e) {
+                throw new RequestErrorException(e.getMessage());
+            }
 
             String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                     .queryParam("token", accessToken)
