@@ -2,9 +2,11 @@ package ru.loolzaaa.authserver.config.security.filter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -27,6 +29,8 @@ import java.util.Base64;
 public class LoginAccessFilter extends GenericFilterBean {
 
     private final SsoServerProperties ssoServerProperties;
+
+    private final AccessDeniedHandler accessDeniedHandler;
 
     private final CookieService cookieService;
 
@@ -61,13 +65,18 @@ public class LoginAccessFilter extends GenericFilterBean {
                     logger.debug("Try to redirect to " + continueUri);
                     if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
                         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                        accessToken = jwtService.authenticateWithJWT(servletRequest, authentication, appName);
-                        String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
-                                .queryParam("token", accessToken)
-                                .queryParam("serverTime", System.currentTimeMillis())
-                                .toUriString();
-                        servletResponse.sendRedirect(redirectURL);
-                        return;
+                        try {
+                            accessToken = jwtService.authenticateWithJWT(servletRequest, authentication, appName);
+                            String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+                                    .queryParam("token", accessToken)
+                                    .queryParam("serverTime", System.currentTimeMillis())
+                                    .toUriString();
+                            servletResponse.sendRedirect(redirectURL);
+                            return;
+                        } catch (IllegalArgumentException e) {
+                            accessDeniedHandler.handle(servletRequest, servletResponse, new AccessDeniedException(e.getLocalizedMessage()));
+                            return;
+                        }
                     } else {
                         logger.warn("Continue parameter is not absolute url or empty: " + continueParameter);
                         String encodedRedirectURL = servletResponse.encodeRedirectURL(servletRequest.getContextPath() + "/");
