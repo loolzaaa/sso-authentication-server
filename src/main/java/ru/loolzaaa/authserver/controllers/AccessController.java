@@ -53,10 +53,14 @@ public class AccessController {
 
         JWTAuthentication jwtAuthentication = null;
         if (isRefreshTokenValid) {
-            jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
-            if (jwtAuthentication == null) {
-                isRefreshTokenValid = false;
-                securityContextService.clearSecurityContextHolder(req, resp);
+            try {
+                jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
+                if (jwtAuthentication == null) {
+                    isRefreshTokenValid = false;
+                    securityContextService.clearSecurityContextHolder(req, resp);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new AccessDeniedException(e.getLocalizedMessage());
             }
         }
 
@@ -94,21 +98,25 @@ public class AccessController {
                     );
         }
 
-        JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
-        if (jwtAuthentication == null) {
-            securityContextService.clearSecurityContextHolder(req, resp);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(RequestStatusDTO.builder()
-                            .status(RequestStatus.ERROR)
-                            .statusCode(HttpStatus.UNAUTHORIZED)
-                            .text("Refresh token is invalid")
-                            .build()
-                    );
-        }
+        try {
+            JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
+            if (jwtAuthentication == null) {
+                securityContextService.clearSecurityContextHolder(req, resp);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(RequestStatusDTO.builder()
+                                .status(RequestStatus.ERROR)
+                                .statusCode(HttpStatus.UNAUTHORIZED)
+                                .text("Refresh token is invalid")
+                                .build()
+                        );
+            }
 
-        String body = String.format("{\"token\":\"%s\",\"serverTime\":%d}",
-                jwtAuthentication.getAccessToken(), System.currentTimeMillis());
-        return ResponseEntity.ok().body(RequestStatusDTO.ok(body));
+            String body = String.format("{\"token\":\"%s\",\"serverTime\":%d}",
+                    jwtAuthentication.getAccessToken(), System.currentTimeMillis());
+            return ResponseEntity.ok().body(RequestStatusDTO.ok(body));
+        } catch (IllegalArgumentException e) {
+            throw new AccessDeniedException(e.getLocalizedMessage());
+        }
     }
 
     @PostMapping("/fast/rfid")

@@ -163,7 +163,8 @@ public class JWTService {
             jwtAuthentication = generateJWTAuthentication(username, authorities);
         }
 
-        log.debug("Refresh token for user {}[{}]. RFID: {}", username, req.getRemoteAddr(), isRfid);
+        log.debug("Refresh token for user {}[{}]. RFID: {}. App: {}",
+                username, req.getRemoteAddr(), isRfid, currentApplication);
 
         return jwtAuthentication;
     }
