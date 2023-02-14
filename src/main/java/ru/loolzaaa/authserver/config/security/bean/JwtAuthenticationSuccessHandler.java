@@ -1,6 +1,7 @@
 package ru.loolzaaa.authserver.config.security.bean;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.util.UrlUtils;
@@ -42,13 +43,17 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
                 appName = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
                 continueUri = new String(Base64.getUrlDecoder().decode(continueParameter));
                 if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
-                    String accessToken = jwtService.authenticateWithJWT(req, authentication, appName);
-                    String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
-                            .queryParam("token", accessToken)
-                            .queryParam("serverTime", System.currentTimeMillis())
-                            .toUriString();
-                    logger.info("Authentication success. Redirect to: " + continueUri);
-                    resp.sendRedirect(redirectURL);
+                    try {
+                        String accessToken = jwtService.authenticateWithJWT(req, authentication, appName);
+                        String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+                                .queryParam("token", accessToken)
+                                .queryParam("serverTime", System.currentTimeMillis())
+                                .toUriString();
+                        logger.info("Authentication success. Redirect to: " + continueUri);
+                        resp.sendRedirect(redirectURL);
+                    } catch (IllegalArgumentException e) {
+                        throw new InsufficientAuthenticationException(e.getLocalizedMessage());
+                    }
                 } else {
                     logger.warn("Authentication success. Redirect to SSO main page, " +
                             "because of continue parameter is invalid Base64 scheme: " + continueUri);
