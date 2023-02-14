@@ -10,6 +10,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @RequiredArgsConstructor
 @Component
@@ -20,7 +22,8 @@ public class JwtAuthenticationFailureHandler extends SimpleUrlAuthenticationFail
     @Override
     public void onAuthenticationFailure(HttpServletRequest req, HttpServletResponse resp, AuthenticationException ex)
             throws IOException, ServletException {
-        String defaultFailureUrl = ssoServerProperties.getLoginPage() + "?credentialsError=" + ex.getMessage();
+        String exMessage = URLEncoder.encode(ex.getLocalizedMessage(), StandardCharsets.UTF_8);
+        String defaultFailureUrl = ssoServerProperties.getLoginPage() + "?credentialsError=" + exMessage;
 
         String appParameter = req.getParameter("_app");
         String continuePath = req.getParameter("_continue");
