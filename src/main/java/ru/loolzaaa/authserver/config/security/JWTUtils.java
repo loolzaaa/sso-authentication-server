@@ -5,8 +5,10 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.TextCodec;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.Date;
 import java.util.Map;
 
@@ -15,8 +17,10 @@ public class JWTUtils {
 
     private static final String accessSecretKey = "dUYzUFY4UVN6MkpXenpKbThzaFhmd0U2eElOdFlzZmQzZGN4Sk8xTTA5RDBWR014RElpTElkNndtTmYyaDRkMQ==";
 
-    private static final int ACCESS_TOKEN_TTL = 5 * 6 * 1000; // 5 Minutes (30 sec)
-    private static final int REFRESH_TOKEN_TTL = 10 * 60 * 60 * 1000; // 10 Hours
+    @Value("${sso.server.jwt.access-ttl:30s}")
+    private Duration accessTokenTtl;
+    @Value("${sso.server.jwt.refresh-ttl:10h}")
+    private Duration refreshTokenTtl;
 
     public String buildAccessToken(Date issuedAt, long exp, Map<String, Object> params) {
         return Jwts.builder()
@@ -38,11 +42,11 @@ public class JWTUtils {
         return TextCodec.BASE64.decode(key);
     }
 
-    public int getAccessTokenTtl() {
-        return ACCESS_TOKEN_TTL;
+    public Duration getAccessTokenTtl() {
+        return accessTokenTtl;
     }
 
-    public int getRefreshTokenTtl() {
-        return REFRESH_TOKEN_TTL;
+    public Duration getRefreshTokenTtl() {
+        return refreshTokenTtl;
     }
 }

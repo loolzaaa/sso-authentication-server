@@ -49,7 +49,7 @@ class JwtSecurityRealServerTests {
         params.put("login", "user");
         params.put("authorities", List.of("passport"));
         Date now = new Date();
-        long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl();
+        long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl().toMillis();
 
         accessToken = jwtUtils.buildAccessToken(now, accessExp, params);
         refreshToken = UUID.randomUUID();

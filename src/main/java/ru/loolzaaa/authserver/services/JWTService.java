@@ -84,7 +84,7 @@ public class JWTService {
         params.put("login", user.getUsername());
         params.put("authorities", authorities);
         Date now = new Date();
-        long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl();
+        long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl().toMillis();
         String accessToken = jwtUtils.buildAccessToken(now, accessExp, params);
 
         log.info("Authenticate user {}[{}] for application: {}", user.getUsername(), req.getRemoteAddr(), applicationName);
@@ -199,8 +199,8 @@ public class JWTService {
         params.put("login", username);
         params.put("authorities", authorities);
         Date now = new Date();
-        long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl();
-        long refreshExp = now.getTime() + jwtUtils.getRefreshTokenTtl();
+        long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl().toMillis();
+        long refreshExp = now.getTime() + jwtUtils.getRefreshTokenTtl().toMillis();
         String accessToken = jwtUtils.buildAccessToken(now, accessExp, params);
         UUID refreshToken = UUID.randomUUID();
 
