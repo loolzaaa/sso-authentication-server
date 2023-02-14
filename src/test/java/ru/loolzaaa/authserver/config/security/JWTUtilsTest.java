@@ -2,43 +2,39 @@ package ru.loolzaaa.authserver.config.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class JWTUtilsTest {
 
     JWTUtils jwtUtils;
 
-    @BeforeEach
-    void setUp() {
-        jwtUtils = new JWTUtils();
+    @ParameterizedTest
+    @ValueSource(strings = { "", "classpath:keystore", "classpath:keystore/" })
+    void shouldCorrectWorkWithPathKeys(String keyPath) throws Exception {
+        jwtUtils = new JWTUtils(keyPath);
+        final String claimName = "TEST";
+        final String claimValue = "CLAIM";
+        Map<String, Object> testClaim = Map.of(claimName, claimValue);
+
+        String token = jwtUtils.buildAccessToken(new Date(), new Date().getTime(), testClaim);
+        System.err.println(token);
+        Jws<Claims> claimsJws = jwtUtils.parserEnforceAccessToken(token);
+
+        assertNotNull(claimsJws);
+        assertNotNull(claimsJws.getBody());
+        assertEquals(claimValue, claimsJws.getBody().get(claimName));
     }
 
     @Test
-    void test() throws Exception {
-        Date now = new Date();
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        generator.initialize(2048);
-        KeyPair pair = generator.generateKeyPair();
-        String compact = Jwts.builder()
-                .setIssuedAt(now)
-                .setExpiration(now)
-                .addClaims(Map.of())
-                .signWith(SignatureAlgorithm.RS256, pair.getPrivate())
-                .compact();
-        System.out.println(compact);
-
-        Jws<Claims> claimsJws = Jwts.parser()
-                .setAllowedClockSkewSeconds(30)
-                .setSigningKey(pair.getPublic())
-                .parseClaimsJws(compact);
-        System.out.println(claimsJws);
+    void shouldThrowExceptionSomeKeyFileNotFound() throws Exception {
+        assertThrows(IOException.class, () -> new JWTUtils("ERR.KEY"));
     }
 }
