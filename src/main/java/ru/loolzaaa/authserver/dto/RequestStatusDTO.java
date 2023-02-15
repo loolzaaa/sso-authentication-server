@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.HttpStatus;
 
-import static java.lang.String.*;
-
 @Getter
 @Setter
 @Builder
@@ -15,19 +13,19 @@ public class RequestStatusDTO {
     private HttpStatus statusCode;
     private String text;
 
-    public static RequestStatusDTO ok(String text, Object... objects) {
+    public static RequestStatusDTO ok(String text) {
         return RequestStatusDTO.builder()
                 .status(RequestStatus.OK)
                 .statusCode(HttpStatus.OK)
-                .text(format(text, objects))
+                .text(text)
                 .build();
     }
 
-    public static RequestStatusDTO badRequest(String text, Object... objects) {
+    public static RequestStatusDTO badRequest(String text) {
         return RequestStatusDTO.builder()
                 .status(RequestStatus.ERROR)
                 .statusCode(HttpStatus.BAD_REQUEST)
-                .text(format(text, objects))
+                .text(text)
                 .build();
     }
 }

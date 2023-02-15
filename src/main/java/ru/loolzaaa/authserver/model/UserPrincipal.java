@@ -48,19 +48,20 @@ public class UserPrincipal implements UserDetails {
                 if (authNode.has(UserAttributes.LOCK)) {
                     this.accountNonLocked = !authNode.get(UserAttributes.LOCK).asBoolean();
                 }
+
+                //check for date access for temporary user
+                if (authNode.has(UserAttributes.TEMPORARY)) {
+                    ((ObjectNode) authNode.get(UserAttributes.TEMPORARY)).remove("pass");
+                    LocalDate dateFrom = LocalDate.parse(authNode.get(UserAttributes.TEMPORARY).get("dateFrom").asText());
+                    LocalDate dateTo = LocalDate.parse(authNode.get(UserAttributes.TEMPORARY).get("dateTo").asText());
+                    if (dateFrom.isAfter(LocalDate.now()) || dateTo.isBefore(LocalDate.now())) {
+                        log.info("User [{}] temporary account is expired", user.getLogin());
+                        this.accountNonExpired = false;
+                    }
+                }
             } else {
                 log.info("User [{}] is locked", user.getLogin());
                 this.accountNonLocked = false;
-            }
-
-            //check for date access for temporary user
-            if (userConf.has(UserAttributes.TEMPORARY)) {
-                LocalDate dateFrom = LocalDate.parse(userConf.get(UserAttributes.TEMPORARY).get("dateFrom").asText());
-                LocalDate dateTo = LocalDate.parse(userConf.get(UserAttributes.TEMPORARY).get("dateTo").asText());
-                if (dateFrom.isAfter(LocalDate.now()) || dateTo.isBefore(LocalDate.now())) {
-                    log.info("User [{}] temporary account is expired", user.getLogin());
-                    this.accountNonExpired = false;
-                }
             }
         } else {
             log.warn("User [{}] does not contain config", user.getLogin());
@@ -85,6 +86,10 @@ public class UserPrincipal implements UserDetails {
                         appConfig.get(UserAttributes.PRIVILEGES).forEach(privilege -> this.authorities.add(new SimpleGrantedAuthority(privilege.asText())));
                     }
                     ((ObjectNode) appConfig).remove(List.of(UserAttributes.ROLES, UserAttributes.PRIVILEGES));
+                    if (userConf.get(applicationName).has(UserAttributes.TEMPORARY)) {
+                        JsonNode temporaryNode = userConf.get(applicationName).get(UserAttributes.TEMPORARY);
+                        ((ObjectNode) appConfig).set(UserAttributes.TEMPORARY, temporaryNode);
+                    }
                     user.setConfig(new UserConfigWrapper(appConfig));
                 } else throw new IllegalArgumentException(String.format("There is no application [%s] for user [%s]", app, this.user.getLogin()));
             }

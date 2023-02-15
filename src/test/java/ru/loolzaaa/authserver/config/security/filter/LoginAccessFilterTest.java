@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.services.CookieService;
+import ru.loolzaaa.authserver.services.JWTService;
 
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
@@ -23,7 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Base64;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +39,8 @@ class LoginAccessFilterTest {
 
     @Mock
     CookieService cookieService;
+    @Mock
+    JWTService jwtService;
 
     @Mock
     Authentication authentication;
@@ -53,7 +56,7 @@ class LoginAccessFilterTest {
         SecurityContextHolder.clearContext();
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        loginAccessFilter = new LoginAccessFilter(ssoServerProperties, cookieService);
+        loginAccessFilter = new LoginAccessFilter(ssoServerProperties, cookieService, jwtService);
     }
 
     @ParameterizedTest
@@ -99,12 +102,14 @@ class LoginAccessFilterTest {
         verifyNoInteractions(servletResponse);
     }
 
-    @Test
-    void shouldContinueFilteringIfNotAuthenticatedAndRequestPageIsLoginAndContinuePathIsNull() throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1})
+    void shouldContinueFilteringIfNotAuthenticatedAndRequestPageIsLoginAndContinuePathIsNull(int op) throws Exception {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
-        when(servletRequest.getParameter("continue")).thenReturn(null);
+        when(servletRequest.getParameter("app")).thenReturn(op == 0 ? null : "APP");
+        when(servletRequest.getParameter("continue")).thenReturn(op == 0 ? "CONTINUE" : null);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -116,11 +121,13 @@ class LoginAccessFilterTest {
 
     @Test
     void shouldForwardToLoginIfNotAuthenticatedAndRequestPageIsLoginAndContinuePathIsNotNullAndValid() throws Exception {
+        final String APP = "APP";
         final String CONTINUE_PATH = "aHR0cDovL2V4YW1wbGUuY29tLy90ZXN0L2FwaQ==";
         ArgumentCaptor<String> forwardStringCaptor = ArgumentCaptor.forClass(String.class);
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(APP);
         when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
         RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
         when(servletRequest.getRequestDispatcher(anyString())).thenReturn(requestDispatcher);
@@ -137,10 +144,12 @@ class LoginAccessFilterTest {
 
     @Test
     void shouldContinueFilteringIfNotAuthenticatedAndRequestPageIsLoginAndContinuePathIsNotNullAndInvalidScheme() throws Exception {
+        final String APP = "APP";
         final String CONTINUE_PATH = "abcd+efgh";
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(APP);
         when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
@@ -153,10 +162,12 @@ class LoginAccessFilterTest {
 
     @Test
     void shouldContinueFilteringIfNotAuthenticatedAndRequestPageIsLoginAndContinuePathIsNotNullAndInvalidAbsolute() throws Exception {
+        final String APP = "APP";
         final String CONTINUE_PATH = "L3Rlc3QvYXBp";
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(APP);
         when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
@@ -174,10 +185,12 @@ class LoginAccessFilterTest {
             "abcd+efgh, token",
             "L3Rlc3QvYXBp, token",
     }, nullValues={"null"})
-    void shouldSetStatus307AndRedirectToRootIfAuthenticatedAndRequestToLoginAnd(String continueParam, String token) throws Exception {
+    void should307AndRedirectToRootIfAuthenticatedAndLoginAndParamsInvalid(String continueParam, String token) throws Exception {
+        final String APP = "APP";
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(APP);
         when(servletRequest.getParameter("continue")).thenReturn(continueParam);
         when(servletResponse.encodeRedirectURL(anyString())).thenReturn("/");
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(token);
@@ -194,20 +207,25 @@ class LoginAccessFilterTest {
 
     @Test
     void shouldRedirectToApplicationWithTokenAndServerTimeIfAuthenticatedAndRequestToLoginAndContinuePathValid() throws Exception {
+        final String APP = "APP";
         final String TOKEN = "TOKEN";
+        final String TOKEN2 = "TOKEN2";
         final String ABSOLUTE_URL = "http://example.com/test/api";
         final String ENCODED_URL =  Base64.getUrlEncoder().encodeToString(ABSOLUTE_URL.getBytes());
         when(authentication.isAuthenticated()).thenReturn(true);
         when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(APP);
         when(servletRequest.getParameter("continue")).thenReturn(ENCODED_URL);
         when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(TOKEN);
+        when(jwtService.authenticateWithJWT(eq(servletRequest), eq(authentication), anyString())).thenReturn(TOKEN2);
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
+        verify(jwtService).authenticateWithJWT(servletRequest, authentication, APP);
         verify(servletResponse).sendRedirect(url.capture());
-        assertThat(url.getValue()).startsWith(ABSOLUTE_URL + "?token=" + TOKEN + "&serverTime=");
+        assertThat(url.getValue()).startsWith(ABSOLUTE_URL + "?token=" + TOKEN2 + "&serverTime=");
         verifyNoInteractions(chain);
     }
 }

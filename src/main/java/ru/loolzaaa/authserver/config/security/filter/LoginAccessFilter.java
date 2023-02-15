@@ -2,9 +2,11 @@ package ru.loolzaaa.authserver.config.security.filter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -13,11 +15,14 @@ import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.services.CookieService;
+import ru.loolzaaa.authserver.services.JWTService;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @RequiredArgsConstructor
@@ -25,7 +30,11 @@ public class LoginAccessFilter extends GenericFilterBean {
 
     private final SsoServerProperties ssoServerProperties;
 
+    private final AccessDeniedHandler accessDeniedHandler;
+
     private final CookieService cookieService;
+
+    private final JWTService jwtService;
 
     @Override
     protected void initFilterBean() {
@@ -43,21 +52,31 @@ public class LoginAccessFilter extends GenericFilterBean {
         if (isAuthenticated() && ssoServerProperties.getLoginPage().equals(uriWithoutContextPath)) {
             logger.debug("Already authenticated user with login path detected");
 
+            String appParameter = req.getParameter("app");
             String continueParameter = req.getParameter("continue");
             String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), servletRequest.getCookies());
-            if (continueParameter != null && accessToken != null) {
+            if (appParameter != null && continueParameter != null && accessToken != null) {
                 logger.debug("Suppose application doesn't have access token, but server has");
+                String appName;
                 String continueUri;
                 try {
+                    appName = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
                     continueUri = new String(Base64.getUrlDecoder().decode(continueParameter));
                     logger.debug("Try to redirect to " + continueUri);
                     if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
-                        String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
-                                .queryParam("token", accessToken)
-                                .queryParam("serverTime", System.currentTimeMillis())
-                                .toUriString();
-                        servletResponse.sendRedirect(redirectURL);
-                        return;
+                        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                        try {
+                            accessToken = jwtService.authenticateWithJWT(servletRequest, authentication, appName);
+                            String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+                                    .queryParam("token", accessToken)
+                                    .queryParam("serverTime", System.currentTimeMillis())
+                                    .toUriString();
+                            servletResponse.sendRedirect(redirectURL);
+                            return;
+                        } catch (IllegalArgumentException e) {
+                            accessDeniedHandler.handle(servletRequest, servletResponse, new AccessDeniedException(e.getLocalizedMessage()));
+                            return;
+                        }
                     } else {
                         logger.warn("Continue parameter is not absolute url or empty: " + continueParameter);
                         String encodedRedirectURL = servletResponse.encodeRedirectURL(servletRequest.getContextPath() + "/");
@@ -80,8 +99,9 @@ public class LoginAccessFilter extends GenericFilterBean {
                 servletResponse.setHeader("Location", encodedRedirectURL);
             }
         } else if (!isAuthenticated() && ssoServerProperties.getLoginPage().equals(uriWithoutContextPath)) {
+            String appParameter = req.getParameter("app");
             String continueParameter = req.getParameter("continue");
-            if (continueParameter != null) {
+            if (appParameter != null && continueParameter != null) {
                 String continueUri;
                 try {
                     continueUri = new String(Base64.getUrlDecoder().decode(continueParameter));

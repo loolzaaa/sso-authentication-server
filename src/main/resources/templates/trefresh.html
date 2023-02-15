@@ -17,6 +17,7 @@
 <form action="#" id="refresh_form" method="post" th:action="@{/api/refresh}">
     <input id="fp_input" name="_fingerprint" type="hidden" value="FP_PLACEHOLDER">
     <input th:if="${param.continue != null}" name="_continue" type="hidden" th:value="${param.continue}">
+    <input th:if="${param.app != null}" name="_app" type="hidden" th:value="${param.app}">
 </form>
 <script type="text/javascript">
      let refresh = function() {

@@ -44,18 +44,23 @@ public class AccessController {
     String refreshToken(HttpServletRequest req, HttpServletResponse resp) {
         boolean isRefreshTokenValid = true;
 
+        String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), req.getCookies());
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
-        if (refreshToken == null) {
+        if (accessToken == null || refreshToken == null) {
             isRefreshTokenValid = false;
             securityContextService.clearSecurityContextHolder(req, resp);
         }
 
         JWTAuthentication jwtAuthentication = null;
         if (isRefreshTokenValid) {
-            jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
-            if (jwtAuthentication == null) {
-                isRefreshTokenValid = false;
-                securityContextService.clearSecurityContextHolder(req, resp);
+            try {
+                jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
+                if (jwtAuthentication == null) {
+                    isRefreshTokenValid = false;
+                    securityContextService.clearSecurityContextHolder(req, resp);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new AccessDeniedException(e.getLocalizedMessage());
             }
         }
 
@@ -80,8 +85,9 @@ public class AccessController {
 
     @PostMapping("/refresh/ajax")
     ResponseEntity<RequestStatusDTO> refreshTokenByAjax(HttpServletRequest req, HttpServletResponse resp) {
+        String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), req.getCookies());
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
-        if (refreshToken == null) {
+        if (accessToken == null || refreshToken == null) {
             securityContextService.clearSecurityContextHolder(req, resp);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(RequestStatusDTO.builder()
@@ -92,20 +98,25 @@ public class AccessController {
                     );
         }
 
-        JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, refreshToken);
-        if (jwtAuthentication == null) {
-            securityContextService.clearSecurityContextHolder(req, resp);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(RequestStatusDTO.builder()
-                            .status(RequestStatus.ERROR)
-                            .statusCode(HttpStatus.UNAUTHORIZED)
-                            .text("Refresh token is invalid")
-                            .build()
-                    );
-        }
+        try {
+            JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
+            if (jwtAuthentication == null) {
+                securityContextService.clearSecurityContextHolder(req, resp);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(RequestStatusDTO.builder()
+                                .status(RequestStatus.ERROR)
+                                .statusCode(HttpStatus.UNAUTHORIZED)
+                                .text("Refresh token is invalid")
+                                .build()
+                        );
+            }
 
-        return ResponseEntity.ok().body(RequestStatusDTO.ok("{\"token\":\"%s\",\"serverTime\":%d}",
-                jwtAuthentication.getAccessToken(), System.currentTimeMillis()));
+            String body = String.format("{\"token\":\"%s\",\"serverTime\":%d}",
+                    jwtAuthentication.getAccessToken(), System.currentTimeMillis());
+            return ResponseEntity.ok().body(RequestStatusDTO.ok(body));
+        } catch (IllegalArgumentException e) {
+            throw new AccessDeniedException(e.getLocalizedMessage());
+        }
     }
 
     @PostMapping("/fast/rfid")
@@ -120,6 +131,7 @@ public class AccessController {
         String login = req.getParameter("login");
         String password = req.getParameter("password");
         String from = req.getParameter("from");
+        String app = req.getParameter("app");
 
         if (!KEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
 
@@ -138,6 +150,14 @@ public class AccessController {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
+
+            try {
+                if (app != null) {
+                    accessToken = jwtService.authenticateWithJWT(req, authentication, app);
+                }
+            } catch (Exception e) {
+                throw new RequestErrorException(e.getMessage());
+            }
 
             String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
                     .queryParam("token", accessToken)

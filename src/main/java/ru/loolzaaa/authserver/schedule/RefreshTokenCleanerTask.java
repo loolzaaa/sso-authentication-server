@@ -22,11 +22,11 @@ public class RefreshTokenCleanerTask {
 
     @Scheduled(initialDelay = 1, fixedDelay = 10, timeUnit = TimeUnit.MINUTES)
     public void clean() {
-        int refreshTokenTtl = jwtUtils.getRefreshTokenTtl() / 1000 / 60 / 60;
+        long refreshTokenTtl = jwtUtils.getRefreshTokenTtl().toHours();
+        if (refreshTokenTtl < 1) {
+            throw new IllegalArgumentException("Incorrect refresh token ttl: " + jwtUtils.getRefreshTokenTtl());
+        }
         try {
-            if (refreshTokenTtl < 1) {
-                throw new IllegalArgumentException("Incorrect refresh token ttl: " + jwtUtils.getRefreshTokenTtl());
-            }
             int i = jdbcTemplate.update(String.format("DELETE FROM refresh_sessions WHERE expires_in < (now() - interval '%d hour')", refreshTokenTtl));
             if (i > 0) {
                 log.info("Refresh tokens remove: [{}]", i);

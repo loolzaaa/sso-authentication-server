@@ -3,7 +3,7 @@
 
 # Single Sign-On authentication server
 
-This Single Sign-On (SSO) is server based on Spring Security. The main authentication routine happens through a standard login form. Further authentication occurs through Json Web Tokens (JWT) tokens, which are checked through a custom filter. In addition, there are a number of APIs that are accessed through Basic authentication with predefined users in the application configuration. All other components of the system are based on standard Spring Security beans with minor changes.
+This Single Sign-On (SSO) is server based on Spring Security. The main authentication routine happens through a standard login form. Further authentication occurs through Json Web Tokens (JWT), which are checked through a custom filter. In addition, there are a number of APIs that are accessed through Basic authentication with predefined users in the application configuration. All other components of the system are based on standard Spring Security beans with minor changes.
 
 # Server Startup
 
@@ -53,9 +53,9 @@ Run application with `spring-boot-maven-plugin` and `dev`, and `postgres` profil
 
 **OR** you can package application to Uber JAR and run it:
 ```shell
-> ./mvnw clean install -DskipTests
+> ./mvnw clean package -DskipTests
 > cd ./target/
-> java "-Dspring.profiles.active=dev,postgres" -jar .\auth-server-0.2.0.jar
+> java "-Dspring.profiles.active=dev,postgres" -jar ./auth-server-0.4.0.jar
 ```
 
 # Server Configuration
@@ -94,6 +94,11 @@ sso.server.refresh-uri=/trefresh
 # SameSite parameter for token cookies
 # Default: Lax
 sso.server.cookie.same-site=Lax
+
+# JWT TTL parameter
+# Default: 30s for access, 10h for refresh
+sso.server.jwt.access-ttl=5m
+sso.server.jwt.refresh-ttl=10h
 
 # Predefined users for Basic authentication
 # Can be used to better restrict access 
@@ -134,7 +139,7 @@ The user configuration schema can be viewed on the [wiki page](https://github.co
 ## Application profiles
 
 The application must be launched with one of two profiles: `dev`, `prod`.  
-Optional profile: `noop`.
+Optional profile: `noop`, `ssl`.
 
 ### Developer mode
 

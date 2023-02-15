@@ -6,22 +6,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.MessageSource;
 import org.springframework.http.*;
+import org.springframework.test.context.TestPropertySource;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.JWTUtils;
-import ru.loolzaaa.authserver.config.security.property.BasicUsersProperties;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.services.JWTService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestProfiles
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = "server.servlet.contextPath=/")
 class JwtSecurityRealServerTests {
 
     @LocalServerPort
@@ -31,13 +32,13 @@ class JwtSecurityRealServerTests {
     TestRestTemplate testRestTemplate;
 
     @Autowired
-    BasicUsersProperties basicUsersProperties;
-
-    @Autowired
     SsoServerProperties ssoServerProperties;
 
     @Autowired
     JWTUtils jwtUtils;
+
+    @Autowired
+    MessageSource messageSource;
 
     String accessToken;
     UUID refreshToken;
@@ -46,8 +47,9 @@ class JwtSecurityRealServerTests {
     public void setup() {
         Map<String, Object> params = new HashMap<>();
         params.put("login", "user");
+        params.put("authorities", List.of("passport"));
         Date now = new Date();
-        long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl();
+        long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl().toMillis();
 
         accessToken = jwtUtils.buildAccessToken(now, accessExp, params);
         refreshToken = UUID.randomUUID();
@@ -59,6 +61,7 @@ class JwtSecurityRealServerTests {
     void shouldRedirectFromLoginToApplicationPageIfServerHasValidAccessToken() {
         final String SSO_URL = String.format("http://localhost:%d%s", localPort, ssoServerProperties.getLoginPage());
         final String APP_URL = "http://example.com";
+        final String APP = "passport";
         final String CONTINUE_PARAM = Base64.getUrlEncoder().encodeToString(APP_URL.getBytes(StandardCharsets.UTF_8));
 
         HttpHeaders headers = new HttpHeaders();
@@ -66,7 +69,7 @@ class JwtSecurityRealServerTests {
 
         HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
         ResponseEntity<String> response = testRestTemplate.exchange(
-                String.format("%s?continue=%s", SSO_URL, CONTINUE_PARAM),
+                String.format("%s?app=%s&continue=%s", SSO_URL, APP, CONTINUE_PARAM),
                 HttpMethod.GET,
                 httpEntity,
                 String.class);
@@ -79,6 +82,7 @@ class JwtSecurityRealServerTests {
     @Test
     void shouldRedirectFromLoginToMainPageIfServerHasValidAccessToken() {
         final String SSO_URL = String.format("http://localhost:%d%s", localPort, ssoServerProperties.getLoginPage());
+        final String expectedText = messageSource.getMessage("index.title", null, Locale.US);
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.COOKIE, CookieName.ACCESS.getName() + "=" + accessToken);
@@ -92,7 +96,7 @@ class JwtSecurityRealServerTests {
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertThat(response.getBody()).contains("<h5 class=\"lead\">User profile</h5>");
+        assertThat(response.getBody()).contains(String.format("<h5 class=\"lead\">%s</h5>", expectedText));
     }
 
     @Test
@@ -132,10 +136,11 @@ class JwtSecurityRealServerTests {
 
     @Test
     void shouldLogoutWithRevokeTokenAndRedirectToApplication(@Autowired JWTService jwtService) {
+        final String APP = "passport";
         final String APP_URL = "http://example.com";
         final String CONTINUE_PARAM = Base64.getUrlEncoder().encodeToString(APP_URL.getBytes(StandardCharsets.UTF_8));
-        final String SSO_URL = String.format("http://localhost:%d/api/logout?token=%s&continue=%s",
-                localPort, accessToken, CONTINUE_PARAM);
+        final String SSO_URL = String.format("http://localhost:%d/api/logout?token=%s&app=%s&continue=%s",
+                localPort, accessToken, APP, CONTINUE_PARAM);
         jwtService.revokeToken(accessToken);
 
         ResponseEntity<String> response = testRestTemplate.getForEntity(

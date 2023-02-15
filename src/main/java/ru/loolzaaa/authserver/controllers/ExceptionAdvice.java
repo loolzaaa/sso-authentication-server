@@ -10,7 +10,7 @@ import ru.loolzaaa.authserver.exception.RequestErrorException;
 public class ExceptionAdvice {
     @ExceptionHandler(RequestErrorException.class)
     ResponseEntity<RequestStatusDTO> requestError(RequestErrorException e) {
-        RequestStatusDTO requestStatusDTO = RequestStatusDTO.badRequest(e.getMessage(), e.getObjects());
+        RequestStatusDTO requestStatusDTO = RequestStatusDTO.badRequest(e.getMessage());
         return ResponseEntity.badRequest().body(requestStatusDTO);
     }
 }

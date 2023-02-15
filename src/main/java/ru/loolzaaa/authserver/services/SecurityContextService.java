@@ -28,12 +28,8 @@ public class SecurityContextService {
         User user = userRepository.findByLogin(login).orElseThrow(() -> new UsernameNotFoundException(login));
         UserPrincipal userDetails = new UserPrincipal(user);
 
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                userDetails,
-                null,
-                userDetails.getAuthorities()
-        );
-
+        UsernamePasswordAuthenticationToken authentication = UsernamePasswordAuthenticationToken
+                .authenticated(userDetails, null, userDetails.getAuthorities());
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);

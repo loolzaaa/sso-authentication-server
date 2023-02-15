@@ -18,7 +18,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -124,7 +124,7 @@ class JwtTokenFilterTest {
         when(req.getRequestURI()).thenReturn("/uri");
         when(req.getParameter("_fingerprint")).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
-        when(jwtService.refreshAccessToken(req, resp, INVALID_REFRESH_TOKEN)).thenReturn(null);
+        when(jwtService.refreshAccessToken(req, resp, INVALID_ACCESS_TOKEN, INVALID_REFRESH_TOKEN)).thenReturn(null);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
 
@@ -145,7 +145,7 @@ class JwtTokenFilterTest {
         when(req.getRequestURI()).thenReturn("/uri");
         when(req.getParameter("_fingerprint")).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
-        when(jwtService.refreshAccessToken(req, resp, VALID_REFRESH_TOKEN)).thenReturn(jwtAuthentication);
+        when(jwtService.refreshAccessToken(req, resp, INVALID_ACCESS_TOKEN, VALID_REFRESH_TOKEN)).thenReturn(jwtAuthentication);
         when(jwtAuthentication.getUsername()).thenReturn(LOGIN);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
@@ -178,7 +178,7 @@ class JwtTokenFilterTest {
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
 
         verify(resp).setStatus(HttpServletResponse.SC_FORBIDDEN);
-        verify(resp).setHeader(eq("fp_request"), fingerprintHeaderCaptor.capture());
+        verify(resp).setHeader(eq("X-SSO-FP"), fingerprintHeaderCaptor.capture());
         assertThat(fingerprintHeaderCaptor.getValue()).isEqualTo("http://some-site.com:8080" + CONTEXT_PATH + "/api/refresh/ajax");
         verifyNoInteractions(filterChain);
     }

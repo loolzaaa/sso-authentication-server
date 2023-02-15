@@ -14,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -46,6 +47,7 @@ public class JwtSecurityConfig {
     private final JwtAuthenticationSuccessHandler jwtAuthenticationSuccessHandler;
     private final JwtAuthenticationFailureHandler jwtAuthenticationFailureHandler;
     private final JwtLogoutHandler jwtLogoutHandler;
+    private final AccessDeniedHandler accessDeniedHandler;
 
     private final IgnoredPathsHandler ignoredPathsHandler;
 
@@ -85,6 +87,8 @@ public class JwtSecurityConfig {
                         .failureHandler(jwtAuthenticationFailureHandler)
                         .successHandler(jwtAuthenticationSuccessHandler)
                         .permitAll())
+                .exceptionHandling(exception -> exception
+                        .accessDeniedHandler(accessDeniedHandler))
                 .logout(logout -> logout
                         .logoutRequestMatcher(new AntPathRequestMatcher("/do_logout", "POST"))
                         .logoutSuccessUrl(ssoServerProperties.getLoginPage() + "?successLogout")
@@ -99,7 +103,8 @@ public class JwtSecurityConfig {
                 .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtTokenFilter(ssoServerProperties, ignoredPathsHandler,
                         securityContextService, jwtService, cookieService), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new LoginAccessFilter(ssoServerProperties, cookieService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(new LoginAccessFilter(ssoServerProperties, accessDeniedHandler, cookieService, jwtService),
+                        UsernamePasswordAuthenticationFilter.class);
         log.debug("Jwt [all API except Basic authentication] configuration completed");
         return http.build();
     }
