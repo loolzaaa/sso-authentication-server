@@ -13,7 +13,7 @@
     <link th:href="@{/webjars/bulma/0.9.2/css/bulma.min.css}" rel="stylesheet">
     <link th:href="@{/css/style.css}" rel="stylesheet">
     <link th:href="@{/favicon.ico}" rel="icon">
-    <title>Authentication server</title>
+    <title th:text="#{login.title}">Authentication server</title>
 </head>
 <body>
 <noscript>
@@ -23,20 +23,21 @@
 <div class="position-absolute top-0 start-50 translate-middle-x" style="width: 360px;">
     <form class="container mt-3" action="#" id="login_form" method="post" th:action="@{/do_login}">
         <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
+            <label for="username" class="form-label" th:text="#{login.username}">Username</label>
             <input type="text" name="username" class="form-control" id="username">
         </div>
         <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
+            <label for="password" class="form-label" th:text="#{login.password}">Password</label>
             <input type="password" name="password" class="form-control" id="password">
         </div>
         <div class="input-group mb-3">
-            <button class="btn btn-outline-primary" type="submit">Sign in</button>
+            <button class="btn btn-outline-primary" type="submit" th:text="#{login.signIn}">Sign in</button>
             <input th:if="${param.credentialsError}"
                    th:value="${param.credentialsError}"
                    class="form-control" disabled>
             <input th:if="${param.successLogout}"
                    value="You are logged out"
+                   th:value="#{login.logout}"
                    class="form-control" disabled>
         </div>
         <input id="fp_input" name="_fingerprint" type="hidden" value="FP_PLACEHOLDER">
