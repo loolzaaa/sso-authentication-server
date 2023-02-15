@@ -47,10 +47,24 @@ class JwtAuthenticationSuccessHandlerTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"", ".invalid-base64-string-because-of-start-dot"})
-    void shouldUseSuperClassMethodWhenContinuePathIsNullOrNotBase64(String path) throws Exception {
+    void shouldUseSuperClassMethodWhenAppIsNull(String path) throws Exception {
         final String fingerprint = "FP";
         if ("".equals(path)) path = null;
         when(req.getParameter("_app")).thenReturn(null);
+        when(req.getParameter("_continue")).thenReturn(path);
+        when(req.getParameter("_fingerprint")).thenReturn(fingerprint);
+
+        successHandler.onAuthenticationSuccess(req, resp, authentication);
+
+        verify(jwtService).authenticateWithJWT(req, resp, authentication, fingerprint);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", ".invalid-base64-string-because-of-start-dot"})
+    void shouldUseSuperClassMethodWhenContinuePathIsNotBase64(String path) throws Exception {
+        final String fingerprint = "FP";
+        if ("".equals(path)) path = null;
+        when(req.getParameter("_app")).thenReturn("APP");
         when(req.getParameter("_continue")).thenReturn(path);
         when(req.getParameter("_fingerprint")).thenReturn(fingerprint);
 

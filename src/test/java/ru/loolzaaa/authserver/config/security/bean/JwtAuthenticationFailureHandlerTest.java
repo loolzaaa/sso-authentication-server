@@ -45,13 +45,16 @@ class JwtAuthenticationFailureHandlerTest {
 
         jwtAuthenticationFailureHandler = new JwtAuthenticationFailureHandler(ssoServerProperties);
         jwtAuthenticationFailureHandler.setRedirectStrategy(redirectStrategy);
+
+        when(authenticationException.getMessage()).thenReturn("ERROR");
+        when(authenticationException.getLocalizedMessage()).thenReturn("ERROR");
     }
 
     @ParameterizedTest
     @ValueSource(ints = {0, 1})
     void shouldRedirectToDefaultUrl(int op) throws IOException, ServletException {
         when(req.getParameter("_app")).thenReturn(op == 0 ? null : "APP");
-        when(req.getParameter("_continue")).thenReturn(op == 0 ? "CONTRINUE" : null);
+        when(req.getParameter("_continue")).thenReturn(op == 0 ? "CONTINUE" : null);
         when(req.getSession(anyBoolean())).thenReturn(null);
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 

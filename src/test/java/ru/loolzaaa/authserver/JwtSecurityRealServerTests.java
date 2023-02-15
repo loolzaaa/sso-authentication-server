@@ -118,7 +118,7 @@ class JwtSecurityRealServerTests {
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertThat(response.getBody()).contains("<label for=\"username\" class=\"form-label\">Username</label>");
+        assertThat(response.getBody()).contains("<input type=\"text\" name=\"username\" class=\"form-control\" id=\"username\">");
     }
 
     @Test

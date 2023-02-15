@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.services.CookieService;
@@ -38,6 +39,8 @@ class LoginAccessFilterTest {
     FilterChain chain;
 
     @Mock
+    AccessDeniedHandler accessDeniedHandler;
+    @Mock
     CookieService cookieService;
     @Mock
     JWTService jwtService;
@@ -56,7 +59,25 @@ class LoginAccessFilterTest {
         SecurityContextHolder.clearContext();
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        loginAccessFilter = new LoginAccessFilter(ssoServerProperties, cookieService, jwtService);
+        loginAccessFilter = new LoginAccessFilter(ssoServerProperties, accessDeniedHandler, cookieService, jwtService);
+    }
+
+    @Test
+    void shouldCheckLoginPage() throws Exception {
+        ssoServerProperties.setLoginPage("");
+
+        assertThatThrownBy(() -> loginAccessFilter.initFilterBean())
+                .isInstanceOf(IllegalArgumentException.class);
+
+        ssoServerProperties.setLoginPage(null);
+
+        assertThatThrownBy(() -> loginAccessFilter.initFilterBean())
+                .isInstanceOf(IllegalArgumentException.class);
+
+        ssoServerProperties.setLoginPage("ERROR");
+
+        assertThatThrownBy(() -> loginAccessFilter.initFilterBean())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @ParameterizedTest
@@ -226,6 +247,29 @@ class LoginAccessFilterTest {
         verify(jwtService).authenticateWithJWT(servletRequest, authentication, APP);
         verify(servletResponse).sendRedirect(url.capture());
         assertThat(url.getValue()).startsWith(ABSOLUTE_URL + "?token=" + TOKEN2 + "&serverTime=");
+        verifyNoInteractions(chain);
+    }
+
+    @Test
+    void shouldHandleAccessDeniedIfAuthenticatedButAppForbidden() throws Exception {
+        final String APP = "APP";
+        final String TOKEN = "TOKEN";
+        final String TOKEN2 = "TOKEN2";
+        final String ABSOLUTE_URL = "http://example.com/test/api";
+        final String ENCODED_URL =  Base64.getUrlEncoder().encodeToString(ABSOLUTE_URL.getBytes());
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(servletRequest.getRequestURI()).thenReturn(ssoServerProperties.getLoginPage());
+        when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(APP);
+        when(servletRequest.getParameter("continue")).thenReturn(ENCODED_URL);
+        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(TOKEN);
+        when(jwtService.authenticateWithJWT(eq(servletRequest), eq(authentication), anyString()))
+                .thenThrow(IllegalArgumentException.class);
+
+        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+
+        verify(jwtService).authenticateWithJWT(servletRequest, authentication, APP);
+        verify(accessDeniedHandler).handle(eq(servletRequest), eq(servletResponse), any());
         verifyNoInteractions(chain);
     }
 }
