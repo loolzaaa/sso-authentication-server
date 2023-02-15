@@ -118,7 +118,7 @@ class JwtSecurityRealServerTests {
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertThat(response.getBody()).contains("<input type=\"text\" name=\"username\" class=\"form-control\" id=\"username\">");
+        assertThat(response.getBody()).contains("<input class=\"input\" name=\"username\" placeholder=\"Имя пользователя\" type=\"text\">");
     }
 
     @Test
