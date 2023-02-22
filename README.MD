@@ -136,6 +136,14 @@ private String actuatorAuthority = "ACTUATOR_ADMIN";
 
 The user configuration schema can be viewed on the [wiki page](https://github.com/loolzaaa/sso-authentication-server/wiki/User-definition-schema).
 
+## Secret key generation
+
+Secret key generation process described on the [wiki page](https://github.com/loolzaaa/sso-authentication-server/wiki/JWT-secret-key-generation).  
+  
+After generation, keys **MUST** have `public.key` and `private.key` names and can be placed in:
+- classpath under `resources/keystore/` folder
+- somewhere on local path specified by `sso.server.jwt.key-path` property
+
 ## Application profiles
 
 The application must be launched with one of two profiles: `dev`, `prod`.  
