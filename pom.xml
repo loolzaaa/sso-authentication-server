@@ -13,7 +13,7 @@
 
   <groupId>ru.loolzaaa</groupId>
   <artifactId>auth-server</artifactId>
-  <version>0.4.0</version>
+  <version>0.4.1</version>
 
   <name>auth-server</name>
   <description>Single sign-on authentication server</description>
