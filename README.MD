@@ -23,7 +23,7 @@ First, clone this repository and navigate to the project folder:
 
 Build Docker image from project folder:
 ```shell
-> docker build --tag sso-postgres .
+> docker build --tag sso-postgres --file .\Dockerfile-db .
 ```
 
 Run Docker container in detached mode with published port `9898` and predefined container name
@@ -55,7 +55,7 @@ Run application with `spring-boot-maven-plugin` and `dev`, and `postgres` profil
 ```shell
 > ./mvnw clean package -DskipTests
 > cd ./target/
-> java "-Dspring.profiles.active=dev,postgres" -jar ./auth-server-0.4.0.jar
+> java "-Dspring.profiles.active=dev,postgres" -jar ./auth-server-0.5.0.jar
 ```
 
 # Server Configuration

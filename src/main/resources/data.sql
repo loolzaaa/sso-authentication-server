@@ -22,3 +22,12 @@ INSERT INTO HASHES VALUES
     ('5ac38d6a76b031e4d42459fd311cd0ef08bb0be92099aaf71f8472c6ccbefd8dd24bc315980345845f98912f50719f48ed6078c5a5efd4e83dc67ed16aed9b'),
     ('21a2a7ef7b6979be41b9d6872942bf6df2daf1f8fd547cc9da729b84c47442209948e96786a9a66a9983b0b032d119c6e6f34bc222c1ebf0bd36fbfc0e0790'),
     ('ba45d53cc80da0c8a3b08d73425747d389bd26b115aef1d38728bc8e9b5c5e973c0aeba8edf04b73d05fb220bc8b67138f1e1ad4cc3e865867f0e1ff1e7745');
+
+INSERT INTO WEBHOOKS (id, event, secret, url, enabled)
+    VALUES (
+        'TEST_WEBHOOK_ID',
+        'DELETE_USER',
+        '12345678',
+        'http://localhost:8888/example',
+        true
+    );

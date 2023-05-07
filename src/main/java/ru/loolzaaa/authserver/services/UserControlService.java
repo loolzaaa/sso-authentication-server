@@ -24,6 +24,7 @@ import ru.loolzaaa.authserver.model.UserAttributes;
 import ru.loolzaaa.authserver.model.UserConfigWrapper;
 import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.repositories.UserRepository;
+import ru.loolzaaa.authserver.webhook.WebhookEvent;
 
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -47,6 +48,8 @@ public class UserControlService {
     private final SsoServerProperties ssoServerProperties;
 
     private final MessageSource messageSource;
+
+    private final WebhookService webhookService;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -179,6 +182,7 @@ public class UserControlService {
 
         jdbcTemplate.update("DELETE FROM refresh_sessions WHERE user_id = ?", user.getId());
         userRepository.delete(user);
+        webhookService.fireEvent(WebhookEvent.DELETE_USER, login);
 
         String hashStatus = messageSource.getMessage("userControl.delete.hash" + (isHashDeleted ? "Del" : "Stay"), null, l);
         log.info("Delete user [{}]. Hash {} database", login, hashStatus);

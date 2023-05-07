@@ -17,8 +17,9 @@ import ru.loolzaaa.authserver.services.JWTService;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @TestProfiles
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -118,7 +119,7 @@ class JwtSecurityRealServerTests {
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertThat(response.getBody()).contains("<input class=\"input\" name=\"username\" placeholder=\"Имя пользователя\" type=\"text\">");
+        assertThat(response.getBody()).contains("<input type=\"text\" name=\"username\" class=\"form-control\" id=\"username\">");
     }
 
     @Test
