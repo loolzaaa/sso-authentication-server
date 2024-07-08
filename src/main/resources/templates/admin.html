@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <meta content="width=device-width,initial-scale=1.0" name="viewport">
-    <script th:src="@{/webjars/axios/0.27.2/dist/axios.min.js}"></script>
+    <script th:src="@{/webjars/axios/1.7.2/dist/axios.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/5.2.1/dist/js/bootstrap.min.js}"></script>
     <script th:src="@{/js/fingerprint2.min.js}"></script>
     <script th:src="@{/js/script.js}"></script>
@@ -277,8 +277,11 @@
             });
     }
     instance.interceptors.response.use(function (response) {
-        const _csrf = document.cookie.match(new RegExp(`XSRF-TOKEN=([^;]+)`));
-        if (_csrf !== undefined && _csrf !== null) document.getElementsByName('_csrf').forEach(el => el.value = _csrf[1]);
+        const xsrfCookieName = 'XSRF-TOKEN-ENC';
+        const _csrf = document.cookie.match(new RegExp(`${xsrfCookieName}=([^;]+)`));
+        if (_csrf !== undefined && _csrf !== null) {
+            document.getElementsByName('_csrf').forEach(el => el.value = _csrf[1]);
+        }
         return response;
     }, async function (err) {
         if (err?.response?.status === 403) {
