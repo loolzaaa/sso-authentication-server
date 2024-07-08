@@ -5,6 +5,7 @@ on:
       - master
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,6 +22,8 @@ jobs:
           cache: 'maven'
       - name: Install dependencies
         run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+      - name: Run database
+        run: docker build --tag sso-postgres --file ./Dockerfile-db . && docker run -dp 9898:5432 --rm --name sso-postgres sso-postgres
       - name: Run tests and collect coverage
         run: mvn -B test
       - name: Upload coverage to Codecov
