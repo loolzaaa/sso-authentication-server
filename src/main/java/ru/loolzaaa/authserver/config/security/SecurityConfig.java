@@ -32,9 +32,6 @@ public class SecurityConfig implements WebSecurityCustomizer {
     @Override
     public void customize(WebSecurity web) {
         web.ignoring().requestMatchers(PathRequest.toStaticResources().atCommonLocations());
-        if (activeProfile.contains("h2")) {
-            web.ignoring().antMatchers("/h2-console/**");
-        }
     }
 
     @Profile("!noop")

@@ -26,9 +26,7 @@ public class CustomJdbcConfiguration extends AbstractJdbcConfiguration {
     protected List<?> userConverters() {
         return Arrays.asList(
                 new UserConfigWrapperToJsonConverter(),
-                new JsonToUserConfigWrapperConverter(),
-                new StringToUserConfigWrapperConverter(),
-                new UserConfigWrapperToStringConverter()
+                new JsonToUserConfigWrapperConverter()
         );
     }
 
@@ -58,33 +56,6 @@ public class CustomJdbcConfiguration extends AbstractJdbcConfiguration {
                 e.printStackTrace();
             }
             return json;
-        }
-    }
-
-    @ReadingConverter
-    class StringToUserConfigWrapperConverter implements Converter<String, UserConfigWrapper> {
-        @Override
-        public UserConfigWrapper convert(String s) {
-            try {
-                JsonNode jsonNode = objectMapper.readTree(s);
-                return new UserConfigWrapper(jsonNode);
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
-
-    @WritingConverter
-    class UserConfigWrapperToStringConverter implements Converter<UserConfigWrapper, String> {
-        @Override
-        public String convert(UserConfigWrapper configWrapper) {
-            try {
-                return objectMapper.writeValueAsString(configWrapper.getConfig());
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
-            return null;
         }
     }
 }

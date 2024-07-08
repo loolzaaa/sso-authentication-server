@@ -1,6 +1,7 @@
 package ru.loolzaaa.authserver.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,6 @@ import ru.loolzaaa.authserver.exception.RequestErrorException;
 import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.services.UserControlService;
 
-import javax.validation.Valid;
 import java.util.List;
 import java.util.Locale;
 

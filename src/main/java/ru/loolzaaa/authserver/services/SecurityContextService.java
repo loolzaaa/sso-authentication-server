@@ -1,5 +1,8 @@
 package ru.loolzaaa.authserver.services;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -10,10 +13,6 @@ import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.model.User;
 import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.repositories.UserRepository;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 @RequiredArgsConstructor
 @Service

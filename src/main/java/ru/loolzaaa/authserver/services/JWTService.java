@@ -2,6 +2,8 @@ package ru.loolzaaa.authserver.services;
 
 import io.jsonwebtoken.ClaimJwtException;
 import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -18,8 +20,6 @@ import ru.loolzaaa.authserver.model.User;
 import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.repositories.UserRepository;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
