@@ -4,7 +4,6 @@ import io.jsonwebtoken.ClaimJwtException;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataAccessException;
@@ -243,7 +242,6 @@ public class JWTService {
         revokedTokens.removeIf(revokeToken -> now.minusHours(1L).isAfter(revokeToken.revokeTime()));
     }
 
-    @Getter
     private record RevokeToken(String token, LocalDateTime revokeTime) {
         @Override
         public boolean equals(Object o) {
