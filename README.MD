@@ -3,7 +3,13 @@
 
 # Single Sign-On authentication server
 
-This Single Sign-On (SSO) is server based on Spring Security. The main authentication routine happens through a standard login form. Further authentication occurs through Json Web Tokens (JWT), which are checked through a custom filter. In addition, there are a number of APIs that are accessed through Basic authentication with predefined users in the application configuration. All other components of the system are based on standard Spring Security beans with minor changes.
+This Single Sign-On (SSO) is a server based on Spring Security. 
+The main authentication routine happens through a standard login form. 
+Further authentication occurs through Json Web Tokens (JWT), 
+which are checked through a custom filter. 
+In addition, there are a number of APIs that are accessed through Basic authentication 
+with predefined users in the application configuration. 
+All other components of the system are based on standard Spring Security beans with minor changes.
 
 # Server Startup
 
@@ -30,32 +36,34 @@ Run Docker container in detached mode with published port `9898` and predefined 
 ```shell
 > docker run -dp 9898:5432 --rm --name sso-postgres sso-postgres
 ```
-**Note:** *--rm* flag denotes deletion of container after stop. To prevent this behavior from being undesirable, you can create a physical or bind mount volume.
+**Note:** *--rm* flag denotes deletion of container after stop. To prevent this behavior 
+from being undesirable, you can create a physical or bind mount volume.
 
 If you want to connect to the container database, you need to run the following command:
 ```shell
 > docker exec -it sso-postgres /bin/bash -c "psql -U sso -d sso"
 ```
-**Note:** the user (*sso* in example) and database name (*sso* in example) for connecting is specified in the application configuration.
+**Note:** the user (*sso* in example) and database name (*sso* in example) for connecting 
+is specified in the application configuration.
 
 If you want to see the logs of a running container, then you need to run the following command:
 ```shell
 > docker logs -f sso-postgres
 ```
-**Note:** this command show logs in *follow* mode.
+**Note:** this command shows logs in *follow* mode.
 
 ## Java application startup
 
-Run application with `spring-boot-maven-plugin` and `dev`, and `postgres` profiles active:
+Run application with `spring-boot-maven-plugin` and `dev` profile active:
 ```shell
-> ./mvnw spring-boot:run -D spring-boot.run.profiles=dev,postgres
+> ./mvnw spring-boot:run -D spring-boot.run.profiles=dev
 ```
 
 **OR** you can package application to Uber JAR and run it:
 ```shell
 > ./mvnw clean package -DskipTests
 > cd ./target/
-> java "-Dspring.profiles.active=dev,postgres" -jar ./auth-server-0.5.0.jar
+> java "-Dspring.profiles.active=dev" -jar ./auth-server-<version>.jar
 ```
 
 # Server Configuration
@@ -124,8 +132,9 @@ private String revokeAuthority = "REVOKE_TOKEN";
 
 ### Actuator endpoint access
 
-Actuator endpoints available (if enable, see server configuration) under Basic Authentication for special user.  
-This properties available under `sso.server.basic.<property-name>`.
+Actuator endpoints available (if enabled, see server configuration) 
+under Basic Authentication for special user.  
+These properties available under `sso.server.basic.<property-name>`.
 ```Java
 private String actuatorUsername = "actuator";
 private String actuatorPassword = "1234";
@@ -142,26 +151,12 @@ Secret key generation process described on the [wiki page](https://github.com/lo
   
 After generation, keys **MUST** have `public.key` and `private.key` names and can be placed in:
 - classpath under `resources/keystore/` folder
-- somewhere on local path specified by `sso.server.jwt.key-path` property
+- somewhere on a local path specified by `sso.server.jwt.key-path` property
 
 ## Application profiles
 
-The application must be launched with one of two profiles: `dev`, `prod`.  
+The application must be launched with one of two profiles: `dev` (developer mode), `prod` (production mode).  
 Optional profile: `noop`, `ssl`.
-
-### Developer mode
-
-Main active profile: `dev`.  
-Additional profiles: `h2` **OR** `postgres`. 
-
-Additional profiles determine which database the application will connect to: H2 in-memory database or PostgreSQL database inside Docker container.
-
-### Production mode
-
-Main active profile: `prod`.  
-Additional profiles: N/A.
-
-Application properties for production (`application-prod.properties`) mode already contains database connection parameters.
 
 ### Password encoder for development
 
