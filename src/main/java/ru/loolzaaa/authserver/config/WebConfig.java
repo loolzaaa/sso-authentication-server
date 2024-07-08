@@ -33,7 +33,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Bean
     LocaleResolver localeResolver() {
         AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.US);
+        localeResolver.setDefaultLocale(createServerLocale());
         return localeResolver;
     }
 
@@ -42,5 +42,12 @@ public class WebConfig implements WebMvcConfigurer {
         AccessDeniedHandlerImpl accessDeniedHandler = new AccessDeniedHandlerImpl();
         accessDeniedHandler.setErrorPage(FORBIDDEN_PATH);
         return accessDeniedHandler;
+    }
+
+    private Locale createServerLocale() {
+        return switch (ssoServerProperties.getLanguage()) {
+            case "ru" -> new Locale("ru");
+            default -> new Locale("en");
+        };
     }
 }

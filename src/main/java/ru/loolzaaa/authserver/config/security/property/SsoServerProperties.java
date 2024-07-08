@@ -9,6 +9,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("sso.server")
 public class SsoServerProperties {
 
+    private String language = "en";
+
     private String loginPage = "/login";
     private String refreshUri = "/trefresh";
 
