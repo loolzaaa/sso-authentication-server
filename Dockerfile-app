@@ -1,6 +1,0 @@
-FROM java-base
-
-RUN mkdir /opt/app
-COPY ./target/auth-server-*.jar /opt/app/app.jar
-
-ENTRYPOINT [ "java", "-jar", "/opt/app/app.jar" ]
