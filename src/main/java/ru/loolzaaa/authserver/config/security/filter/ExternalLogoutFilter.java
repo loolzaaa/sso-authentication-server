@@ -24,8 +24,10 @@ public class ExternalLogoutFilter extends OncePerRequestFilter {
     private final JWTService jwtService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse resp,
-                                    FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest req,
+                                    HttpServletResponse resp,
+                                    FilterChain chain
+    ) throws ServletException, IOException {
         AntPathRequestMatcher externalLogoutRequestMatcher = new AntPathRequestMatcher("/api/logout");
         RequestMatcher.MatchResult matcher = externalLogoutRequestMatcher.matcher(req);
         if (matcher.isMatch()) {

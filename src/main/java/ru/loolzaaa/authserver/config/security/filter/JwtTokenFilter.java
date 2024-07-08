@@ -31,8 +31,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final CookieService cookieService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse resp,
-                                    FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest req,
+                                    HttpServletResponse resp,
+                                    FilterChain chain
+    ) throws ServletException, IOException {
         String requestedUri = req.getRequestURI().substring(req.getContextPath().length());
         if (ignoredPathsHandler.checkUri(requestedUri)) {
             logger.debug(String.format("Access to '%s' is permitted without jwt filter", requestedUri));

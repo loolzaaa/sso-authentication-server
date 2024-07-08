@@ -24,11 +24,8 @@ public class CustomDaoAuthenticationProvider extends DaoAuthenticationProvider {
     }
 
     private boolean matchPasswords(String presentedPassword, UserDetails userDetails) {
-        if (this.getPasswordEncoder() instanceof CustomPBKDF2PasswordEncoder) {
-            CustomPBKDF2PasswordEncoder passwordEncoder = (CustomPBKDF2PasswordEncoder) this.getPasswordEncoder();
-            if (userDetails instanceof UserPrincipal) {
-                UserPrincipal user = (UserPrincipal) userDetails;
-
+        if (this.getPasswordEncoder() instanceof CustomPBKDF2PasswordEncoder passwordEncoder) {
+            if (userDetails instanceof UserPrincipal user) {
                 passwordEncoder.setSalt(user.getSalt());
                 boolean matchResult = user.getHashes()
                         .stream()

@@ -43,7 +43,7 @@ public class JWTService {
     private final List<RevokeToken> revokedTokens = new CopyOnWriteArrayList<>();
 
     public String authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp,
-                                    Authentication authentication, String fingerprint) {
+                                      Authentication authentication, String fingerprint) {
         UserPrincipal user = (UserPrincipal) authentication.getPrincipal();
         List<String> authorities = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -52,8 +52,8 @@ public class JWTService {
         JWTAuthentication jwtAuthentication = generateJWTAuthentication(user.getUsername(), authorities);
 
         String sql = "INSERT INTO refresh_sessions " +
-                "(user_id, refresh_token, expires_in, fingerprint) " +
-                "VALUES (?, ?, ?, ?)";
+                     "(user_id, refresh_token, expires_in, fingerprint) " +
+                     "VALUES (?, ?, ?, ?)";
         jdbcTemplate.update(
                 sql,
                 user.getId(),
@@ -109,9 +109,9 @@ public class JWTService {
         String currentFingerprint = req.getParameter("_fingerprint");
 
         String sql = "SELECT login, fingerprint " +
-                "FROM refresh_sessions, users " +
-                "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id " +
-                "AND (fingerprint = ? OR fingerprint = 'RFID')";
+                     "FROM refresh_sessions, users " +
+                     "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id " +
+                     "AND (fingerprint = ? OR fingerprint = 'RFID')";
         Map<String, Object> stringObjectMap;
         try {
             stringObjectMap = jdbcTemplate.queryForMap(sql, refreshToken, currentFingerprint);
@@ -139,8 +139,8 @@ public class JWTService {
         JWTAuthentication jwtAuthentication = generateJWTAuthentication(username, authorities);
 
         jdbcTemplate.update("UPDATE refresh_sessions " +
-                        "SET refresh_token = ?::uuid, expires_in = ?, fingerprint = ? " +
-                        "WHERE refresh_token = ?::uuid AND fingerprint = ?",
+                            "SET refresh_token = ?::uuid, expires_in = ?, fingerprint = ? " +
+                            "WHERE refresh_token = ?::uuid AND fingerprint = ?",
                 jwtAuthentication.getRefreshToken(),
                 new Timestamp(jwtAuthentication.getRefreshExp()),
                 currentFingerprint,
@@ -171,8 +171,8 @@ public class JWTService {
 
     public void deleteTokenFromDatabase(String refreshToken) {
         String sql = "SELECT login " +
-                "FROM refresh_sessions, users " +
-                "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id";
+                     "FROM refresh_sessions, users " +
+                     "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id";
         String username = DataAccessUtils.singleResult(jdbcTemplate.queryForList(sql, String.class, refreshToken));
         if (username == null) {
             log.warn("Cannot find user with token [{}] in database!", refreshToken);
@@ -216,7 +216,7 @@ public class JWTService {
 
     private Claims parseTokenClaims(String token, boolean ignoreClaimException) {
         try {
-            return jwtUtils.parserEnforceAccessToken(token).getBody();
+            return jwtUtils.parserEnforceAccessToken(token).getPayload();
         } catch (ClaimJwtException e) {
             if (ignoreClaimException) {
                 return e.getClaims();
@@ -224,7 +224,7 @@ public class JWTService {
                 log.debug("Failed check token for {}. Error: {}", e.getClaims().get("login"), e.getMessage());
                 return null;
             }
-        }  catch (Exception e) {
+        } catch (Exception e) {
             log.warn("Unknown JWT validation error: {}", e.getMessage());
             return null;
         }
@@ -240,15 +240,11 @@ public class JWTService {
     @Scheduled(initialDelay = 1, fixedDelay = 60, timeUnit = TimeUnit.MINUTES)
     public void cleanRevokedTokens() {
         LocalDateTime now = LocalDateTime.now();
-        revokedTokens.removeIf(revokeToken -> now.minusHours(1L).isAfter(revokeToken.getRevokeTime()));
+        revokedTokens.removeIf(revokeToken -> now.minusHours(1L).isAfter(revokeToken.revokeTime()));
     }
 
-    @RequiredArgsConstructor
     @Getter
-    private static class RevokeToken {
-        private final String token;
-        private final LocalDateTime revokeTime;
-
+    private record RevokeToken(String token, LocalDateTime revokeTime) {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

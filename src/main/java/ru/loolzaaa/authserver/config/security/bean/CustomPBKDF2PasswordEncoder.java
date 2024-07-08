@@ -34,7 +34,7 @@ public class CustomPBKDF2PasswordEncoder implements PasswordEncoder {
     public boolean matches(CharSequence rawPassword, String encodedPassword) {
         if (rawPassword == null) {
             throw new IllegalArgumentException("rawPassword cannot be null");
-        } else if (encodedPassword != null && encodedPassword.length() != 0) {
+        } else if (encodedPassword != null && !encodedPassword.isEmpty()) {
             return checkPassword(rawPassword.toString(), encodedPassword);
         } else {
             this.logger.warn("Empty encoded password");
