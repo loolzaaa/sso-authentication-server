@@ -33,6 +33,8 @@ import java.util.Base64;
 @RequestMapping("/api")
 public class AccessController {
 
+    @Getter
+    @Setter
     private String KEY = "49A9Tr3PAyFHaqM6XfjtUhxm59icL4Ql4xxTvPCqZs2QmNkCEJhkb1j5L9DHZaAA";
 
     private final SsoServerProperties ssoServerProperties;
@@ -178,13 +180,5 @@ public class AccessController {
     @PostMapping("/fast/prepare_logout")
     void prepareLogout(@RequestHeader("Revoke-Token") String token) {
         jwtService.revokeToken(token);
-    }
-
-    public String getKEY() {
-        return KEY;
-    }
-
-    public void setKEY(String KEY) {
-        this.KEY = KEY;
     }
 }

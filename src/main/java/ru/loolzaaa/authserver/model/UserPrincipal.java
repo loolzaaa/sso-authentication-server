@@ -3,6 +3,7 @@ package ru.loolzaaa.authserver.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,6 +22,7 @@ public class UserPrincipal implements UserDetails {
 
     private static String applicationName;
 
+    @Getter
     private final User user;
 
     private final List<GrantedAuthority> authorities = new ArrayList<>();
@@ -115,10 +117,6 @@ public class UserPrincipal implements UserDetails {
         return user.getHashes();
     }
 
-    public User getUser() {
-        return user;
-    }
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
@@ -160,9 +158,9 @@ public class UserPrincipal implements UserDetails {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof UserPrincipal)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         UserPrincipal that = (UserPrincipal) o;
-        return user.equals(that.user);
+        return Objects.equals(user, that.user);
     }
 
     @Override

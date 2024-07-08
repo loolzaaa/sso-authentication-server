@@ -29,7 +29,6 @@ class JwtSecurityRealServerTests {
     @LocalServerPort
     int localPort;
 
-    @Autowired
     TestRestTemplate testRestTemplate;
 
     @Autowired
@@ -46,6 +45,8 @@ class JwtSecurityRealServerTests {
 
     @BeforeEach
     public void setup() {
+        testRestTemplate = new TestRestTemplate(TestRestTemplate.HttpClientOption.ENABLE_REDIRECTS);
+
         Map<String, Object> params = new HashMap<>();
         params.put("login", "user");
         params.put("authorities", List.of("passport"));
