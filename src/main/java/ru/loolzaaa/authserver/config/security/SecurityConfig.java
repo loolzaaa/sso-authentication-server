@@ -1,7 +1,6 @@
 package ru.loolzaaa.authserver.config.security;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,22 +29,19 @@ public class SecurityConfig implements WebSecurityCustomizer {
     }
 
     @Profile("!noop")
-    @Qualifier("jwtPasswordEncoder")
-    @Bean
+    @Bean("jwtPasswordEncoder")
     PasswordEncoder jwtPasswordEncoder() {
         return new CustomPBKDF2PasswordEncoder();
     }
 
     @Primary
-    @Qualifier("basicPasswordEncoder")
-    @Bean
+    @Bean("basicPasswordEncoder")
     PasswordEncoder basicPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Profile("noop")
-    @Qualifier("jwtPasswordEncoder")
-    @Bean
+    @Bean("jwtPasswordEncoder")
     PasswordEncoder noopPasswordEncoder() {
         return new NoopCustomPasswordEncoder();
     }

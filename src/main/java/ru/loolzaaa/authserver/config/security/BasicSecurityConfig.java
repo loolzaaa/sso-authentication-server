@@ -37,8 +37,7 @@ public class BasicSecurityConfig {
     @Qualifier("basicPasswordEncoder")
     private final PasswordEncoder passwordEncoder;
 
-    @Bean
-    @Qualifier("basicUserDetailsService")
+    @Bean("basicUserDetailsService")
     public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
         if (basicUsersProperties.getUsers().isEmpty()) {
             log.warn("\n\n\tThere is no basic users in properties. Some API unavailable!\n");

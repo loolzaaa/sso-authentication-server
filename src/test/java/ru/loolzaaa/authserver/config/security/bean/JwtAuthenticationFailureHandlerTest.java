@@ -46,7 +46,6 @@ class JwtAuthenticationFailureHandlerTest {
         jwtAuthenticationFailureHandler = new JwtAuthenticationFailureHandler(ssoServerProperties);
         jwtAuthenticationFailureHandler.setRedirectStrategy(redirectStrategy);
 
-        when(authenticationException.getMessage()).thenReturn("ERROR");
         when(authenticationException.getLocalizedMessage()).thenReturn("ERROR");
     }
 

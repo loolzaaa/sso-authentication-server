@@ -24,12 +24,14 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Log4j2
 @RequiredArgsConstructor
 @Service
 public class JWTService {
+
+    private static final String LOGIN_CLAIM_NAME = "login";
+    private static final String AUTHORITIES_CLAIM_NAME = "authorities";
 
     private final CookieService cookieService;
 
@@ -46,7 +48,7 @@ public class JWTService {
         UserPrincipal user = (UserPrincipal) authentication.getPrincipal();
         List<String> authorities = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+                .toList();
 
         JWTAuthentication jwtAuthentication = generateJWTAuthentication(user.getUsername(), authorities);
 
@@ -77,11 +79,11 @@ public class JWTService {
         user = new UserPrincipal(user.getUser(), applicationName);
         List<String> authorities = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, Object> params = new HashMap<>();
-        params.put("login", user.getUsername());
-        params.put("authorities", authorities);
+        params.put(LOGIN_CLAIM_NAME, user.getUsername());
+        params.put(AUTHORITIES_CLAIM_NAME, authorities);
         Date now = new Date();
         long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl().toMillis();
         String accessToken = jwtUtils.buildAccessToken(now, accessExp, params);
@@ -119,7 +121,7 @@ public class JWTService {
             return null;
         }
 
-        String username = (String) stringObjectMap.get("login");
+        String username = (String) stringObjectMap.get(LOGIN_CLAIM_NAME);
         String oldFingerprint = (String) stringObjectMap.get("fingerprint");
 
         Claims claims = parseTokenClaims(oldAccessToken, true);
@@ -129,7 +131,7 @@ public class JWTService {
             return null;
         }
 
-        Object authorities = claims.get("authorities");
+        Object authorities = claims.get(AUTHORITIES_CLAIM_NAME);
         if (authorities == null) {
             log.warn("There is no authorities in access token for {}", username);
             return null;
@@ -157,7 +159,7 @@ public class JWTService {
             UserPrincipal userPrincipal = new UserPrincipal(user, currentApplication);
             authorities = userPrincipal.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toList());
+                    .toList();
 
             jwtAuthentication = generateJWTAuthentication(username, authorities);
         }
@@ -196,8 +198,8 @@ public class JWTService {
 
     private JWTAuthentication generateJWTAuthentication(String username, Object authorities) {
         Map<String, Object> params = new HashMap<>();
-        params.put("login", username);
-        params.put("authorities", authorities);
+        params.put(LOGIN_CLAIM_NAME, username);
+        params.put(AUTHORITIES_CLAIM_NAME, authorities);
         Date now = new Date();
         long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl().toMillis();
         long refreshExp = now.getTime() + jwtUtils.getRefreshTokenTtl().toMillis();
@@ -220,7 +222,7 @@ public class JWTService {
             if (ignoreClaimException) {
                 return e.getClaims();
             } else {
-                log.debug("Failed check token for {}. Error: {}", e.getClaims().get("login"), e.getMessage());
+                log.debug("Failed check token for {}. Error: {}", e.getClaims().get(LOGIN_CLAIM_NAME), e.getMessage());
                 return null;
             }
         } catch (Exception e) {
@@ -233,7 +235,7 @@ public class JWTService {
         if (claims == null) {
             return null;
         }
-        return claims.get("login", String.class);
+        return claims.get(LOGIN_CLAIM_NAME, String.class);
     }
 
     @Scheduled(initialDelay = 1, fixedDelay = 60, timeUnit = TimeUnit.MINUTES)

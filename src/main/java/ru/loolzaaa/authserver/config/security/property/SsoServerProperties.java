@@ -13,6 +13,8 @@ public class SsoServerProperties {
 
     private String loginPage = "/login";
     private String refreshUri = "/trefresh";
+    private String forbiddenUri = "/forbidden";
+    private String adminUri = "/admin";
 
     private final Application application = new Application();
 

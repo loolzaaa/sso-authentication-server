@@ -11,6 +11,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -19,7 +21,12 @@ import java.util.Objects;
 @Setter
 @NoArgsConstructor
 @Table("users")
-public class User {
+public class User implements Serializable {
+
+    @JsonIgnore
+    @Serial
+    private static final long serialVersionUID = 4932484828673582967L;
+
     @Id
     private Long id;
     private String login;

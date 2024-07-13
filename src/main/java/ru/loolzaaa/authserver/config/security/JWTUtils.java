@@ -11,8 +11,10 @@ import org.springframework.util.ResourceUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -36,7 +38,7 @@ public class JWTUtils {
     @Value("${sso.server.jwt.refresh-ttl:10h}")
     private Duration refreshTokenTtl;
 
-    public JWTUtils(@Value("${sso.server.jwt.key-path:}") String keyPath) throws Exception {
+    public JWTUtils(@Value("${sso.server.jwt.key-path:}") String keyPath) throws IOException, GeneralSecurityException {
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 
         String publicKeyPath = "keystore/public.key";

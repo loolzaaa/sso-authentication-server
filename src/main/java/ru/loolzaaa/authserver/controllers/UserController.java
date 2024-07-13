@@ -136,10 +136,9 @@ public class UserController {
 
     private boolean isUserPermitToCreateTemporaryUser(Authentication authentication, String username) {
         boolean isUserAdmin = authentication.getAuthorities().contains(adminGrantedAuthority);
-        UserPrincipal userPrincipal = null;
-        if (authentication.getPrincipal() instanceof UserPrincipal) {
-            userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        if (authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
+            return isUserAdmin || userPrincipal.getUser().getLogin().equals(username);
         }
-        return isUserAdmin || (userPrincipal != null && userPrincipal.getUser().getLogin().equals(username));
+        return isUserAdmin;
     }
 }

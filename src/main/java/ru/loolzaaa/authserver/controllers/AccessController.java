@@ -33,9 +33,11 @@ import java.util.Base64;
 @RequestMapping("/api")
 public class AccessController {
 
+    private static final String REDIRECT_CMD = "redirect:";
+
     @Getter
     @Setter
-    private String KEY = "49A9Tr3PAyFHaqM6XfjtUhxm59icL4Ql4xxTvPCqZs2QmNkCEJhkb1j5L9DHZaAA";
+    private String rfidKEY = "49A9Tr3PAyFHaqM6XfjtUhxm59icL4Ql4xxTvPCqZs2QmNkCEJhkb1j5L9DHZaAA";
 
     private final SsoServerProperties ssoServerProperties;
 
@@ -70,7 +72,7 @@ public class AccessController {
 
         String continuePath = req.getParameter("_continue");
         if (continuePath == null) {
-            return !isRefreshTokenValid ? ("redirect:" + ssoServerProperties.getLoginPage()) : "redirect:/";
+            return !isRefreshTokenValid ? (REDIRECT_CMD + ssoServerProperties.getLoginPage()) : REDIRECT_CMD + "/";
         } else {
             String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
             if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
@@ -80,9 +82,9 @@ public class AccessController {
                             .queryParam("token", jwtAuthentication.getAccessToken())
                             .queryParam("serverTime", System.currentTimeMillis());
                 }
-                return "redirect:" + uriComponentsBuilder.toUriString();
+                return REDIRECT_CMD + uriComponentsBuilder.toUriString();
             } else {
-                return !isRefreshTokenValid ? ("redirect:" + ssoServerProperties.getLoginPage()) : "redirect:/";
+                return !isRefreshTokenValid ? (REDIRECT_CMD + ssoServerProperties.getLoginPage()) : REDIRECT_CMD + "/";
             }
         }
     }
@@ -128,7 +130,7 @@ public class AccessController {
         if (!ssoServerProperties.getRfid().isActivate()) {
             throw new AccessDeniedException("RFID authentication disabled");
         }
-        if (!StringUtils.hasText(KEY)) {
+        if (!StringUtils.hasText(rfidKEY)) {
             throw new AccessDeniedException("There is no valid RFID key for authentication");
         }
 
@@ -137,7 +139,7 @@ public class AccessController {
         String from = req.getParameter("from");
         String app = req.getParameter("app");
 
-        if (!KEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
+        if (!rfidKEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
 
         if (!StringUtils.hasText(from) || !StringUtils.hasText(login)) {
             throw new RequestErrorException("FROM and LOGIN parameter must not be empty string");
@@ -168,7 +170,7 @@ public class AccessController {
                     .queryParam("serverTime", System.currentTimeMillis())
                     .queryParam(CookieName.RFID.getName())
                     .toUriString();
-            return "redirect:" + redirectURL;
+            return REDIRECT_CMD + redirectURL;
         } else {
             throw new RequestErrorException("Invalid FROM parameter for RFID authentication");
         }

@@ -38,32 +38,37 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
             super.onAuthenticationSuccess(req, resp, authentication);
         } else {
             String appName;
-            String continueUri = null;
+            String continueUri;
             try {
                 appName = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
-                continueUri = new String(Base64.getUrlDecoder().decode(continueParameter));
+                continueUri = new String(Base64.getUrlDecoder().decode(continueParameter)).replaceAll("[\r\n]", "_");
                 if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
-                    try {
-                        String accessToken = jwtService.authenticateWithJWT(req, authentication, appName);
-                        String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
-                                .queryParam("token", accessToken)
-                                .queryParam("serverTime", System.currentTimeMillis())
-                                .toUriString();
-                        logger.info("Authentication success. Redirect to: " + continueUri);
-                        resp.sendRedirect(redirectURL);
-                    } catch (IllegalArgumentException e) {
-                        throw new InsufficientAuthenticationException(e.getLocalizedMessage());
-                    }
+                    authenticateAndRedirect(req, resp, authentication, appName, continueUri);
                 } else {
                     logger.warn("Authentication success. Redirect to SSO main page, " +
-                            "because of continue parameter is invalid Base64 scheme: " + continueUri);
+                            "because of continue parameter is empty or not absolute url");
                     super.onAuthenticationSuccess(req, resp, authentication);
                 }
             } catch (IllegalArgumentException e) {
                 logger.warn("Authentication success. Redirect to SSO main page, " +
-                        "because of continue parameter is invalid Base64 scheme: " + continueUri);
+                        "because of continue parameter is invalid Base64 scheme");
                 super.onAuthenticationSuccess(req, resp, authentication);
             }
+        }
+    }
+
+    private void authenticateAndRedirect(HttpServletRequest req, HttpServletResponse resp, Authentication authentication,
+                                         String appName, String continueUri) throws IOException {
+        try {
+            String accessToken = jwtService.authenticateWithJWT(req, authentication, appName);
+            String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+                    .queryParam("token", accessToken)
+                    .queryParam("serverTime", System.currentTimeMillis())
+                    .toUriString();
+            logger.info("Authentication success. Redirect to: " + continueUri);
+            resp.sendRedirect(redirectURL);
+        } catch (IllegalArgumentException e) {
+            throw new InsufficientAuthenticationException(e.getLocalizedMessage());
         }
     }
 }

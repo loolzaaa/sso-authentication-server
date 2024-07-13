@@ -87,6 +87,8 @@ class LoginAccessFilterTest {
         when(authentication.isAuthenticated()).thenReturn(value);
         when(servletRequest.getRequestURI()).thenReturn(""); // not login
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(value ? "APP" : null);
+        when(servletRequest.getParameter("continue")).thenReturn(value ? null : "CONTINUE");
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -101,6 +103,8 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(""); // not login
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(null);
+        when(servletRequest.getParameter("continue")).thenReturn("CONTINUE");
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -115,6 +119,8 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(mock(AnonymousAuthenticationToken.class));
         when(servletRequest.getRequestURI()).thenReturn(""); // not login
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(null);
+        when(servletRequest.getParameter("continue")).thenReturn("CONTINUE");
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 

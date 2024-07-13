@@ -30,8 +30,7 @@ public class JwtAuthenticationFailureHandler extends SimpleUrlAuthenticationFail
         if (appParameter != null && continuePath != null) {
             defaultFailureUrl += "&app=" + appParameter + "&continue=" + continuePath;
         }
-        logger.info("Authentication failure. Message: " + ex.getMessage());
-        logger.info("Authentication failure. Redirect to: " + continuePath);
+        logger.info("Authentication failure with message: " + ex.getLocalizedMessage());
 
         setAllowSessionCreation(false);
         setDefaultFailureUrl(defaultFailureUrl);

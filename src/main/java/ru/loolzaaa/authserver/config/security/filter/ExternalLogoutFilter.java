@@ -30,32 +30,42 @@ public class ExternalLogoutFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         AntPathRequestMatcher externalLogoutRequestMatcher = new AntPathRequestMatcher("/api/logout");
         RequestMatcher.MatchResult matcher = externalLogoutRequestMatcher.matcher(req);
-        if (matcher.isMatch()) {
-            String token = req.getParameter("token");
-            if (token != null && jwtService.checkTokenForRevoke(token)) {
-                securityContextService.clearSecurityContextHolder(req, resp);
-
-                String continuePath = req.getParameter("continue");
-                if (continuePath != null) {
-                    try {
-                        String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
-                        if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
-                            logger.info("External logout. Redirect to: " + continueUri);
-                            resp.sendRedirect(continueUri);
-                        }
-                    } catch (Exception ignored) {
-                        logger.warn("Continue parameter is not valid Base64 scheme: " + continuePath);
-                    }
-                } else {
-                    logger.debug("Continue parameter is null");
-                }
-                return;
-            } else {
-                logger.debug("Token is null or not revoked");
-            }
-        } else {
+        if (!matcher.isMatch()) {
             logger.trace("Request pattern is not match: " + req.getRequestURI());
+            chain.doFilter(req, resp);
+            return;
         }
-        chain.doFilter(req, resp);
+
+        String token = req.getParameter("token");
+        if (isTokenRevoked(token)) {
+            chain.doFilter(req, resp);
+            return;
+        }
+
+        securityContextService.clearSecurityContextHolder(req, resp);
+
+        String continuePath = req.getParameter("continue");
+        if (continuePath == null) {
+            logger.debug("Continue parameter is null");
+            return;
+        }
+
+        try {
+            String continueUri = new String(Base64.getUrlDecoder().decode(continuePath)).replaceAll("[\r\n]", "_");
+            if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
+                logger.info("External logout. Redirect to: " + continueUri);
+                resp.sendRedirect(continueUri);
+            }
+        } catch (Exception ignored) {
+            logger.warn("Continue parameter is not valid Base64 scheme");
+        }
+    }
+
+    private boolean isTokenRevoked(String token) {
+        boolean tokenRevoked = token == null || !jwtService.checkTokenForRevoke(token);
+        if (tokenRevoked) {
+            logger.debug("Token is null or not revoked");
+        }
+        return tokenRevoked;
     }
 }

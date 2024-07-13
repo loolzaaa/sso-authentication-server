@@ -27,23 +27,23 @@ class RFIDKeyMBeanTest {
     @Test
     void shouldInvokeGetterOfAccessController() {
         final String KEY = "111";
-        when(accessController.getKEY()).thenReturn(KEY);
+        when(accessController.getRfidKEY()).thenReturn(KEY);
 
         String key = rfidKeyMBean.getKey();
 
         assertEquals(key, KEY);
-        verify(accessController).getKEY();
+        verify(accessController).getRfidKEY();
     }
 
     @Test
     void shouldInvokeSetterOfAccessController() {
         final String KEY = "111";
-        doNothing().when(accessController).setKEY(anyString());
+        doNothing().when(accessController).setRfidKEY(anyString());
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
 
         rfidKeyMBean.setKey(KEY);
 
-        verify(accessController).setKEY(keyCaptor.capture());
+        verify(accessController).setRfidKEY(keyCaptor.capture());
         assertEquals(keyCaptor.getValue(), KEY);
     }
 }
