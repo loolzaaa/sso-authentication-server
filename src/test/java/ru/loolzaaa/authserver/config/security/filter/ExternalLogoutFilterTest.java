@@ -16,7 +16,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ExternalLogoutFilterTest {
 
-    final String EXTERNAL_LOGOUT_PATTERN = "/api/logout";
+    final String externalLogoutPattern = "/api/logout";
 
     @Mock
     SecurityContextService securityContextService;
@@ -51,7 +51,7 @@ class ExternalLogoutFilterTest {
 
     @Test
     void shouldContinueFilteringIfRequestPatternIsValidAndTokenIsNull() throws Exception {
-        when(req.getServletPath()).thenReturn(EXTERNAL_LOGOUT_PATTERN);
+        when(req.getServletPath()).thenReturn(externalLogoutPattern);
         when(req.getParameter("token")).thenReturn(null);
 
         externalLogoutFilter.doFilterInternal(req, resp, filterChain);
@@ -65,7 +65,7 @@ class ExternalLogoutFilterTest {
     @Test
     void shouldContinueFilteringIfRequestPatternIsValidAndTokenIsNotRevoked() throws Exception {
         final String TOKEN = "token";
-        when(req.getServletPath()).thenReturn(EXTERNAL_LOGOUT_PATTERN);
+        when(req.getServletPath()).thenReturn(externalLogoutPattern);
         when(req.getParameter("token")).thenReturn(TOKEN);
         when(jwtService.checkTokenForRevoke(TOKEN)).thenReturn(false);
 
@@ -79,7 +79,7 @@ class ExternalLogoutFilterTest {
     @Test
     void shouldReturnIfRequestPatternIsValidAndTokenIsRevokedAndContinuePathIsNull() throws Exception {
         final String TOKEN = "token";
-        when(req.getServletPath()).thenReturn(EXTERNAL_LOGOUT_PATTERN);
+        when(req.getServletPath()).thenReturn(externalLogoutPattern);
         when(req.getParameter("token")).thenReturn(TOKEN);
         when(req.getParameter("continue")).thenReturn(null);
         when(jwtService.checkTokenForRevoke(TOKEN)).thenReturn(true);
@@ -93,7 +93,7 @@ class ExternalLogoutFilterTest {
     @Test
     void shouldReturnIfRequestPatternIsValidAndTokenIsRevokedAndContinuePathIsInvalidBase64() throws Exception {
         final String TOKEN = "token";
-        when(req.getServletPath()).thenReturn(EXTERNAL_LOGOUT_PATTERN);
+        when(req.getServletPath()).thenReturn(externalLogoutPattern);
         when(req.getParameter("token")).thenReturn(TOKEN);
         when(req.getParameter("continue")).thenReturn("asd+zxc");
         when(jwtService.checkTokenForRevoke(TOKEN)).thenReturn(true);
@@ -107,7 +107,7 @@ class ExternalLogoutFilterTest {
     @Test
     void shouldRedirectIfRequestPatternIsValidAndTokenIsRevokedAndContinuePathIsValid() throws Exception {
         final String TOKEN = "token";
-        when(req.getServletPath()).thenReturn(EXTERNAL_LOGOUT_PATTERN);
+        when(req.getServletPath()).thenReturn(externalLogoutPattern);
         when(req.getParameter("token")).thenReturn(TOKEN);
         when(req.getParameter("continue")).thenReturn("aHR0cDovL2V4YW1wbGUuY29t");
         when(jwtService.checkTokenForRevoke(TOKEN)).thenReturn(true);

@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SecurityContextServiceTest {
 
-    final String LOGIN = "LOGIN";
+    final String login = "LOGIN";
 
     @Mock
     UserRepository userRepository;
@@ -54,10 +54,10 @@ class SecurityContextServiceTest {
     @Test
     void shouldUpdateSecurityContextIfUserExist() {
         User user = mock(User.class);
-        ReflectionTestUtils.setField(user, "login", LOGIN);
-        when(userRepository.findByLogin(LOGIN)).thenReturn(Optional.of(user));
+        ReflectionTestUtils.setField(user, "login", login);
+        when(userRepository.findByLogin(login)).thenReturn(Optional.of(user));
 
-        securityContextService.updateSecurityContextHolder(req, LOGIN);
+        securityContextService.updateSecurityContextHolder(req, login);
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         assertThat(authentication)
@@ -83,7 +83,7 @@ class SecurityContextServiceTest {
     void throwExceptionIfUserNotFound() {
         when(userRepository.findByLogin(anyString())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> securityContextService.updateSecurityContextHolder(req, LOGIN))
+        assertThatThrownBy(() -> securityContextService.updateSecurityContextHolder(req, login))
                 .isInstanceOf(UsernameNotFoundException.class);
     }
 

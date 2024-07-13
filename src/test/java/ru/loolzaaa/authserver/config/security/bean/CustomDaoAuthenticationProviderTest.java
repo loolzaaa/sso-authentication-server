@@ -13,13 +13,13 @@ import ru.loolzaaa.authserver.model.UserPrincipal;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith({MockitoExtension.class})
 class CustomDaoAuthenticationProviderTest {
 
-    final String HASH = "HASH";
+    final String hash = "HASH";
 
     @Mock
     UserPrincipal userDetails;
@@ -36,7 +36,7 @@ class CustomDaoAuthenticationProviderTest {
         authenticationProvider = new CustomDaoAuthenticationProvider();
         authenticationProvider.setPasswordEncoder(passwordEncoder);
 
-        when(authentication.getCredentials()).thenReturn(HASH);
+        when(authentication.getCredentials()).thenReturn(hash);
     }
 
     @Test
@@ -75,7 +75,7 @@ class CustomDaoAuthenticationProviderTest {
     @Test
     void shouldPassIfCredentialsIsValid() {
         final String SALT = "SALT";
-        when(userDetails.getHashes()).thenReturn(List.of(HASH));
+        when(userDetails.getHashes()).thenReturn(List.of(hash));
         when(userDetails.getSalt()).thenReturn(SALT);
         when(passwordEncoder.matches(any(), anyString())).thenReturn(true);
 

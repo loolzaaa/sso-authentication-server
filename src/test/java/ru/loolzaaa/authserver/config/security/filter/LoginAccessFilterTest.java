@@ -64,7 +64,7 @@ class LoginAccessFilterTest {
     }
 
     @Test
-    void shouldCheckLoginPage() throws Exception {
+    void shouldCheckLoginPage() {
         ssoServerProperties.setLoginPage("");
 
         assertThatThrownBy(() -> loginAccessFilter.initFilterBean())
@@ -261,7 +261,6 @@ class LoginAccessFilterTest {
     void shouldHandleAccessDeniedIfAuthenticatedButAppForbidden() throws Exception {
         final String APP = "APP";
         final String TOKEN = "TOKEN";
-        final String TOKEN2 = "TOKEN2";
         final String ABSOLUTE_URL = "http://example.com/test/api";
         final String ENCODED_URL =  Base64.getUrlEncoder().encodeToString(ABSOLUTE_URL.getBytes());
         when(authentication.isAuthenticated()).thenReturn(true);

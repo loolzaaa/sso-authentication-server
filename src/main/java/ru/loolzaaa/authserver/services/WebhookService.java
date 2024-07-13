@@ -40,10 +40,8 @@ public class WebhookService {
     public WebhookService(ObjectMapper mapper, WebhookRepository webhookRepository) {
         this.mapper = mapper;
         this.webhookRepository = webhookRepository;
-
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setErrorHandler(new CustomErrorHandler());
-        this.restTemplate = restTemplate;
+        this.restTemplate = new RestTemplate();
+        this.restTemplate.setErrorHandler(new CustomErrorHandler());
     }
 
     public void fireEvent(WebhookEvent event, String login) {

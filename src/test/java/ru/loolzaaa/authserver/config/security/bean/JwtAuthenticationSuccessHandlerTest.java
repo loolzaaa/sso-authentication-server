@@ -15,7 +15,6 @@ import ru.loolzaaa.authserver.services.JWTService;
 
 import java.util.Base64;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -23,7 +22,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationSuccessHandlerTest {
 
-    final String TOKEN = "TOKEN";
+    final String token = "TOKEN";
 
     @Mock
     HttpServletRequest req;
@@ -41,8 +40,8 @@ class JwtAuthenticationSuccessHandlerTest {
     void setUp() {
         successHandler = new JwtAuthenticationSuccessHandler(jwtService);
 
-        when(jwtService.authenticateWithJWT(eq(req), eq(resp), eq(authentication), anyString())).thenReturn(TOKEN);
-        lenient().when(jwtService.authenticateWithJWT(eq(req), eq(authentication), anyString())).thenReturn(TOKEN);
+        when(jwtService.authenticateWithJWT(eq(req), eq(resp), eq(authentication), anyString())).thenReturn(token);
+        lenient().when(jwtService.authenticateWithJWT(eq(req), eq(authentication), anyString())).thenReturn(token);
     }
 
     @ParameterizedTest
@@ -115,7 +114,7 @@ class JwtAuthenticationSuccessHandlerTest {
         );
         return decoded.stream()
                 .map(s -> new String(Base64.getUrlEncoder().encode(s.getBytes())))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     static List<String> getValidUrls() {
@@ -125,6 +124,6 @@ class JwtAuthenticationSuccessHandlerTest {
         );
         return decoded.stream()
                 .map(s -> new String(Base64.getUrlEncoder().encode(s.getBytes())))
-                .collect(Collectors.toList());
+                .toList();
     }
 }
