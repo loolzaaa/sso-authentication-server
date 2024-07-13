@@ -37,7 +37,7 @@ public class ExternalLogoutFilter extends OncePerRequestFilter {
         }
 
         String token = req.getParameter("token");
-        if (isTokenRevoked(token)) {
+        if (isTokenIsNullOrNotRevoked(token)) {
             chain.doFilter(req, resp);
             return;
         }
@@ -61,11 +61,11 @@ public class ExternalLogoutFilter extends OncePerRequestFilter {
         }
     }
 
-    private boolean isTokenRevoked(String token) {
-        boolean tokenRevoked = token == null || !jwtService.checkTokenForRevoke(token);
-        if (tokenRevoked) {
+    private boolean isTokenIsNullOrNotRevoked(String token) {
+        boolean tokenIsNullOrNotRevoked = token == null || !jwtService.checkTokenForRevoke(token);
+        if (tokenIsNullOrNotRevoked) {
             logger.debug("Token is null or not revoked");
         }
-        return tokenRevoked;
+        return tokenIsNullOrNotRevoked;
     }
 }

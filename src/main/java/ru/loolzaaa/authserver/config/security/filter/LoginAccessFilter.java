@@ -52,12 +52,12 @@ public class LoginAccessFilter extends GenericFilterBean {
         String uriWithoutContextPath = servletRequest.getRequestURI().substring(servletRequest.getContextPath().length());
         String appParameter = req.getParameter("app");
         String continueParameter = req.getParameter("continue");
-        if (isAuthenticated() && ssoServerProperties.getLoginPage().equals(uriWithoutContextPath)) {
+        if (isAuthenticatedUserGoesToLoginPage(uriWithoutContextPath)) {
             logger.debug("Already authenticated user with login path detected");
 
             String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), servletRequest.getCookies());
             if (appParameter == null || continueParameter == null || accessToken == null) {
-                logger.debug("Continue parameter or access token is null");
+                logger.debug("Application, continue parameter or access token is null");
                 setTemporaryRedirect(servletRequest, servletResponse);
 
                 chain.doFilter(servletRequest, servletResponse);
@@ -65,40 +65,37 @@ public class LoginAccessFilter extends GenericFilterBean {
             }
 
             logger.debug("Suppose application doesn't have access token, but server has");
-            String appName;
-            String continueUri;
             try {
-                appName = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
-                continueUri = new String(Base64.getUrlDecoder().decode(continueParameter)).replaceAll("[\r\n]", "_");
-                logger.debug("Try to redirect to " + continueUri);
-                if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
+                String appName = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
+                String continueUrl = new String(Base64.getUrlDecoder().decode(continueParameter)).replaceAll("[\r\n]", "_");
+                logger.debug("Try to redirect to " + continueUrl);
+                if (isValidUrl(continueUrl)) {
                     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                    authenticateAndRedirect(servletRequest, servletResponse, authentication, appName, continueUri);
+                    authenticateAndRedirect(servletRequest, servletResponse, authentication, appName, continueUrl);
                     return;
-                } else {
-                    logger.warn("Continue parameter is not absolute url or empty: " + continueUri);
-                    setTemporaryRedirect(servletRequest, servletResponse);
                 }
+                logger.warn("Continue parameter is not absolute url or empty: " + continueUrl);
+                setTemporaryRedirect(servletRequest, servletResponse);
             } catch (IllegalArgumentException e) {
                 logger.warn("Continue parameter is not valid Base64 scheme");
                 setTemporaryRedirect(servletRequest, servletResponse);
             }
-        } else if (!isAuthenticated() && ssoServerProperties.getLoginPage().equals(uriWithoutContextPath)) {
+        } else if (isNotAuthenticatedUserGoesToLoginPage(uriWithoutContextPath)) {
             if (appParameter == null || continueParameter == null) {
+                logger.debug("Application or continue parameter is null");
+
                 chain.doFilter(servletRequest, servletResponse);
                 return;
             }
 
-            String continueUri;
             try {
-                continueUri = new String(Base64.getUrlDecoder().decode(continueParameter)).replaceAll("[\r\n]", "_");
-                if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
+                String continueUrl = new String(Base64.getUrlDecoder().decode(continueParameter)).replaceAll("[\r\n]", "_");
+                if (isValidUrl(continueUrl)) {
                     RequestDispatcher dispatcher = req.getRequestDispatcher(ssoServerProperties.getLoginPage());
                     dispatcher.forward(req, resp);
                     return;
-                } else {
-                    logger.warn("Continue parameter is not absolute url or empty: " + continueUri);
                 }
+                logger.warn("Continue parameter is not absolute url or empty: " + continueUrl);
             } catch (Exception e) {
                 logger.warn("Continue parameter is not valid Base64 scheme");
             }
@@ -120,6 +117,14 @@ public class LoginAccessFilter extends GenericFilterBean {
         }
     }
 
+    private boolean isAuthenticatedUserGoesToLoginPage(String uriWithoutContextPath) {
+        return isAuthenticated() && ssoServerProperties.getLoginPage().equals(uriWithoutContextPath);
+    }
+
+    private boolean isNotAuthenticatedUserGoesToLoginPage(String uriWithoutContextPath) {
+        return !isAuthenticated() && ssoServerProperties.getLoginPage().equals(uriWithoutContextPath);
+    }
+
     private boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || AnonymousAuthenticationToken.class.isAssignableFrom(authentication.getClass())) {
@@ -137,5 +142,9 @@ public class LoginAccessFilter extends GenericFilterBean {
 
         servletResponse.setStatus(HttpStatus.TEMPORARY_REDIRECT.value());
         servletResponse.setHeader(HttpHeaders.LOCATION, encodedRedirectURL);
+    }
+
+    private boolean isValidUrl(String url) {
+        return StringUtils.hasText(url) && UrlUtils.isAbsoluteUrl(url);
     }
 }

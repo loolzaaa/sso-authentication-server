@@ -86,15 +86,7 @@ public class UserControlService {
         List<UserPrincipal> users = new ArrayList<>();
         try {
             for (User u : allUsers) {
-                UserPrincipal userPrincipal;
-                try {
-                    userPrincipal = new UserPrincipal(u, appName);
-                    if (userPrincipal.getAuthorities().contains(grantedAuthority)) {
-                        users.add(userPrincipal);
-                    }
-                } catch (IllegalArgumentException ignored) {
-                    log.debug("Can't create user by authority [{}] in application [{}]", authority, appName);
-                }
+                addUserByAuthority(appName, authority, u, grantedAuthority, users);
             }
             log.debug("Return {} users by authority [{}] in application [{}]", users.size(), authority, appName);
             return users;
@@ -412,12 +404,23 @@ public class UserControlService {
 
         jdbcTemplate.update(INSERT_HASH_STATEMENT, hash);
 
-        //TODO: Some notifications?
-
         log.info("Temporary user [{}] created for user [{}]", dTemporaryLogin, temporaryLogin);
         String message = messageSource.getMessage("userControl.temporary.success",
                 new Object[]{dTemporaryLogin, dTemporaryPassword}, l);
         return RequestStatusDTO.ok(message);
+    }
+
+    private void addUserByAuthority(String appName, String authority, User u, SimpleGrantedAuthority grantedAuthority,
+                                    List<UserPrincipal> users) {
+        UserPrincipal userPrincipal;
+        try {
+            userPrincipal = new UserPrincipal(u, appName);
+            if (userPrincipal.getAuthorities().contains(grantedAuthority)) {
+                users.add(userPrincipal);
+            }
+        } catch (IllegalArgumentException ignored) {
+            log.debug("Can't create user by authority [{}] in application [{}]", authority, appName);
+        }
     }
 
     private boolean checkUserAndDeleteHash(User user, String password) {

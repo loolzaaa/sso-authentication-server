@@ -73,20 +73,18 @@ public class AccessController {
         String continuePath = req.getParameter("_continue");
         if (continuePath == null) {
             return !isRefreshTokenValid ? (REDIRECT_CMD + ssoServerProperties.getLoginPage()) : REDIRECT_CMD + "/";
-        } else {
-            String continueUri = new String(Base64.getUrlDecoder().decode(continuePath));
-            if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-                UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromHttpUrl(continueUri);
-                if (isRefreshTokenValid) {
-                    uriComponentsBuilder
-                            .queryParam("token", jwtAuthentication.getAccessToken())
-                            .queryParam("serverTime", System.currentTimeMillis());
-                }
-                return REDIRECT_CMD + uriComponentsBuilder.toUriString();
-            } else {
-                return !isRefreshTokenValid ? (REDIRECT_CMD + ssoServerProperties.getLoginPage()) : REDIRECT_CMD + "/";
-            }
         }
+        String continueUrl = new String(Base64.getUrlDecoder().decode(continuePath));
+        if (!isValidRedirectUrl(continueUrl)) {
+            return !isRefreshTokenValid ? (REDIRECT_CMD + ssoServerProperties.getLoginPage()) : REDIRECT_CMD + "/";
+        }
+        UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromHttpUrl(continueUrl);
+        if (isRefreshTokenValid) {
+            uriComponentsBuilder
+                    .queryParam("token", jwtAuthentication.getAccessToken())
+                    .queryParam("serverTime", System.currentTimeMillis());
+        }
+        return REDIRECT_CMD + uriComponentsBuilder.toUriString();
     }
 
     @PostMapping("/refresh/ajax")
@@ -145,35 +143,34 @@ public class AccessController {
             throw new RequestErrorException("FROM and LOGIN parameter must not be empty string");
         }
 
-        String continueUri;
+        String continueUrl;
         try {
-            continueUri = new String(Base64.getUrlDecoder().decode(from));
+            continueUrl = new String(Base64.getUrlDecoder().decode(from));
         } catch (IllegalArgumentException e) {
             throw new RequestErrorException("Invalid Base64 scheme for FROM parameter for RFID authentication");
         }
-        if (StringUtils.hasText(continueUri) && UrlUtils.isValidRedirectUrl(continueUri)) {
-            securityContextService.updateSecurityContextHolder(req, login);
-
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
-
-            try {
-                if (app != null) {
-                    accessToken = jwtService.authenticateWithJWT(req, authentication, app);
-                }
-            } catch (Exception e) {
-                throw new RequestErrorException(e.getMessage());
-            }
-
-            String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
-                    .queryParam("token", accessToken)
-                    .queryParam("serverTime", System.currentTimeMillis())
-                    .queryParam(CookieName.RFID.getName())
-                    .toUriString();
-            return REDIRECT_CMD + redirectURL;
-        } else {
+        if (!isValidRedirectUrl(continueUrl)) {
             throw new RequestErrorException("Invalid FROM parameter for RFID authentication");
         }
+        securityContextService.updateSecurityContextHolder(req, login);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String accessToken = jwtService.authenticateWithJWT(req, resp, authentication, "RFID");
+
+        try {
+            if (app != null) {
+                accessToken = jwtService.authenticateWithJWT(req, authentication, app);
+            }
+        } catch (Exception e) {
+            throw new RequestErrorException(e.getMessage());
+        }
+
+        String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUrl)
+                .queryParam("token", accessToken)
+                .queryParam("serverTime", System.currentTimeMillis())
+                .queryParam(CookieName.RFID.getName())
+                .toUriString();
+        return REDIRECT_CMD + redirectURL;
     }
 
     @PreAuthorize("hasAuthority('REVOKE_TOKEN')")
@@ -182,5 +179,9 @@ public class AccessController {
     @PostMapping("/fast/prepare_logout")
     void prepareLogout(@RequestHeader("Revoke-Token") String token) {
         jwtService.revokeToken(token);
+    }
+
+    private boolean isValidRedirectUrl(String url) {
+        return StringUtils.hasText(url) && UrlUtils.isValidRedirectUrl(url);
     }
 }
