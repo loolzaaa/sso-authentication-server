@@ -17,6 +17,8 @@ import ru.loolzaaa.authserver.services.JWTService;
 import ru.loolzaaa.authserver.services.SecurityContextService;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
@@ -87,15 +89,16 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
                 // If client application NOT CONTAIN access token, it will redirect to login with continue param,
                 // but SSO application can contain access token, so it will try to refresh it
+                UriComponentsBuilder uriComponentsBuilder;
                 String continuePath = req.getParameter("continue");
                 if (continuePath == null) {
-                    resp.sendRedirect(req.getContextPath() + ssoServerProperties.getRefreshUri());
+                    continuePath = Base64.getUrlEncoder().encodeToString(UrlUtils.buildFullRequestUrl(req).getBytes(StandardCharsets.UTF_8));
+                    uriComponentsBuilder = UriComponentsBuilder.fromUriString(req.getContextPath() + ssoServerProperties.getRefreshUri());
                 } else {
-                    String redirectURL = UriComponentsBuilder.fromHttpUrl(getServerUrl(req) + ssoServerProperties.getRefreshUri())
-                            .queryParam("continue", continuePath)
-                            .toUriString();
-                    resp.sendRedirect(redirectURL);
+                    uriComponentsBuilder = UriComponentsBuilder.fromHttpUrl(getServerUrl(req) + ssoServerProperties.getRefreshUri());
                 }
+                String redirectURL = uriComponentsBuilder.queryParam("continue", continuePath).toUriString();
+                resp.sendRedirect(redirectURL);
             }
             return;
         }

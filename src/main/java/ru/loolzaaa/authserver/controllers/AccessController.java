@@ -79,7 +79,7 @@ public class AccessController {
             return !isRefreshTokenValid ? (REDIRECT_CMD + ssoServerProperties.getLoginPage()) : REDIRECT_CMD + "/";
         }
         UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromHttpUrl(continueUrl);
-        if (isRefreshTokenValid) {
+        if (isRefreshTokenValid && req.getParameter("_app") != null) {
             uriComponentsBuilder
                     .queryParam("token", jwtAuthentication.getAccessToken())
                     .queryParam("serverTime", System.currentTimeMillis());
