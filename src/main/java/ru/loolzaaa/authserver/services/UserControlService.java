@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AccountStatusException;
@@ -55,6 +56,7 @@ public class UserControlService {
 
     private final UserRepository userRepository;
 
+    @Qualifier("jwtAuthenticationProvider")
     private final AuthenticationProvider authenticationProvider;
 
     private final CustomPBKDF2PasswordEncoder passwordEncoder;

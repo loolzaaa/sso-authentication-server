@@ -56,7 +56,7 @@ public class JwtSecurityConfig {
     private final SecurityContextService securityContextService;
 
     @Bean
-    AuthenticationProvider authenticationProvider() {
+    public AuthenticationProvider jwtAuthenticationProvider() {
         CustomDaoAuthenticationProvider authenticationProvider = new CustomDaoAuthenticationProvider();
         authenticationProvider.setPasswordEncoder(passwordEncoder);
         authenticationProvider.setUserDetailsService(userDetailsService);
