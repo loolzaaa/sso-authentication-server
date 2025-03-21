@@ -8,6 +8,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -23,7 +26,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @EnableMethodSecurity
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class SecurityConfig implements WebSecurityCustomizer {
 
     @Value("${spring.profiles.active:}")
@@ -37,24 +40,29 @@ public class SecurityConfig implements WebSecurityCustomizer {
         }
     }
 
+    @Bean
+    public AuthenticationManager authenticationManager(List<AuthenticationProvider> authenticationProviders) {
+        return new ProviderManager(authenticationProviders);
+    }
+
     @Profile("!noop")
     @Qualifier("jwtPasswordEncoder")
     @Bean
-    PasswordEncoder jwtPasswordEncoder() {
+    public PasswordEncoder jwtPasswordEncoder() {
         return new CustomPBKDF2PasswordEncoder();
     }
 
     @Primary
     @Qualifier("basicPasswordEncoder")
     @Bean
-    PasswordEncoder basicPasswordEncoder() {
+    public PasswordEncoder basicPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Profile("noop")
     @Qualifier("jwtPasswordEncoder")
     @Bean
-    PasswordEncoder noopPasswordEncoder() {
+    public PasswordEncoder noopPasswordEncoder() {
         return new NoopCustomPasswordEncoder();
     }
 
