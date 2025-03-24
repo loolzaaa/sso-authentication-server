@@ -14,11 +14,10 @@ import ru.loolzaaa.authserver.config.security.WithMockJwtUser;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.dto.CreateUserRequestDTO;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @TestProfiles
 @SpringBootTest
@@ -50,6 +49,7 @@ class JwtSecurityTests {
                         .param("username", "admin")
                         .param("password", "pass")
                         .param("_fingerprint", "TEST")
+                        .param("_authenticationMode", "sso")
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(cookie().exists(CookieName.ACCESS.getName()))
