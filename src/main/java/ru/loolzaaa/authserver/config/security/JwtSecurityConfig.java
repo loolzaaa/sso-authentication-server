@@ -82,6 +82,7 @@ public class JwtSecurityConfig {
                         .antMatchers(ignoredPathsHandler.toAntPatterns()).permitAll()
                         .anyRequest().hasAuthority(ssoServerProperties.getApplication().getName()))
                 .formLogin(formLogin -> formLogin
+                        .authenticationDetailsSource(new CustomAuthenticationDetailsSource())
                         .loginPage(ssoServerProperties.getLoginPage())
                         .loginProcessingUrl("/do_login")
                         .failureHandler(jwtAuthenticationFailureHandler)
