@@ -128,6 +128,52 @@ sso.server.basic.actuatorEnable=true
 **Note:** all basic users must have `BasicUsersProperties.basicUserAuthority`
 authority for access.
 
+## LDAP Configuration
+
+This SSO server can authenticate user via external LDAP or Active Directory
+server. By default, this feature is disabled.
+
+```
+# Enable LDAP/AD authentication feature
+# Default: false
+sso.server.ldap.enabled=true
+
+# Mode of LDAP/AD feature.
+# Permitted values: ad, ldap
+sso.server.ldap.mode=ad
+
+# LDAP provider URL. Must starts with ldap: or ldaps:
+sso.server.ldap.providerUrl=ldap://oasup.pnppk.ru:389
+
+# Active Directory domain for binding user
+sso.server.ldap.domain=oasup.pnppk.ru
+
+# Referral policy for Active Directory search queries
+# Permitted values: ignore, follow, throw, null
+sso.server.ldap.referral=follow
+
+# LDAP user distinguished name patterns
+# Example: uid={0},ou=people
+sso.server.ldap.userDnPatterns
+
+# Search base for user searches. Only used with search filter
+# Default: ""
+# Example: ou=people
+sso.server.ldap.searchBase
+
+# The LDAP/AD filter used to search for users
+# Example: (uid={0})
+sso.server.ldap.searchFilter=(samaccountname={0})
+
+# The attributes which will be retrieved from the directory.
+# Null means all attributes
+sso.server.ldap.userAttributes="userprincipalname, displayname"
+```
+
+To enable LDAP feature with full configuration, you can place
+`application-ldap.properties` file with all necessary properties
+in *current directory*. After that, run application with `ldap` profile.
+
 ### External application logout
 
 In addition, the application defines a user to revoke JWT tokens
