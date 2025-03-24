@@ -69,7 +69,7 @@ and `postgres` profiles active:
 ```shell
 ./mvnw clean package -DskipTests
 cd ./target/
-java "-Dspring.profiles.active=dev,postgres" -jar ./auth-server-0.5.0.jar
+java "-Dspring.profiles.active=dev,postgres" -jar ./auth-server-0.6.0.jar
 ```
 
 # Server Configuration
