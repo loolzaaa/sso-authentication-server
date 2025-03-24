@@ -24,7 +24,7 @@ public class Webhook {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Webhook webhook = (Webhook) o;
-        return id.equals(webhook.id);
+        return Objects.equals(id, webhook.id);
     }
 
     @Override

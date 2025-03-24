@@ -3,6 +3,7 @@ package ru.loolzaaa.authserver.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,6 +22,7 @@ public class UserPrincipal implements UserDetails {
 
     private static String applicationName;
 
+    @Getter
     private final User user;
 
     private final List<GrantedAuthority> authorities = new ArrayList<>();
@@ -34,38 +36,40 @@ public class UserPrincipal implements UserDetails {
         this.user = user;
 
         JsonNode userConf = user.getJsonConfig();
-        if (userConf != null) {
-            userConf.fieldNames().forEachRemaining(s -> authorities.add(new SimpleGrantedAuthority(s)));
-            if (userConf.has(applicationName)) {
-                JsonNode authNode = userConf.get(applicationName);
-                if (authNode.has(UserAttributes.ROLES)) {
-                    authNode.get(UserAttributes.ROLES).forEach(role -> this.authorities.add(new SimpleGrantedAuthority(role.asText())));
-                }
-                if (authNode.has(UserAttributes.CREDENTIALS_EXP) && isUserCredentialsExpired(authNode)) {
-                    log.info("User [{}] credentials is expired", user.getLogin());
-                    this.credentialsNonExpired = false;
-                }
-                if (authNode.has(UserAttributes.LOCK)) {
-                    this.accountNonLocked = !authNode.get(UserAttributes.LOCK).asBoolean();
-                }
-
-                //check for date access for temporary user
-                if (authNode.has(UserAttributes.TEMPORARY)) {
-                    ((ObjectNode) authNode.get(UserAttributes.TEMPORARY)).remove("pass");
-                    LocalDate dateFrom = LocalDate.parse(authNode.get(UserAttributes.TEMPORARY).get("dateFrom").asText());
-                    LocalDate dateTo = LocalDate.parse(authNode.get(UserAttributes.TEMPORARY).get("dateTo").asText());
-                    if (dateFrom.isAfter(LocalDate.now()) || dateTo.isBefore(LocalDate.now())) {
-                        log.info("User [{}] temporary account is expired", user.getLogin());
-                        this.accountNonExpired = false;
-                    }
-                }
-            } else {
-                log.info("User [{}] is locked", user.getLogin());
-                this.accountNonLocked = false;
-            }
-        } else {
+        if (userConf == null) {
             log.warn("User [{}] does not contain config", user.getLogin());
             this.accountNonLocked = false;
+            return;
+        }
+
+        userConf.fieldNames().forEachRemaining(s -> authorities.add(new SimpleGrantedAuthority(s)));
+        if (!userConf.has(applicationName)) {
+            log.info("User [{}] is locked", user.getLogin());
+            this.accountNonLocked = false;
+            return;
+        }
+
+        JsonNode authNode = userConf.get(applicationName);
+        if (authNode.has(UserAttributes.ROLES)) {
+            authNode.get(UserAttributes.ROLES).forEach(role -> this.authorities.add(new SimpleGrantedAuthority(role.asText())));
+        }
+        if (authNode.has(UserAttributes.CREDENTIALS_EXP) && isUserCredentialsExpired(authNode)) {
+            log.info("User [{}] credentials is expired", user.getLogin());
+            this.credentialsNonExpired = false;
+        }
+        if (authNode.has(UserAttributes.LOCK)) {
+            this.accountNonLocked = !authNode.get(UserAttributes.LOCK).asBoolean();
+        }
+
+        //check for date access for temporary user
+        if (authNode.has(UserAttributes.TEMPORARY)) {
+            ((ObjectNode) authNode.get(UserAttributes.TEMPORARY)).remove("pass");
+            LocalDate dateFrom = LocalDate.parse(authNode.get(UserAttributes.TEMPORARY).get("dateFrom").asText());
+            LocalDate dateTo = LocalDate.parse(authNode.get(UserAttributes.TEMPORARY).get("dateTo").asText());
+            if (dateFrom.isAfter(LocalDate.now()) || dateTo.isBefore(LocalDate.now())) {
+                log.info("User [{}] temporary account is expired", user.getLogin());
+                this.accountNonExpired = false;
+            }
         }
     }
 
@@ -74,26 +78,29 @@ public class UserPrincipal implements UserDetails {
         this(user);
 
         JsonNode userConf = user.getJsonConfig();
-        if (userConf != null) {
-            if (app != null) {
-                JsonNode appConfig = userConf.get(app);
-                if (appConfig != null) {
-                    this.authorities.removeIf(grantedAuthority -> !app.equals(grantedAuthority.getAuthority()));
-                    if (appConfig.has(UserAttributes.ROLES)) {
-                        appConfig.get(UserAttributes.ROLES).forEach(role -> this.authorities.add(new SimpleGrantedAuthority(role.asText())));
-                    }
-                    if (appConfig.has(UserAttributes.PRIVILEGES)) {
-                        appConfig.get(UserAttributes.PRIVILEGES).forEach(privilege -> this.authorities.add(new SimpleGrantedAuthority(privilege.asText())));
-                    }
-                    ((ObjectNode) appConfig).remove(List.of(UserAttributes.ROLES, UserAttributes.PRIVILEGES));
-                    if (userConf.get(applicationName).has(UserAttributes.TEMPORARY)) {
-                        JsonNode temporaryNode = userConf.get(applicationName).get(UserAttributes.TEMPORARY);
-                        ((ObjectNode) appConfig).set(UserAttributes.TEMPORARY, temporaryNode);
-                    }
-                    user.setConfig(new UserConfigWrapper(appConfig));
-                } else throw new IllegalArgumentException(String.format("There is no application [%s] for user [%s]", app, this.user.getLogin()));
-            }
-        } else throw new IllegalArgumentException(String.format("There is no config for user [%s]", this.user.getLogin()));
+        if (userConf == null) {
+            throw new IllegalArgumentException(String.format("There is no config for user [%s]", this.user.getLogin()));
+        }
+        if (app == null) {
+            return;
+        }
+        JsonNode appConfig = userConf.get(app);
+        if (appConfig == null) {
+            throw new IllegalArgumentException(String.format("There is no application [%s] for user [%s]", app, this.user.getLogin()));
+        }
+        this.authorities.removeIf(grantedAuthority -> !app.equals(grantedAuthority.getAuthority()));
+        if (appConfig.has(UserAttributes.ROLES)) {
+            appConfig.get(UserAttributes.ROLES).forEach(role -> this.authorities.add(new SimpleGrantedAuthority(role.asText())));
+        }
+        if (appConfig.has(UserAttributes.PRIVILEGES)) {
+            appConfig.get(UserAttributes.PRIVILEGES).forEach(privilege -> this.authorities.add(new SimpleGrantedAuthority(privilege.asText())));
+        }
+        ((ObjectNode) appConfig).remove(List.of(UserAttributes.ROLES, UserAttributes.PRIVILEGES));
+        if (userConf.get(applicationName).has(UserAttributes.TEMPORARY)) {
+            JsonNode temporaryNode = userConf.get(applicationName).get(UserAttributes.TEMPORARY);
+            ((ObjectNode) appConfig).set(UserAttributes.TEMPORARY, temporaryNode);
+        }
+        user.setConfig(new UserConfigWrapper(appConfig));
     }
 
     public static void setApplicationName(String applicationName) {
@@ -113,10 +120,6 @@ public class UserPrincipal implements UserDetails {
     @JsonIgnore
     public List<String> getHashes() {
         return user.getHashes();
-    }
-
-    public User getUser() {
-        return user;
     }
 
     @Override
@@ -160,9 +163,9 @@ public class UserPrincipal implements UserDetails {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof UserPrincipal)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         UserPrincipal that = (UserPrincipal) o;
-        return user.equals(that.user);
+        return Objects.equals(user, that.user);
     }
 
     @Override

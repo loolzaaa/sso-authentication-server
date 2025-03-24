@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,8 +37,7 @@ public class BasicSecurityConfig {
     @Qualifier("basicPasswordEncoder")
     private final PasswordEncoder passwordEncoder;
 
-    @Bean
-    @Qualifier("basicUserDetailsService")
+    @Bean("basicUserDetailsService")
     public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
         if (basicUsersProperties.getUsers().isEmpty()) {
             log.warn("\n\n\tThere is no basic users in properties. Some API unavailable!\n");
@@ -75,17 +75,17 @@ public class BasicSecurityConfig {
         final String basicPrepareLogoutMatcherPattern = "/api/fast/prepare_logout";
         http
                 .userDetailsService(inMemoryUserDetailsManager())
-                .antMatcher(basicMvcMatcherPattern)
-                .csrf().disable()
+                .securityMatcher(basicMvcMatcherPattern)
+                .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .antMatchers(HttpMethod.POST, basicPrepareLogoutMatcherPattern).hasAuthority(basicUsersProperties.getRevokeAuthority())
-                        .antMatchers(HttpMethod.POST, "/api/fast/rfid").permitAll()
+                        .requestMatchers(HttpMethod.POST, basicPrepareLogoutMatcherPattern).hasAuthority(basicUsersProperties.getRevokeAuthority())
+                        .requestMatchers(HttpMethod.POST, "/api/fast/rfid").permitAll()
                         .anyRequest().hasAuthority(basicUsersProperties.getBasicUserAuthority()))
                 .httpBasic(httpBasic -> httpBasic
                         .realmName("Fast API"))
-                .anonymous().disable();
+                .anonymous(AbstractHttpConfigurer::disable);
         log.debug("Basic [{}] configuration completed", basicMvcMatcherPattern);
         log.debug("JWT logout for other applications can be prepared via POST {} with '{}' authority",
                 basicPrepareLogoutMatcherPattern, basicUsersProperties.getRevokeAuthority());
@@ -98,8 +98,8 @@ public class BasicSecurityConfig {
     public SecurityFilterChain actuatorFilterChain(HttpSecurity http) throws Exception {
         http
                 .userDetailsService(inMemoryUserDetailsManager())
-                .requestMatcher(EndpointRequest.toAnyEndpoint())
-                .csrf().disable()
+                .securityMatcher(EndpointRequest.toAnyEndpoint())
+                .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize

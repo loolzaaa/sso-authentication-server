@@ -29,6 +29,7 @@ import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.repositories.UserRepository;
 import ru.loolzaaa.authserver.webhook.WebhookEvent;
 
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -36,7 +37,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -44,7 +44,11 @@ import java.util.stream.Collectors;
 @Service
 public class UserControlService {
 
-    private final Random random = new Random();
+    private static final String USER_NOT_FOUND_MSG_KEY = "userControl.userNotFound";
+
+    private static final String INSERT_HASH_STATEMENT = "INSERT INTO hashes VALUES (?)";
+
+    private final SecureRandom random = new SecureRandom();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -67,7 +71,7 @@ public class UserControlService {
         User user = userRepository.findByLogin(username).orElse(null);
         if (user == null) {
             log.debug("Try to receive invalid user [{}] for app [{}]", username, appName);
-            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{username}, l);
+            String message = messageSource.getMessage(USER_NOT_FOUND_MSG_KEY, new Object[]{username}, l);
             throw new RequestErrorException(message);
         }
         try {
@@ -86,15 +90,7 @@ public class UserControlService {
         List<UserPrincipal> users = new ArrayList<>();
         try {
             for (User u : allUsers) {
-                UserPrincipal userPrincipal;
-                try {
-                    userPrincipal = new UserPrincipal(u, appName);
-                    if (userPrincipal.getAuthorities().contains(grantedAuthority)) {
-                        users.add(userPrincipal);
-                    }
-                } catch (IllegalArgumentException ignored) {
-                    log.debug("Can't create user by authority [{}] in application [{}]", authority, appName);
-                }
+                addUserByAuthority(appName, authority, u, grantedAuthority, users);
             }
             log.debug("Return {} users by authority [{}] in application [{}]", users.size(), authority, appName);
             return users;
@@ -154,7 +150,7 @@ public class UserControlService {
                 .build();
         userRepository.save(user);
 
-        jdbcTemplate.update("INSERT INTO hashes VALUES (?)", hash);
+        jdbcTemplate.update(INSERT_HASH_STATEMENT, hash);
 
         log.info("Create new user [{}] with start application: {}", login, app);
         String message = messageSource.getMessage("userControl.create.success", new Object[]{login, tempPassword}, l);
@@ -167,7 +163,7 @@ public class UserControlService {
 
         if (user == null) {
             log.warn("Try to delete non existing user: {}", login);
-            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            String message = messageSource.getMessage(USER_NOT_FOUND_MSG_KEY, new Object[]{login}, l);
             throw new RequestErrorException(message);
         }
 
@@ -211,7 +207,7 @@ public class UserControlService {
 
         if (user == null) {
             log.warn("Try to lock non existing user: {}", login);
-            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            String message = messageSource.getMessage(USER_NOT_FOUND_MSG_KEY, new Object[]{login}, l);
             throw new RequestErrorException(message);
         }
 
@@ -238,7 +234,7 @@ public class UserControlService {
 
         if (user == null) {
             log.warn("Try to change password for non existing user: {}", login);
-            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            String message = messageSource.getMessage(USER_NOT_FOUND_MSG_KEY, new Object[]{login}, l);
             throw new RequestErrorException(message);
         }
 
@@ -270,7 +266,7 @@ public class UserControlService {
             userRepository.updateConfigByLogin(user.getConfig(), login);
         }
 
-        jdbcTemplate.update("INSERT INTO hashes VALUES (?)", newHash);
+        jdbcTemplate.update(INSERT_HASH_STATEMENT, newHash);
 
         log.info("Password for user [{}] changed", login);
         String message = messageSource.getMessage("userControl.changePassword.success", new Object[]{login}, l);
@@ -296,7 +292,7 @@ public class UserControlService {
 
         if (user == null) {
             log.warn("Try to change config for non existing user: {}", login);
-            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            String message = messageSource.getMessage(USER_NOT_FOUND_MSG_KEY, new Object[]{login}, l);
             throw new RequestErrorException(message);
         }
 
@@ -328,7 +324,7 @@ public class UserControlService {
 
         if (user == null) {
             log.warn("Try to delete config for non existing user: {}", login);
-            String message = messageSource.getMessage("userControl.userNotFound", new Object[]{login}, l);
+            String message = messageSource.getMessage(USER_NOT_FOUND_MSG_KEY, new Object[]{login}, l);
             throw new RequestErrorException(message);
         }
 
@@ -410,14 +406,25 @@ public class UserControlService {
                 .build();
         userRepository.save(dTemporaryUser);
 
-        jdbcTemplate.update("INSERT INTO hashes VALUES (?)", hash);
-
-        //TODO: Some notifications?
+        jdbcTemplate.update(INSERT_HASH_STATEMENT, hash);
 
         log.info("Temporary user [{}] created for user [{}]", dTemporaryLogin, temporaryLogin);
         String message = messageSource.getMessage("userControl.temporary.success",
                 new Object[]{dTemporaryLogin, dTemporaryPassword}, l);
         return RequestStatusDTO.ok(message);
+    }
+
+    private void addUserByAuthority(String appName, String authority, User u, SimpleGrantedAuthority grantedAuthority,
+                                    List<UserPrincipal> users) {
+        UserPrincipal userPrincipal;
+        try {
+            userPrincipal = new UserPrincipal(u, appName);
+            if (userPrincipal.getAuthorities().contains(grantedAuthority)) {
+                users.add(userPrincipal);
+            }
+        } catch (IllegalArgumentException ignored) {
+            log.debug("Can't create user by authority [{}] in application [{}]", authority, appName);
+        }
     }
 
     private boolean checkUserAndDeleteHash(User user, String password) {

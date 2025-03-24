@@ -29,12 +29,12 @@ class JWTUtilsTest {
         Jws<Claims> claimsJws = jwtUtils.parserEnforceAccessToken(token);
 
         assertNotNull(claimsJws);
-        assertNotNull(claimsJws.getBody());
-        assertEquals(claimValue, claimsJws.getBody().get(claimName));
+        assertNotNull(claimsJws.getPayload());
+        assertEquals(claimValue, claimsJws.getPayload().get(claimName));
     }
 
     @Test
-    void shouldThrowExceptionSomeKeyFileNotFound() throws Exception {
+    void shouldThrowExceptionSomeKeyFileNotFound() {
         assertThrows(IOException.class, () -> new JWTUtils("ERR.KEY"));
     }
 }

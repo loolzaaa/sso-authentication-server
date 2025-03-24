@@ -12,7 +12,8 @@ import ru.loolzaaa.authserver.config.security.JWTUtils;
 
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,7 +32,7 @@ class RefreshTokenCleanerTaskTest {
     }
 
     @Test
-    void shouldThrowExceptionIfTokenTtlInvalid() throws Exception {
+    void shouldThrowExceptionIfTokenTtlInvalid() {
         given(jwtUtils.getRefreshTokenTtl()).willReturn(Duration.ZERO);
 
         assertThrows(IllegalArgumentException.class, () -> refreshTokenCleanerTask.clean());
@@ -39,18 +40,18 @@ class RefreshTokenCleanerTaskTest {
 
     @ParameterizedTest
     @ValueSource(ints = {0, 1})
-    void shouldCleanOldRefreshTokens(int count) throws Exception {
+    void shouldCleanOldRefreshTokens(int count) {
         given(jwtUtils.getRefreshTokenTtl()).willReturn(Duration.ofHours(10));
         given(jdbcTemplate.update(anyString())).willReturn(count);
 
-        refreshTokenCleanerTask.clean();
+        assertDoesNotThrow(() -> refreshTokenCleanerTask.clean());
     }
 
     @Test
-    void shouldCorrectWorkIfDbError() throws Exception {
+    void shouldCorrectWorkIfDbError() {
         given(jwtUtils.getRefreshTokenTtl()).willReturn(Duration.ofHours(10));
         when(jdbcTemplate.update(anyString())).thenThrow(RuntimeException.class);
 
-        refreshTokenCleanerTask.clean();
+        assertDoesNotThrow(() -> refreshTokenCleanerTask.clean());
     }
 }

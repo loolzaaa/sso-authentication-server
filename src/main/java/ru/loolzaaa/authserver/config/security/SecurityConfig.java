@@ -1,8 +1,6 @@
 package ru.loolzaaa.authserver.config.security;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,16 +28,9 @@ import java.util.List;
 @EnableMethodSecurity
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig implements WebSecurityCustomizer {
-
-    @Value("${spring.profiles.active:}")
-    private String activeProfile;
-
     @Override
     public void customize(WebSecurity web) {
         web.ignoring().requestMatchers(PathRequest.toStaticResources().atCommonLocations());
-        if (activeProfile.contains("h2")) {
-            web.ignoring().antMatchers("/h2-console/**");
-        }
     }
 
     @Bean
@@ -60,22 +51,19 @@ public class SecurityConfig implements WebSecurityCustomizer {
     }
 
     @Profile("!noop")
-    @Qualifier("jwtPasswordEncoder")
-    @Bean
+    @Bean("jwtPasswordEncoder")
     public PasswordEncoder jwtPasswordEncoder() {
         return new CustomPBKDF2PasswordEncoder();
     }
 
     @Primary
-    @Qualifier("basicPasswordEncoder")
-    @Bean
+    @Bean("basicPasswordEncoder")
     public PasswordEncoder basicPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Profile("noop")
-    @Qualifier("jwtPasswordEncoder")
-    @Bean
+    @Bean("jwtPasswordEncoder")
     public PasswordEncoder noopPasswordEncoder() {
         return new NoopCustomPasswordEncoder();
     }

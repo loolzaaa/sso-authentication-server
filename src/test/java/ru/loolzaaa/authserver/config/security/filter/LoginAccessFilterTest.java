@@ -1,5 +1,9 @@
 package ru.loolzaaa.authserver.config.security.filter;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,13 +23,10 @@ import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
 
-import javax.servlet.FilterChain;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Base64;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -63,7 +64,7 @@ class LoginAccessFilterTest {
     }
 
     @Test
-    void shouldCheckLoginPage() throws Exception {
+    void shouldCheckLoginPage() {
         ssoServerProperties.setLoginPage("");
 
         assertThatThrownBy(() -> loginAccessFilter.initFilterBean())
@@ -86,6 +87,8 @@ class LoginAccessFilterTest {
         when(authentication.isAuthenticated()).thenReturn(value);
         when(servletRequest.getRequestURI()).thenReturn(""); // not login
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(value ? "APP" : null);
+        when(servletRequest.getParameter("continue")).thenReturn(value ? null : "CONTINUE");
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -100,6 +103,8 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(null);
         when(servletRequest.getRequestURI()).thenReturn(""); // not login
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(null);
+        when(servletRequest.getParameter("continue")).thenReturn("CONTINUE");
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -114,6 +119,8 @@ class LoginAccessFilterTest {
         SecurityContextHolder.getContext().setAuthentication(mock(AnonymousAuthenticationToken.class));
         when(servletRequest.getRequestURI()).thenReturn(""); // not login
         when(servletRequest.getContextPath()).thenReturn("");
+        when(servletRequest.getParameter("app")).thenReturn(null);
+        when(servletRequest.getParameter("continue")).thenReturn("CONTINUE");
 
         loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
 
@@ -254,7 +261,6 @@ class LoginAccessFilterTest {
     void shouldHandleAccessDeniedIfAuthenticatedButAppForbidden() throws Exception {
         final String APP = "APP";
         final String TOKEN = "TOKEN";
-        final String TOKEN2 = "TOKEN2";
         final String ABSOLUTE_URL = "http://example.com/test/api";
         final String ENCODED_URL =  Base64.getUrlEncoder().encodeToString(ABSOLUTE_URL.getBytes());
         when(authentication.isAuthenticated()).thenReturn(true);

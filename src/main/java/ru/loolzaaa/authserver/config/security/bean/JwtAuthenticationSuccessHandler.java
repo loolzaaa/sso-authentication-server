@@ -1,5 +1,8 @@
 package ru.loolzaaa.authserver.config.security.bean;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
@@ -10,9 +13,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.loolzaaa.authserver.services.JWTService;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -38,32 +38,37 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
             super.onAuthenticationSuccess(req, resp, authentication);
         } else {
             String appName;
-            String continueUri = null;
+            String continueUri;
             try {
                 appName = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
-                continueUri = new String(Base64.getUrlDecoder().decode(continueParameter));
+                continueUri = new String(Base64.getUrlDecoder().decode(continueParameter)).replaceAll("[\r\n]", "_");
                 if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
-                    try {
-                        String accessToken = jwtService.authenticateWithJWT(req, authentication, appName);
-                        String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
-                                .queryParam("token", accessToken)
-                                .queryParam("serverTime", System.currentTimeMillis())
-                                .toUriString();
-                        logger.info("Authentication success. Redirect to: " + continueUri);
-                        resp.sendRedirect(redirectURL);
-                    } catch (IllegalArgumentException e) {
-                        throw new InsufficientAuthenticationException(e.getLocalizedMessage());
-                    }
+                    authenticateAndRedirect(req, resp, authentication, appName, continueUri);
                 } else {
                     logger.warn("Authentication success. Redirect to SSO main page, " +
-                            "because of continue parameter is invalid Base64 scheme: " + continueUri);
+                            "because of continue parameter is empty or not absolute url");
                     super.onAuthenticationSuccess(req, resp, authentication);
                 }
             } catch (IllegalArgumentException e) {
                 logger.warn("Authentication success. Redirect to SSO main page, " +
-                        "because of continue parameter is invalid Base64 scheme: " + continueUri);
+                        "because of continue parameter is invalid Base64 scheme");
                 super.onAuthenticationSuccess(req, resp, authentication);
             }
+        }
+    }
+
+    private void authenticateAndRedirect(HttpServletRequest req, HttpServletResponse resp, Authentication authentication,
+                                         String appName, String continueUri) throws IOException {
+        try {
+            String accessToken = jwtService.authenticateWithJWT(req, authentication, appName);
+            String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+                    .queryParam("token", accessToken)
+                    .queryParam("serverTime", System.currentTimeMillis())
+                    .toUriString();
+            logger.info("Authentication success. Redirect to: " + continueUri);
+            resp.sendRedirect(redirectURL);
+        } catch (IllegalArgumentException e) {
+            throw new InsufficientAuthenticationException(e.getLocalizedMessage());
         }
     }
 }

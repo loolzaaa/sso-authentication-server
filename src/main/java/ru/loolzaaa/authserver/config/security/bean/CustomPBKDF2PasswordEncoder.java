@@ -2,6 +2,7 @@ package ru.loolzaaa.authserver.config.security.bean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.crypto.SecretKeyFactory;
@@ -34,7 +35,7 @@ public class CustomPBKDF2PasswordEncoder implements PasswordEncoder {
     public boolean matches(CharSequence rawPassword, String encodedPassword) {
         if (rawPassword == null) {
             throw new IllegalArgumentException("rawPassword cannot be null");
-        } else if (encodedPassword != null && encodedPassword.length() != 0) {
+        } else if (encodedPassword != null && !encodedPassword.isEmpty()) {
             return checkPassword(rawPassword.toString(), encodedPassword);
         } else {
             this.logger.warn("Empty encoded password");
@@ -85,7 +86,7 @@ public class CustomPBKDF2PasswordEncoder implements PasswordEncoder {
         String hex = bi.toString(16);
         int paddingLength = (array.length * 2) - hex.length();
         if (paddingLength > 0) {
-            return String.format("%0" + paddingLength + "d", 0) + hex;
+            return Strings.repeat("0", paddingLength) + hex;
         } else {
             return hex;
         }

@@ -22,13 +22,13 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TemporaryUserCleanerTaskTest {
 
-    final String APP = "APP";
+    final String app = "APP";
 
     @Mock
     UserRepository userRepository;
@@ -41,15 +41,15 @@ class TemporaryUserCleanerTaskTest {
     @BeforeEach
     void setUp() {
         SsoServerProperties properties = new SsoServerProperties();
-        properties.getApplication().setName(APP);
+        properties.getApplication().setName(app);
 
         temporaryUserCleanerTask = new TemporaryUserCleanerTask(properties, userRepository, userControlService);
 
-        UserPrincipal.setApplicationName(APP);
+        UserPrincipal.setApplicationName(app);
     }
 
     @Test
-    void test() throws Exception {
+    void test() {
         final RequestStatusDTO result = RequestStatusDTO.builder()
                 .status(RequestStatus.OK)
                 .statusCode(HttpStatus.OK)
@@ -73,7 +73,7 @@ class TemporaryUserCleanerTaskTest {
         user1.setLogin("L1");
         ObjectNode config1 = mapper.createObjectNode();
         ObjectNode appNode1 = mapper.createObjectNode();
-        config1.set(APP, appNode1);
+        config1.set(app, appNode1);
         ObjectNode temporaryNode1 = mapper.createObjectNode();
         temporaryNode1.put("dateFrom", now.plusDays(1).toString());
         temporaryNode1.put("dateTo", now.plusDays(1).toString());
@@ -86,7 +86,7 @@ class TemporaryUserCleanerTaskTest {
         user2.setLogin("L2");
         ObjectNode config2 = mapper.createObjectNode();
         ObjectNode appNode2 = mapper.createObjectNode();
-        config2.set(APP, appNode2);
+        config2.set(app, appNode2);
         ObjectNode temporaryNode2 = mapper.createObjectNode();
         temporaryNode2.put("dateFrom", now.minusDays(1).toString());
         temporaryNode2.put("dateTo", now.minusDays(1).toString());
@@ -99,7 +99,7 @@ class TemporaryUserCleanerTaskTest {
         user3.setLogin("L3");
         ObjectNode config3 = mapper.createObjectNode();
         ObjectNode appNode3 = mapper.createObjectNode();
-        config3.set(APP, appNode3);
+        config3.set(app, appNode3);
         user3.setConfig(new UserConfigWrapper(config3));
         users.add(user3);
 

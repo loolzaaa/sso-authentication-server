@@ -55,12 +55,11 @@ then you need to run the following command:
 ```shell
 docker logs -f sso-postgres
 ```
-**Note:** this command show logs in *follow* mode.
+**Note:** this command shows logs in *follow* mode.
 
 ## Java application startup
 
-Run application with `spring-boot-maven-plugin` and `dev`,
-and `postgres` profiles active:
+Run application with `spring-boot-maven-plugin` and `dev` profile active:
 ```shell
 ./mvnw spring-boot:run -D spring-boot.run.profiles=dev,postgres
 ```
@@ -69,7 +68,7 @@ and `postgres` profiles active:
 ```shell
 ./mvnw clean package -DskipTests
 cd ./target/
-java "-Dspring.profiles.active=dev,postgres" -jar ./auth-server-0.6.0.jar
+java "-Dspring.profiles.active=dev" -jar ./auth-server-<version>.jar
 ```
 
 # Server Configuration
@@ -207,11 +206,11 @@ Secret key generation process described on the [wiki page](https://github.com/lo
 After generation, keys **MUST** have `public.key` and `private.key` names
 and can be placed in:
 - classpath under `resources/keystore/` folder
-- somewhere on local path specified by `sso.server.jwt.key-path` property
+- somewhere on a local path specified by `sso.server.jwt.key-path` property
 
 ## Application profiles
 
-The application must be launched with one of two profiles: `dev`, `prod`.  
+The application must be launched with one of two profiles: `dev` (developer mode), `prod` (production mode).  
 Optional profile: `noop`, `ssl`.
 
 ### Developer mode

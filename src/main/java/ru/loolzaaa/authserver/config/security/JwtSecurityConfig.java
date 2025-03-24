@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import ru.loolzaaa.authserver.config.security.bean.*;
+import ru.loolzaaa.authserver.config.security.filter.EagerCsrfCookieFilter;
 import ru.loolzaaa.authserver.config.security.filter.ExternalLogoutFilter;
 import ru.loolzaaa.authserver.config.security.filter.JwtTokenFilter;
 import ru.loolzaaa.authserver.config.security.filter.LoginAccessFilter;
@@ -27,6 +29,8 @@ import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
 import ru.loolzaaa.authserver.services.SecurityContextService;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @RequiredArgsConstructor
 @EnableMethodSecurity
@@ -72,14 +76,13 @@ public class JwtSecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .ignoringRequestMatchers(new AntPathRequestMatcher("/api/refresh/ajax", "POST")))
-                .cors()
-                .and()
+                .cors(withDefaults())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .antMatchers("/admin").hasRole("ADMIN")
-                        .antMatchers(ssoServerProperties.getLoginPage()).permitAll()
-                        .antMatchers(ignoredPathsHandler.toAntPatterns()).permitAll()
+                        .requestMatchers("/admin").hasRole("ADMIN")
+                        .requestMatchers(ssoServerProperties.getLoginPage()).permitAll()
+                        .requestMatchers(ignoredPathsHandler.toAntPatterns()).permitAll()
                         .anyRequest().hasAuthority(ssoServerProperties.getApplication().getName()))
                 .formLogin(formLogin -> formLogin
                         .authenticationDetailsSource(new CustomAuthenticationDetailsSource())
@@ -98,14 +101,15 @@ public class JwtSecurityConfig {
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .permitAll())
-                .httpBasic().disable()
-                .anonymous().disable()
-                // Filters order is important!
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .anonymous(AbstractHttpConfigurer::disable)
+                // Filter's order is important!
                 .addFilterBefore(new ExternalLogoutFilter(securityContextService, jwtService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtTokenFilter(ssoServerProperties, ignoredPathsHandler,
                         securityContextService, jwtService, cookieService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new LoginAccessFilter(ssoServerProperties, accessDeniedHandler, cookieService, jwtService),
-                        UsernamePasswordAuthenticationFilter.class);
+                        UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new EagerCsrfCookieFilter(), UsernamePasswordAuthenticationFilter.class);
         log.debug("Jwt [all API except Basic authentication] configuration completed");
         return http.build();
     }

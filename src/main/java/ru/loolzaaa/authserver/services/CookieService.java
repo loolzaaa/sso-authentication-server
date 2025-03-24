@@ -1,14 +1,14 @@
 package ru.loolzaaa.authserver.services;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -94,6 +94,6 @@ public class CookieService {
 
     private String getRequestContext(HttpServletRequest request) {
         String contextPath = request.getContextPath();
-        return (contextPath.length() > 0) ? contextPath : "/";
+        return (!contextPath.isEmpty()) ? contextPath : "/";
     }
 }

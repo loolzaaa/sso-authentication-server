@@ -7,8 +7,9 @@ import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
@@ -39,15 +40,13 @@ public class WebhookService {
     public WebhookService(ObjectMapper mapper, WebhookRepository webhookRepository) {
         this.mapper = mapper;
         this.webhookRepository = webhookRepository;
-
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setErrorHandler(new CustomErrorHandler());
-        this.restTemplate = restTemplate;
+        this.restTemplate = new RestTemplate();
+        this.restTemplate.setErrorHandler(new CustomErrorHandler());
     }
 
     public void fireEvent(WebhookEvent event, String login) {
         List<Webhook> webhooks = webhookRepository.findByEventAndEnabledIsTrue(event);
-        if (webhooks.size() == 0) {
+        if (webhooks.isEmpty()) {
             return;
         }
         for (Webhook webhook : webhooks) {
@@ -77,7 +76,7 @@ public class WebhookService {
                     throw new NullPointerException("Webhook process answer is null");
                 }
 
-                if (response.getStatusCodeValue() == 200) {
+                if (response.getStatusCode().value() == 200) {
                     log.info("Webhook [{}] successfully completed: {}", webhook.getId(), result);
                 } else {
                     log.warn("Webhook [{}] process error: {}", webhook.getId(), result);
@@ -110,12 +109,12 @@ public class WebhookService {
 
     private static class CustomErrorHandler extends DefaultResponseErrorHandler {
         @Override
-        protected boolean hasError(HttpStatus statusCode) {
+        public boolean hasError(ClientHttpResponse response) {
             return false;
         }
 
         @Override
-        protected boolean hasError(int unknownStatusCode) {
+        protected boolean hasError(HttpStatusCode statusCode) {
             return false;
         }
     }

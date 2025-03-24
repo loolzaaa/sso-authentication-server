@@ -1,6 +1,7 @@
 package ru.loolzaaa.authserver.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,6 @@ import ru.loolzaaa.authserver.exception.RequestErrorException;
 import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.services.UserControlService;
 
-import javax.validation.Valid;
 import java.util.List;
 import java.util.Locale;
 
@@ -136,10 +136,9 @@ public class UserController {
 
     private boolean isUserPermitToCreateTemporaryUser(Authentication authentication, String username) {
         boolean isUserAdmin = authentication.getAuthorities().contains(adminGrantedAuthority);
-        UserPrincipal userPrincipal = null;
-        if (authentication.getPrincipal() instanceof UserPrincipal) {
-            userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        if (authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
+            return isUserAdmin || userPrincipal.getUser().getLogin().equals(username);
         }
-        return isUserAdmin || (userPrincipal != null && userPrincipal.getUser().getLogin().equals(username));
+        return isUserAdmin;
     }
 }

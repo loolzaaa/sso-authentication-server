@@ -2,7 +2,8 @@ package ru.loolzaaa.authserver.services;
 
 import io.jsonwebtoken.ClaimJwtException;
 import io.jsonwebtoken.Claims;
-import lombok.Getter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataAccessException;
@@ -18,19 +19,19 @@ import ru.loolzaaa.authserver.model.User;
 import ru.loolzaaa.authserver.model.UserPrincipal;
 import ru.loolzaaa.authserver.repositories.UserRepository;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Log4j2
 @RequiredArgsConstructor
 @Service
 public class JWTService {
+
+    private static final String LOGIN_CLAIM_NAME = "login";
+    private static final String AUTHORITIES_CLAIM_NAME = "authorities";
 
     private final CookieService cookieService;
 
@@ -43,17 +44,17 @@ public class JWTService {
     private final List<RevokeToken> revokedTokens = new CopyOnWriteArrayList<>();
 
     public String authenticateWithJWT(HttpServletRequest req, HttpServletResponse resp,
-                                    Authentication authentication, String fingerprint) {
+                                      Authentication authentication, String fingerprint) {
         UserPrincipal user = (UserPrincipal) authentication.getPrincipal();
         List<String> authorities = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+                .toList();
 
         JWTAuthentication jwtAuthentication = generateJWTAuthentication(user.getUsername(), authorities);
 
         String sql = "INSERT INTO refresh_sessions " +
-                "(user_id, refresh_token, expires_in, fingerprint) " +
-                "VALUES (?, ?, ?, ?)";
+                     "(user_id, refresh_token, expires_in, fingerprint) " +
+                     "VALUES (?, ?, ?, ?)";
         jdbcTemplate.update(
                 sql,
                 user.getId(),
@@ -78,11 +79,11 @@ public class JWTService {
         user = new UserPrincipal(user.getUser(), applicationName);
         List<String> authorities = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, Object> params = new HashMap<>();
-        params.put("login", user.getUsername());
-        params.put("authorities", authorities);
+        params.put(LOGIN_CLAIM_NAME, user.getUsername());
+        params.put(AUTHORITIES_CLAIM_NAME, authorities);
         Date now = new Date();
         long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl().toMillis();
         String accessToken = jwtUtils.buildAccessToken(now, accessExp, params);
@@ -109,9 +110,9 @@ public class JWTService {
         String currentFingerprint = req.getParameter("_fingerprint");
 
         String sql = "SELECT login, fingerprint " +
-                "FROM refresh_sessions, users " +
-                "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id " +
-                "AND (fingerprint = ? OR fingerprint = 'RFID')";
+                     "FROM refresh_sessions, users " +
+                     "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id " +
+                     "AND (fingerprint = ? OR fingerprint = 'RFID')";
         Map<String, Object> stringObjectMap;
         try {
             stringObjectMap = jdbcTemplate.queryForMap(sql, refreshToken, currentFingerprint);
@@ -120,7 +121,7 @@ public class JWTService {
             return null;
         }
 
-        String username = (String) stringObjectMap.get("login");
+        String username = (String) stringObjectMap.get(LOGIN_CLAIM_NAME);
         String oldFingerprint = (String) stringObjectMap.get("fingerprint");
 
         Claims claims = parseTokenClaims(oldAccessToken, true);
@@ -130,7 +131,7 @@ public class JWTService {
             return null;
         }
 
-        Object authorities = claims.get("authorities");
+        Object authorities = claims.get(AUTHORITIES_CLAIM_NAME);
         if (authorities == null) {
             log.warn("There is no authorities in access token for {}", username);
             return null;
@@ -139,8 +140,8 @@ public class JWTService {
         JWTAuthentication jwtAuthentication = generateJWTAuthentication(username, authorities);
 
         jdbcTemplate.update("UPDATE refresh_sessions " +
-                        "SET refresh_token = ?::uuid, expires_in = ?, fingerprint = ? " +
-                        "WHERE refresh_token = ?::uuid AND fingerprint = ?",
+                            "SET refresh_token = ?::uuid, expires_in = ?, fingerprint = ? " +
+                            "WHERE refresh_token = ?::uuid AND fingerprint = ?",
                 jwtAuthentication.getRefreshToken(),
                 new Timestamp(jwtAuthentication.getRefreshExp()),
                 currentFingerprint,
@@ -158,7 +159,7 @@ public class JWTService {
             UserPrincipal userPrincipal = new UserPrincipal(user, currentApplication);
             authorities = userPrincipal.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toList());
+                    .toList();
 
             jwtAuthentication = generateJWTAuthentication(username, authorities);
         }
@@ -171,8 +172,8 @@ public class JWTService {
 
     public void deleteTokenFromDatabase(String refreshToken) {
         String sql = "SELECT login " +
-                "FROM refresh_sessions, users " +
-                "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id";
+                     "FROM refresh_sessions, users " +
+                     "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id";
         String username = DataAccessUtils.singleResult(jdbcTemplate.queryForList(sql, String.class, refreshToken));
         if (username == null) {
             log.warn("Cannot find user with token [{}] in database!", refreshToken);
@@ -197,8 +198,8 @@ public class JWTService {
 
     private JWTAuthentication generateJWTAuthentication(String username, Object authorities) {
         Map<String, Object> params = new HashMap<>();
-        params.put("login", username);
-        params.put("authorities", authorities);
+        params.put(LOGIN_CLAIM_NAME, username);
+        params.put(AUTHORITIES_CLAIM_NAME, authorities);
         Date now = new Date();
         long accessExp = now.getTime() + jwtUtils.getAccessTokenTtl().toMillis();
         long refreshExp = now.getTime() + jwtUtils.getRefreshTokenTtl().toMillis();
@@ -216,15 +217,15 @@ public class JWTService {
 
     private Claims parseTokenClaims(String token, boolean ignoreClaimException) {
         try {
-            return jwtUtils.parserEnforceAccessToken(token).getBody();
+            return jwtUtils.parserEnforceAccessToken(token).getPayload();
         } catch (ClaimJwtException e) {
             if (ignoreClaimException) {
                 return e.getClaims();
             } else {
-                log.debug("Failed check token for {}. Error: {}", e.getClaims().get("login"), e.getMessage());
+                log.debug("Failed check token for {}. Error: {}", e.getClaims().get(LOGIN_CLAIM_NAME), e.getMessage());
                 return null;
             }
-        }  catch (Exception e) {
+        } catch (Exception e) {
             log.warn("Unknown JWT validation error: {}", e.getMessage());
             return null;
         }
@@ -234,21 +235,16 @@ public class JWTService {
         if (claims == null) {
             return null;
         }
-        return claims.get("login", String.class);
+        return claims.get(LOGIN_CLAIM_NAME, String.class);
     }
 
     @Scheduled(initialDelay = 1, fixedDelay = 60, timeUnit = TimeUnit.MINUTES)
     public void cleanRevokedTokens() {
         LocalDateTime now = LocalDateTime.now();
-        revokedTokens.removeIf(revokeToken -> now.minusHours(1L).isAfter(revokeToken.getRevokeTime()));
+        revokedTokens.removeIf(revokeToken -> now.minusHours(1L).isAfter(revokeToken.revokeTime()));
     }
 
-    @RequiredArgsConstructor
-    @Getter
-    private static class RevokeToken {
-        private final String token;
-        private final LocalDateTime revokeTime;
-
+    private record RevokeToken(String token, LocalDateTime revokeTime) {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

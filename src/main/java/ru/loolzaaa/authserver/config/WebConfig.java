@@ -17,15 +17,12 @@ import java.util.Locale;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private static final String FORBIDDEN_PATH = "/forbidden";
-    private static final String ADMIN_PANEL_PATH = "/admin";
-
     private final SsoServerProperties ssoServerProperties;
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController(FORBIDDEN_PATH).setViewName("403");
-        registry.addViewController(ADMIN_PANEL_PATH).setViewName("admin");
+        registry.addViewController(ssoServerProperties.getForbiddenUri()).setViewName("403");
+        registry.addViewController(ssoServerProperties.getAdminUri()).setViewName("admin");
         registry.addViewController(ssoServerProperties.getLoginPage()).setViewName("login");
         registry.addViewController(ssoServerProperties.getRefreshUri()).setViewName("trefresh");
     }
@@ -33,14 +30,21 @@ public class WebConfig implements WebMvcConfigurer {
     @Bean
     LocaleResolver localeResolver() {
         AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.US);
+        localeResolver.setDefaultLocale(createServerLocale());
         return localeResolver;
     }
 
     @Bean
     AccessDeniedHandler accessDeniedHandler() {
         AccessDeniedHandlerImpl accessDeniedHandler = new AccessDeniedHandlerImpl();
-        accessDeniedHandler.setErrorPage(FORBIDDEN_PATH);
+        accessDeniedHandler.setErrorPage(ssoServerProperties.getForbiddenUri());
         return accessDeniedHandler;
+    }
+
+    private Locale createServerLocale() {
+        return switch (ssoServerProperties.getLanguage()) {
+            case "ru" -> new Locale("ru");
+            default -> new Locale("en");
+        };
     }
 }

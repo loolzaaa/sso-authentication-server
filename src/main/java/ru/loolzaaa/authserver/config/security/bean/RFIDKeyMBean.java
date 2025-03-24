@@ -18,12 +18,12 @@ public class RFIDKeyMBean {
     @ManagedAttribute
     public String getKey() {
         log.warn("RFID Key getter invoked!");
-        return accessController.getKEY();
+        return accessController.getRfidKEY();
     }
 
     @ManagedAttribute
     public void setKey(String key) {
         log.warn("RFID Key setter invoked!");
-        accessController.setKEY(key);
+        accessController.setRfidKEY(key);
     }
 }

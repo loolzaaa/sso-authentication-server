@@ -9,6 +9,7 @@ class AuthServerApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// Just load full Spring context
 	}
 
 }
