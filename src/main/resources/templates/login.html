@@ -30,13 +30,17 @@
             <label for="password" class="form-label" th:text="#{login.password}">Password</label>
             <input type="password" name="password" class="form-control" id="password">
         </div>
-        <div class="input-group mb-3">
+        <div class="mb-3">
             <button class="btn btn-outline-primary" type="button" onclick="ssoLogin()" th:text="#{login.signIn}">
                 Sign in
             </button>
+        </div>
+        <div th:if="${ldapEnabled}" class="mb-3">
             <button class="btn btn-outline-primary" type="button" onclick="ldapLogin()" th:text="#{login.signInLdap}">
                 Sign in via LDAP
             </button>
+        </div>
+        <div class="input-group mb-3">
             <input th:if="${param.credentialsError}"
                    th:value="${param.credentialsError}"
                    class="form-control" disabled>
