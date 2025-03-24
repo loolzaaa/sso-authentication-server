@@ -1,10 +1,10 @@
 package ru.loolzaaa.authserver.config.security.bean;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.security.core.SpringSecurityCoreVersion;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.Objects;
 

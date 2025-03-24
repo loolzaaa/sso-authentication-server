@@ -1,8 +1,7 @@
 package ru.loolzaaa.authserver.config.security.bean;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class CustomAuthenticationDetailsSource
         implements AuthenticationDetailsSource<HttpServletRequest, AuthenticationDetails> {
