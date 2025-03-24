@@ -13,7 +13,6 @@ import ru.loolzaaa.authserver.ldap.ActiveDirectoryLdapAuthenticator;
 import ru.loolzaaa.authserver.ldap.LdapAuthenticator;
 import ru.loolzaaa.authserver.ldap.LdapContextSource;
 
-@ConditionalOnProperty(prefix = "sso.server.ldap", value = "enabled")
 @RequiredArgsConstructor
 @EnableConfigurationProperties(LdapServerProperties.class)
 @Configuration
@@ -24,6 +23,7 @@ public class LdapSecurityConfig {
     @Qualifier("jwtUserDetailsService")
     private final UserDetailsService userDetailsService;
 
+    @ConditionalOnProperty(prefix = "sso.server.ldap", value = "enabled")
     @Bean
     public LdapAuthenticationProvider ldapAuthenticationProvider() {
         LdapContextSource contextSource = new LdapContextSource(ldapServerProperties.getProviderUrl());
