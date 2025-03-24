@@ -19,9 +19,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import ru.loolzaaa.authserver.config.security.bean.CustomDaoAuthenticationProvider;
 import ru.loolzaaa.authserver.config.security.bean.CustomPBKDF2PasswordEncoder;
 import ru.loolzaaa.authserver.config.security.bean.NoopCustomPasswordEncoder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -42,7 +44,19 @@ public class SecurityConfig implements WebSecurityCustomizer {
 
     @Bean
     public AuthenticationManager authenticationManager(List<AuthenticationProvider> authenticationProviders) {
-        return new ProviderManager(authenticationProviders);
+        AuthenticationProvider firstProvider = null;
+        List<AuthenticationProvider> orderedProviders = new ArrayList<>(authenticationProviders.size());
+        for (AuthenticationProvider provider : authenticationProviders) {
+            if (provider instanceof CustomDaoAuthenticationProvider) {
+                firstProvider = provider;
+                continue;
+            }
+            orderedProviders.add(provider);
+        }
+        if (firstProvider != null) {
+            orderedProviders.add(0, firstProvider);
+        }
+        return new ProviderManager(orderedProviders);
     }
 
     @Profile("!noop")
