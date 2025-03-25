@@ -4,8 +4,6 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,6 +14,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.util.UriComponentsBuilder;
+import ru.loolzaaa.authserver.config.WebConfig;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.services.CookieService;
@@ -54,12 +53,13 @@ public class LoginAccessFilter extends GenericFilterBean {
         String continueParameter = req.getParameter("continue");
         if (isAuthenticatedUserGoesToLoginPage(uriWithoutContextPath)) {
             logger.debug("Already authenticated user with login path detected");
+            // Set already authenticated attribute for late controller processing
+            servletRequest.setAttribute(WebConfig.ALREADY_LOGGED_IN_ATTRIBUTE, Boolean.TRUE);
 
             String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), servletRequest.getCookies());
             if (appParameter == null || continueParameter == null || accessToken == null) {
                 logger.debug("Application, continue parameter or access token is null");
-                setTemporaryRedirect(servletRequest, servletResponse);
-
+                // Redirect to main page in controller function
                 chain.doFilter(servletRequest, servletResponse);
                 return;
             }
@@ -75,10 +75,10 @@ public class LoginAccessFilter extends GenericFilterBean {
                     return;
                 }
                 logger.warn("Continue parameter is not absolute url or empty: " + continueUrl);
-                setTemporaryRedirect(servletRequest, servletResponse);
+                // Redirect to main page in controller function
             } catch (IllegalArgumentException e) {
                 logger.warn("Continue parameter is not valid Base64 scheme");
-                setTemporaryRedirect(servletRequest, servletResponse);
+                // Redirect to main page in controller function
             }
         } else if (isNotAuthenticatedUserGoesToLoginPage(uriWithoutContextPath)) {
             if (appParameter == null || continueParameter == null) {
@@ -107,7 +107,7 @@ public class LoginAccessFilter extends GenericFilterBean {
                                          Authentication authentication, String appName, String continueUri) throws IOException, ServletException {
         try {
             String accessToken = jwtService.authenticateWithJWT(servletRequest, authentication, appName);
-            String redirectURL = UriComponentsBuilder.fromHttpUrl(continueUri)
+            String redirectURL = UriComponentsBuilder.fromUriString(continueUri)
                     .queryParam("token", accessToken)
                     .queryParam("serverTime", System.currentTimeMillis())
                     .toUriString();
@@ -131,17 +131,6 @@ public class LoginAccessFilter extends GenericFilterBean {
             return false;
         }
         return authentication.isAuthenticated();
-    }
-
-    private void setTemporaryRedirect(HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
-        String contextPath = servletRequest.getContextPath();
-        if (!contextPath.endsWith("/")) {
-            contextPath += "/";
-        }
-        String encodedRedirectURL = servletResponse.encodeRedirectURL(contextPath);
-
-        servletResponse.setStatus(HttpStatus.TEMPORARY_REDIRECT.value());
-        servletResponse.setHeader(HttpHeaders.LOCATION, encodedRedirectURL);
     }
 
     private boolean isValidUrl(String url) {
