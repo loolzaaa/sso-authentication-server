@@ -22,13 +22,13 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TemporaryUserCleanerTaskTest {
 
-    final String app = "APP";
+    final String app = "passport";
 
     @Mock
     UserRepository userRepository;

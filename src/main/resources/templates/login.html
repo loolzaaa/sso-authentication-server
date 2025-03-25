@@ -30,8 +30,17 @@
             <label for="password" class="form-label" th:text="#{login.password}">Password</label>
             <input type="password" name="password" class="form-control" id="password">
         </div>
+        <div class="mb-3">
+            <button class="btn btn-outline-primary" type="button" onclick="ssoLogin()" th:text="#{login.signIn}">
+                Sign in
+            </button>
+        </div>
+        <div th:if="${ldapEnabled}" class="mb-3">
+            <button class="btn btn-outline-primary" type="button" onclick="ldapLogin()" th:text="#{login.signInLdap}">
+                Sign in via LDAP
+            </button>
+        </div>
         <div class="input-group mb-3">
-            <button class="btn btn-outline-primary" type="submit" th:text="#{login.signIn}">Sign in</button>
             <input th:if="${param.credentialsError}"
                    th:value="${param.credentialsError}"
                    class="form-control" disabled>
@@ -43,16 +52,28 @@
         <input id="fp_input" name="_fingerprint" type="hidden" value="FP_PLACEHOLDER">
         <input th:if="${param.continue != null}" name="_continue" type="hidden" th:value="${param.continue}">
         <input th:if="${param.app != null}" name="_app" type="hidden" th:value="${param.app}">
+        <input id="authentication_mode" name="_authenticationMode" type="hidden" th:value="sso">
     </form>
 </div>
 <script type="text/javascript">
-     document.getElementById('login_form').onsubmit = function(e) {
-        e.preventDefault();
+    function ssoLogin() {
+        document.getElementById('authentication_mode').value = 'sso';
+        submitLogin();
+    }
+    function ldapLogin() {
+        document.getElementById('authentication_mode').value = 'ldap';
+        submitLogin();
+    }
+    document.getElementById('login_form').onsubmit = submitLogin;
+    function submitLogin(event) {
+        if (event) {
+            e.preventDefault();
+        }
         getFingerprint()
-            .then(result => {
-                document.getElementById('fp_input').value = result;
-                document.getElementById('login_form').submit();
-            });
+           .then(result => {
+               document.getElementById('fp_input').value = result;
+               document.getElementById('login_form').submit();
+           });
     }
 </script>
 </body>

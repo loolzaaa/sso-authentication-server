@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.1</version>
+    <version>3.4.4</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
 
@@ -31,8 +31,7 @@
 
     <jjwt.version>0.12.6</jjwt.version>
 
-    <sonar.organization>loolzaaa</sonar.organization>
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <wiremock-jetty12.version>3.12.1</wiremock-jetty12.version>
   </properties>
 
   <dependencies>
@@ -131,7 +130,7 @@
     <dependency>
       <groupId>org.wiremock</groupId>
       <artifactId>wiremock-jetty12</artifactId>
-      <version>3.8.0</version>
+      <version>${wiremock-jetty12.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -141,7 +140,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.9.0</version>
+        <version>3.14.0</version>
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
@@ -150,7 +149,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M5</version>
+        <version>3.5.2</version>
       </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
@@ -167,7 +166,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.8</version>
+        <version>0.8.12</version>
         <executions>
           <execution>
             <id>prepare-agent</id>
@@ -187,7 +186,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>3.1.4</version>
       </plugin>
     </plugins>
   </build>

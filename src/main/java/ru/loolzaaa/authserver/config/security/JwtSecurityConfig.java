@@ -60,7 +60,7 @@ public class JwtSecurityConfig {
     private final SecurityContextService securityContextService;
 
     @Bean
-    AuthenticationProvider authenticationProvider() {
+    public AuthenticationProvider jwtAuthenticationProvider() {
         CustomDaoAuthenticationProvider authenticationProvider = new CustomDaoAuthenticationProvider();
         authenticationProvider.setPasswordEncoder(passwordEncoder);
         authenticationProvider.setUserDetailsService(userDetailsService);
@@ -85,6 +85,7 @@ public class JwtSecurityConfig {
                         .requestMatchers(ignoredPathsHandler.toAntPatterns()).permitAll()
                         .anyRequest().hasAuthority(ssoServerProperties.getApplication().getName()))
                 .formLogin(formLogin -> formLogin
+                        .authenticationDetailsSource(new CustomAuthenticationDetailsSource())
                         .loginPage(ssoServerProperties.getLoginPage())
                         .loginProcessingUrl("/do_login")
                         .failureHandler(jwtAuthenticationFailureHandler)

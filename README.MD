@@ -3,13 +3,14 @@
 
 # Single Sign-On authentication server
 
-This Single Sign-On (SSO) is a server based on Spring Security. 
-The main authentication routine happens through a standard login form. 
-Further authentication occurs through Json Web Tokens (JWT), 
-which are checked through a custom filter. 
-In addition, there are a number of APIs that are accessed through Basic authentication 
-with predefined users in the application configuration. 
-All other components of the system are based on standard Spring Security beans with minor changes.
+This Single Sign-On (SSO) is server based on Spring Security.
+The main authentication routine happens through a standard login form.
+Further authentication occurs through Json Web Tokens (JWT),
+which are checked through a custom filter. In addition,
+there are a number of APIs that are accessed through Basic authentication
+with predefined users in the application configuration.
+All other components of the system are based on standard
+Spring Security beans with minor changes.
 
 # Server Startup
 
@@ -20,35 +21,39 @@ The server consists of two parts:
 
 First, clone this repository and navigate to the project folder:
 ```shell
-> cd ~
-> git clone https://github.com/loolzaaa/sso-authentication-server.git
-> cd sso-authentication-server
+cd ~
+git clone https://github.com/loolzaaa/sso-authentication-server.git
+cd sso-authentication-server
 ```
 
 ## Database container startup
 
 Build Docker image from project folder:
 ```shell
-> docker build --tag sso-postgres --file .\Dockerfile-db .
+docker build --tag sso-postgres --file .\Dockerfile-db .
 ```
 
-Run Docker container in detached mode with published port `9898` and predefined container name
+Run Docker container in detached mode with published port `9898`
+and predefined container name
 ```shell
-> docker run -dp 9898:5432 --rm --name sso-postgres sso-postgres
+docker run -dp 9898:5432 --rm --name sso-postgres sso-postgres
 ```
-**Note:** *--rm* flag denotes deletion of container after stop. To prevent this behavior 
-from being undesirable, you can create a physical or bind mount volume.
+**Note:** *--rm* flag denotes deletion of container after stop.
+To prevent this behavior from being undesirable,
+you can create a physical or bind mount volume.
 
-If you want to connect to the container database, you need to run the following command:
+If you want to connect to the container database,
+you need to run the following command:
 ```shell
-> docker exec -it sso-postgres /bin/bash -c "psql -U sso -d sso"
+docker exec -it sso-postgres /bin/bash -c "psql -U sso -d sso"
 ```
-**Note:** the user (*sso* in example) and database name (*sso* in example) for connecting 
-is specified in the application configuration.
+**Note:** the user (*sso* in example) and database name (*sso* in example)
+for connecting is specified in the application configuration.
 
-If you want to see the logs of a running container, then you need to run the following command:
+If you want to see the logs of a running container,
+then you need to run the following command:
 ```shell
-> docker logs -f sso-postgres
+docker logs -f sso-postgres
 ```
 **Note:** this command shows logs in *follow* mode.
 
@@ -56,19 +61,20 @@ If you want to see the logs of a running container, then you need to run the fol
 
 Run application with `spring-boot-maven-plugin` and `dev` profile active:
 ```shell
-> ./mvnw spring-boot:run -D spring-boot.run.profiles=dev
+./mvnw spring-boot:run -D spring-boot.run.profiles=dev,postgres
 ```
 
 **OR** you can package application to Uber JAR and run it:
 ```shell
-> ./mvnw clean package -DskipTests
-> cd ./target/
-> java "-Dspring.profiles.active=dev" -jar ./auth-server-<version>.jar
+./mvnw clean package -DskipTests
+cd ./target/
+java "-Dspring.profiles.active=dev" -jar ./auth-server-<version>.jar
 ```
 
 # Server Configuration
 
-Some properties can be defined to prevent other dependencies from changing the required values.
+Some properties can be defined to prevent other dependencies
+from changing the required values.
 ```
 # Remove all session tracking attributes from servlet container
 server.servlet.session.persistent=false
@@ -118,12 +124,60 @@ sso.server.basic.users[0].password=PASSWORD
 # Default: false
 sso.server.basic.actuatorEnable=true
 ```
-**Note:** all basic users must have `BasicUsersProperties.basicUserAuthority` authority for access.
+**Note:** all basic users must have `BasicUsersProperties.basicUserAuthority`
+authority for access.
+
+## LDAP Configuration
+
+This SSO server can authenticate user via external LDAP or Active Directory
+server. By default, this feature is disabled.
+
+```
+# Enable LDAP/AD authentication feature
+# Default: false
+sso.server.ldap.enabled=true
+
+# Mode of LDAP/AD feature.
+# Permitted values: ad, ldap
+sso.server.ldap.mode=ad
+
+# LDAP provider URL. Must starts with ldap: or ldaps:
+sso.server.ldap.providerUrl=ldap://oasup.pnppk.ru:389
+
+# Active Directory domain for binding user
+sso.server.ldap.domain=oasup.pnppk.ru
+
+# Referral policy for Active Directory search queries
+# Permitted values: ignore, follow, throw, null
+sso.server.ldap.referral=follow
+
+# LDAP user distinguished name patterns
+# Example: uid={0},ou=people
+sso.server.ldap.userDnPatterns
+
+# Search base for user searches. Only used with search filter
+# Default: ""
+# Example: ou=people
+sso.server.ldap.searchBase
+
+# The LDAP/AD filter used to search for users
+# Example: (uid={0})
+sso.server.ldap.searchFilter=(samaccountname={0})
+
+# The attributes which will be retrieved from the directory.
+# Null means all attributes
+sso.server.ldap.userAttributes="userprincipalname, displayname"
+```
+
+To enable LDAP feature with full configuration, you can place
+`application-ldap.properties` file with all necessary properties
+in *current directory*. After that, run application with `ldap` profile.
 
 ### External application logout
 
-In addition, the application defines a user to revoke JWT tokens when external applications logout.  
-This properties available under `sso.server.basic.<property-name>`.
+In addition, the application defines a user to revoke JWT tokens
+when external applications logout.  
+These properties available under `sso.server.basic.<property-name>`.
 ```Java
 private String revokeUsername = "REVOKE_TOKEN_USER";
 private String revokePassword = "REVOKE_TOKEN_USER_PASSWORD";
@@ -132,7 +186,7 @@ private String revokeAuthority = "REVOKE_TOKEN";
 
 ### Actuator endpoint access
 
-Actuator endpoints available (if enabled, see server configuration) 
+Actuator endpoints available (if enabled, see server configuration)
 under Basic Authentication for special user.  
 These properties available under `sso.server.basic.<property-name>`.
 ```Java
@@ -149,7 +203,8 @@ The user configuration schema can be viewed on the [wiki page](https://github.co
 
 Secret key generation process described on the [wiki page](https://github.com/loolzaaa/sso-authentication-server/wiki/JWT-secret-key-generation).  
   
-After generation, keys **MUST** have `public.key` and `private.key` names and can be placed in:
+After generation, keys **MUST** have `public.key` and `private.key` names
+and can be placed in:
 - classpath under `resources/keystore/` folder
 - somewhere on a local path specified by `sso.server.jwt.key-path` property
 
@@ -158,9 +213,27 @@ After generation, keys **MUST** have `public.key` and `private.key` names and ca
 The application must be launched with one of two profiles: `dev` (developer mode), `prod` (production mode).  
 Optional profile: `noop`, `ssl`.
 
+### Developer mode
+
+Main active profile: `dev`.  
+Additional profiles: `h2` **OR** `postgres`. 
+
+Additional profiles determine which database the application
+will connect to: H2 in-memory database or PostgreSQL database
+inside Docker container.
+
+### Production mode
+
+Main active profile: `prod`.  
+Additional profiles: N/A.
+
+Application properties for production (`application-prod.properties`)
+mode already contains database connection parameters.
+
 ### Password encoder for development
 
-If you run application with optional profile `noop`, then special password encoder will be active.  
+If you run application with optional profile `noop`,
+then special password encoder will be active.  
 It is always match any password for **JWT API request matchers**.
 
 ## RFID Authentication

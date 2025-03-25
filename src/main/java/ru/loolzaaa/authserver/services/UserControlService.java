@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AccountStatusException;
@@ -14,6 +15,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.loolzaaa.authserver.config.security.bean.AuthenticationDetails;
+import ru.loolzaaa.authserver.config.security.bean.CustomDaoAuthenticationProvider;
 import ru.loolzaaa.authserver.config.security.bean.CustomPBKDF2PasswordEncoder;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.dto.CreateUserRequestDTO;
@@ -59,6 +62,7 @@ public class UserControlService {
 
     private final UserRepository userRepository;
 
+    @Qualifier("jwtAuthenticationProvider")
     private final AuthenticationProvider authenticationProvider;
 
     private final CustomPBKDF2PasswordEncoder passwordEncoder;
@@ -427,7 +431,10 @@ public class UserControlService {
         boolean isHashDeleted = false;
         if (password != null) {
             try {
-                authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken(user.getLogin(), password));
+                UsernamePasswordAuthenticationToken token = UsernamePasswordAuthenticationToken
+                        .unauthenticated(user.getLogin(), password);
+                token.setDetails(new AuthenticationDetails(CustomDaoAuthenticationProvider.AUTHENTICATION_MODE));
+                authenticationProvider.authenticate(token);
             } catch (AccountStatusException ex) {
                 JsonNode userConfig = user.getJsonConfig().get(ssoServerProperties.getApplication().getName());
                 if (!userConfig.has(UserAttributes.TEMPORARY)) {
