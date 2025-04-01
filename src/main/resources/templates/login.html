@@ -67,7 +67,7 @@
     document.getElementById('login_form').onsubmit = submitLogin;
     function submitLogin(event) {
         if (event) {
-            e.preventDefault();
+            event.preventDefault();
         }
         getFingerprint()
            .then(result => {
