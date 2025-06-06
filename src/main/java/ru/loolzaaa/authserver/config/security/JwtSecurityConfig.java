@@ -18,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.session.SessionManagementFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import ru.loolzaaa.authserver.config.security.bean.*;
 import ru.loolzaaa.authserver.config.security.filter.EagerCsrfCookieFilter;
@@ -30,7 +31,7 @@ import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
 import ru.loolzaaa.authserver.services.SecurityContextService;
 
-import static org.springframework.security.config.Customizer.withDefaults;
+import static org.springframework.security.config.Customizer.*;
 
 @RequiredArgsConstructor
 @EnableMethodSecurity
@@ -109,7 +110,7 @@ public class JwtSecurityConfig {
                         securityContextService, jwtService, cookieService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new LoginAccessFilter(ssoServerProperties, accessDeniedHandler, cookieService, jwtService),
                         UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new EagerCsrfCookieFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(new EagerCsrfCookieFilter(), SessionManagementFilter.class);
         log.debug("Jwt [all API except Basic authentication] configuration completed");
         return http.build();
     }
