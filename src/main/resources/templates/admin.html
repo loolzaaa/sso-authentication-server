@@ -276,10 +276,16 @@
                 }
             });
     }
+
+    const XSRF_COOKIE_NAME = 'XSRF-TOKEN-ENC';
+    instance.defaults.xsrfCookieName = XSRF_COOKIE_NAME;
+    const CSRF_TOKEN = document.cookie.match(new RegExp(`${XSRF_COOKIE_NAME}=([^;]+)`));
+    if (CSRF_TOKEN) {
+        instance.defaults.headers.post['X-XSRF-TOKEN'] = CSRF_TOKEN[1];
+    }
     instance.interceptors.response.use(function (response) {
-        const xsrfCookieName = 'XSRF-TOKEN-ENC';
-        const _csrf = document.cookie.match(new RegExp(`${xsrfCookieName}=([^;]+)`));
-        if (_csrf !== undefined && _csrf !== null) {
+        const _csrf = document.cookie.match(new RegExp(`${XSRF_COOKIE_NAME}=([^;]+)`));
+        if (_csrf) {
             document.getElementsByName('_csrf').forEach(el => el.value = _csrf[1]);
         }
         return response;
