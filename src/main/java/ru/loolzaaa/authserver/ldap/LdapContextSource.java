@@ -2,8 +2,7 @@ package ru.loolzaaa.authserver.ldap;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import ru.loolzaaa.authserver.config.security.property.LdapServerProperties;
 
 import javax.naming.Context;
@@ -25,9 +24,8 @@ import java.util.ListIterator;
  *
  * @see LdapServerProperties
  */
+@Slf4j
 public class LdapContextSource {
-
-    private static final Logger log = LogManager.getLogger(LdapContextSource.class);
 
     private static final String CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 
@@ -151,7 +149,7 @@ public class LdapContextSource {
         DirContext ctx = null;
         try {
             ctx = new InitialLdapContext(env, null);
-            log.debug("Got LDAP context on server: " + ctx.getEnvironment().get(Context.PROVIDER_URL));
+            log.debug("Got LDAP context on server: {}", ctx.getEnvironment().get(Context.PROVIDER_URL));
             return ctx;
         } catch (NamingException e) {
             closeContext(ctx);

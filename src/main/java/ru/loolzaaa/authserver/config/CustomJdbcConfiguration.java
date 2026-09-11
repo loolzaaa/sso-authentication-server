@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.postgresql.util.PGobject;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class CustomJdbcConfiguration extends AbstractJdbcConfiguration {
@@ -40,7 +40,7 @@ public class CustomJdbcConfiguration extends AbstractJdbcConfiguration {
                 JsonNode jsonNode = objectMapper.readTree(json.getValue());
                 return new UserConfigWrapper(jsonNode);
             } catch (JsonProcessingException | NullPointerException e) {
-                log.error(e);
+                log.error("Failed to convert json config to UserConfigWrapper", e);
             }
             return null;
         }
@@ -55,7 +55,7 @@ public class CustomJdbcConfiguration extends AbstractJdbcConfiguration {
             try {
                 json.setValue(objectMapper.writeValueAsString(configWrapper.getConfig()));
             } catch (SQLException | JsonProcessingException e) {
-                log.error(e);
+                log.error("Failed to convert UserConfigWrapper to json", e);
             }
             return json;
         }

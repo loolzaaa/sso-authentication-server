@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,6 +28,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+@Slf4j
 @RequiredArgsConstructor
 public class LoginAccessFilter extends OncePerRequestFilter {
 
@@ -52,37 +54,37 @@ public class LoginAccessFilter extends OncePerRequestFilter {
         String appParameter = servletRequest.getParameter("app");
         String continueParameter = servletRequest.getParameter("continue");
         if (isAuthenticatedUserGoesToLoginPage(uriWithoutContextPath)) {
-            logger.debug("Already authenticated user with login path detected");
+            log.debug("Already authenticated user with login path detected");
             // Set already authenticated attribute for late controller processing
             servletRequest.setAttribute(WebConfig.ALREADY_LOGGED_IN_ATTRIBUTE, Boolean.TRUE);
 
             String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), servletRequest.getCookies());
             if (appParameter == null || continueParameter == null || accessToken == null) {
-                logger.debug("Application, continue parameter or access token is null");
+                log.debug("Application, continue parameter or access token is null");
                 // Redirect to main page in controller function
                 chain.doFilter(servletRequest, servletResponse);
                 return;
             }
 
-            logger.debug("Suppose application doesn't have access token, but server has");
+            log.debug("Suppose application doesn't have access token, but server has");
             try {
                 String appName = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
                 String continueUrl = new String(Base64.getUrlDecoder().decode(continueParameter)).replaceAll("[\r\n]", "_");
-                logger.debug("Try to redirect to " + continueUrl);
+                log.debug("Try to redirect to {}", continueUrl);
                 if (isValidUrl(continueUrl)) {
                     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                     authenticateAndRedirect(servletRequest, servletResponse, authentication, appName, continueUrl);
                     return;
                 }
-                logger.warn("Continue parameter is not absolute url or empty: " + continueUrl);
+                log.warn("Continue parameter is not absolute url or empty: {}", continueUrl);
                 // Redirect to main page in controller function
             } catch (IllegalArgumentException e) {
-                logger.warn("Continue parameter is not valid Base64 scheme");
+                log.warn("Continue parameter is not valid Base64 scheme");
                 // Redirect to main page in controller function
             }
         } else if (isNotAuthenticatedUserGoesToLoginPage(uriWithoutContextPath)) {
             if (appParameter == null || continueParameter == null) {
-                logger.debug("Application or continue parameter is null");
+                log.debug("Application or continue parameter is null");
 
                 chain.doFilter(servletRequest, servletResponse);
                 return;
@@ -95,9 +97,9 @@ public class LoginAccessFilter extends OncePerRequestFilter {
                     dispatcher.forward(servletRequest, servletResponse);
                     return;
                 }
-                logger.warn("Continue parameter is not absolute url or empty: " + continueUrl);
+                log.warn("Continue parameter is not absolute url or empty: {}", continueUrl);
             } catch (Exception e) {
-                logger.warn("Continue parameter is not valid Base64 scheme");
+                log.warn("Continue parameter is not valid Base64 scheme");
             }
         }
         chain.doFilter(servletRequest, servletResponse);

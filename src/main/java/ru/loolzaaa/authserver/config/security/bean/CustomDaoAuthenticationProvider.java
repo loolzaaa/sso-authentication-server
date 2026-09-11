@@ -1,5 +1,6 @@
 package ru.loolzaaa.authserver.config.security.bean;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -10,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.util.Assert;
 import ru.loolzaaa.authserver.model.UserPrincipal;
 
+@Slf4j
 public class CustomDaoAuthenticationProvider extends DaoAuthenticationProvider {
 
     public static final String AUTHENTICATION_MODE = "sso";
@@ -38,12 +40,12 @@ public class CustomDaoAuthenticationProvider extends DaoAuthenticationProvider {
     protected void additionalAuthenticationChecks(UserDetails userDetails,
                                                   UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
         if (authentication.getCredentials() == null) {
-            this.logger.debug("Failed to authenticate since no credentials provided");
+            log.debug("Failed to authenticate since no credentials provided");
             throw new BadCredentialsException(this.messages.getMessage("AbstractUserDetailsAuthenticationProvider.badCredentials", "Bad credentials"));
         } else {
             String presentedPassword = authentication.getCredentials().toString();
             if (!matchPasswords(presentedPassword, userDetails)) {
-                this.logger.debug("Failed to authenticate since password does not match stored value");
+                log.debug("Failed to authenticate since password does not match stored value");
                 throw new BadCredentialsException(this.messages.getMessage("AbstractUserDetailsAuthenticationProvider.badCredentials", "Bad credentials"));
             }
         }

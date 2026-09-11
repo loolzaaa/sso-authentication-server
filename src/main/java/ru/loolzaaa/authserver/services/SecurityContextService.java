@@ -4,11 +4,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
+import ru.loolzaaa.authserver.config.MdcLoggingFilter;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.model.User;
 import ru.loolzaaa.authserver.model.UserPrincipal;
@@ -32,6 +34,7 @@ public class SecurityContextService {
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        MDC.put(MdcLoggingFilter.USERNAME, login);
     }
 
     public void clearSecurityContextHolder(HttpServletRequest req, HttpServletResponse resp) {
@@ -40,6 +43,7 @@ public class SecurityContextService {
 
         SecurityContextHolder.getContext().setAuthentication(null);
         SecurityContextHolder.clearContext();
+        MDC.remove(MdcLoggingFilter.USERNAME);
 
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
         if (refreshToken != null) {

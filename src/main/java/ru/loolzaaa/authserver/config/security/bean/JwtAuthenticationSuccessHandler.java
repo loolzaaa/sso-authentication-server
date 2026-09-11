@@ -4,6 +4,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
@@ -18,6 +19,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
@@ -34,7 +36,7 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
         jwtService.authenticateWithJWT(req, resp, authentication, fingerprintParameter);
 
         if (appParameter == null || continueParameter == null) {
-            logger.info("Authentication success. Redirect to SSO main page.");
+            log.info("Authentication success. Redirect to SSO main page.");
             super.onAuthenticationSuccess(req, resp, authentication);
         } else {
             String appName;
@@ -45,12 +47,12 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
                 if (StringUtils.hasText(continueUri) && UrlUtils.isAbsoluteUrl(continueUri)) {
                     authenticateAndRedirect(req, resp, authentication, appName, continueUri);
                 } else {
-                    logger.warn("Authentication success. Redirect to SSO main page, " +
+                    log.warn("Authentication success. Redirect to SSO main page, " +
                             "because of continue parameter is empty or not absolute url");
                     super.onAuthenticationSuccess(req, resp, authentication);
                 }
             } catch (IllegalArgumentException e) {
-                logger.warn("Authentication success. Redirect to SSO main page, " +
+                log.warn("Authentication success. Redirect to SSO main page, " +
                         "because of continue parameter is invalid Base64 scheme");
                 super.onAuthenticationSuccess(req, resp, authentication);
             }
@@ -65,7 +67,7 @@ public class JwtAuthenticationSuccessHandler extends SavedRequestAwareAuthentica
                     .queryParam("token", accessToken)
                     .queryParam("serverTime", System.currentTimeMillis())
                     .toUriString();
-            logger.info("Authentication success. Redirect to: " + continueUri);
+            log.info("Authentication success. Redirect to: {}", continueUri);
             resp.sendRedirect(redirectURL);
         } catch (IllegalArgumentException e) {
             throw new InsufficientAuthenticationException(e.getLocalizedMessage());

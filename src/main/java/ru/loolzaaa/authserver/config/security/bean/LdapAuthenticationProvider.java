@@ -2,8 +2,7 @@ package ru.loolzaaa.authserver.config.security.bean;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,9 +18,8 @@ import org.springframework.util.StringUtils;
 import ru.loolzaaa.authserver.ldap.DirContextAdapter;
 import ru.loolzaaa.authserver.ldap.LdapAuthenticator;
 
+@Slf4j
 public class LdapAuthenticationProvider implements AuthenticationProvider {
-
-    private static final Logger log = LogManager.getLogger(LdapAuthenticationProvider.class);
 
     private static final String AUTHENTICATION_MODE = "ldap";
 
@@ -62,7 +60,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         try {
             user = userDetailsService.loadUserByUsername(username);
         } catch (UsernameNotFoundException ex) {
-            log.debug("Failed to find user '" + username + "'");
+            log.debug("Failed to find user [{}]", username);
             throw new BadCredentialsException(this.messages
                     .getMessage("AbstractUserDetailsAuthenticationProvider.badCredentials", "Bad credentials"));
         }
@@ -72,7 +70,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
                 authentication.getCredentials(),
                 user.getAuthorities());
         result.setDetails(authentication.getDetails());
-        log.debug("Authenticated user");
+        log.debug("Authenticated user [{}]", username);
         return result;
     }
 

@@ -1,8 +1,6 @@
 package ru.loolzaaa.authserver.config.security.bean;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.logging.log4j.util.Strings;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.crypto.SecretKeyFactory;
@@ -12,9 +10,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 
+@Slf4j
 public class CustomPBKDF2PasswordEncoder implements PasswordEncoder {
-
-    private final Log logger = LogFactory.getLog(this.getClass());
 
     private static final int ITERATIONS = 1000;
 
@@ -38,7 +35,7 @@ public class CustomPBKDF2PasswordEncoder implements PasswordEncoder {
         } else if (encodedPassword != null && !encodedPassword.isEmpty()) {
             return checkPassword(rawPassword.toString(), encodedPassword);
         } else {
-            this.logger.warn("Empty encoded password");
+            log.warn("Empty encoded password");
             return false;
         }
     }
@@ -86,7 +83,7 @@ public class CustomPBKDF2PasswordEncoder implements PasswordEncoder {
         String hex = bi.toString(16);
         int paddingLength = (array.length * 2) - hex.length();
         if (paddingLength > 0) {
-            return Strings.repeat("0", paddingLength) + hex;
+            return "0".repeat(paddingLength) + hex;
         } else {
             return hex;
         }

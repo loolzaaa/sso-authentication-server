@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -23,7 +23,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 @Service
 public class WebhookService {
 
@@ -82,7 +82,7 @@ public class WebhookService {
                     log.warn("Webhook [{}] process error: {}", webhook.getId(), result);
                 }
             } catch (Exception e) {
-                log.error("Process {} webhook [{}] error: {}", webhook.getId(), webhook.getEvent(), e.getMessage());
+                log.error("Process {} webhook [{}] error", webhook.getId(), webhook.getEvent(), e);
             }
         }
     }
