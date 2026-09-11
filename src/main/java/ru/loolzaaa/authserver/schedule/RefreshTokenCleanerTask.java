@@ -1,7 +1,7 @@
 package ru.loolzaaa.authserver.schedule;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -10,7 +10,7 @@ import ru.loolzaaa.authserver.config.security.JWTUtils;
 
 import java.util.concurrent.TimeUnit;
 
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor
 @Component
 @Profile("prod")
@@ -32,7 +32,7 @@ public class RefreshTokenCleanerTask {
                 log.info("Refresh tokens remove: [{}]", i);
             }
         } catch (Exception e) {
-            log.error("Some problem with refresh token cleaner: ", e);
+            log.error("Some problem with refresh token cleaner", e);
         }
     }
 }

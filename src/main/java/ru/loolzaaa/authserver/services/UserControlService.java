@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.loolzaaa.authserver.audit.AuditLogger;
 import ru.loolzaaa.authserver.config.security.bean.AuthenticationDetails;
 import ru.loolzaaa.authserver.config.security.bean.CustomDaoAuthenticationProvider;
 import ru.loolzaaa.authserver.config.security.bean.CustomPBKDF2PasswordEncoder;
@@ -39,7 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class UserControlService {
@@ -95,7 +96,7 @@ public class UserControlService {
             log.debug("Return {} users by authority [{}] in application [{}]", users.size(), authority, appName);
             return users;
         } catch (Exception e) {
-            log.warn("Can't return users by authority [{}] in application [{}]: ", authority, appName, e);
+            log.warn("Can't return users by authority [{}] in application [{}]", authority, appName, e);
             String message = messageSource.getMessage("userControl.common.error", new Object[]{e.getMessage()}, l);
             throw new RequestErrorException(message);
         }
@@ -117,6 +118,7 @@ public class UserControlService {
                 userRepository.updateConfigByLogin(user.getConfig(), login);
 
                 log.info("Added [{}] application for user [{}]", app, login);
+                AuditLogger.adminAction("ADD_USER_APP", login + ":" + app);
                 String message = messageSource.getMessage("userControl.create.appAddOk", new Object[]{app, login}, l);
                 return RequestStatusDTO.ok(message);
             }
@@ -153,6 +155,7 @@ public class UserControlService {
         jdbcTemplate.update(INSERT_HASH_STATEMENT, hash);
 
         log.info("Create new user [{}] with start application: {}", login, app);
+        AuditLogger.adminAction("CREATE_USER", login + ":" + app);
         String message = messageSource.getMessage("userControl.create.success", new Object[]{login, tempPassword}, l);
         return RequestStatusDTO.ok(message);
     }
@@ -186,6 +189,7 @@ public class UserControlService {
 
         String hashStatus = messageSource.getMessage("userControl.delete.hash" + (isHashDeleted ? "Del" : "Stay"), null, l);
         log.info("Delete user [{}]. Hash {} database", login, hashStatus);
+        AuditLogger.adminAction("DELETE_USER", login);
         String message = messageSource.getMessage("userControl.delete.success", new Object[]{login, hashStatus}, l);
         return RequestStatusDTO.ok(message);
     }
@@ -215,6 +219,7 @@ public class UserControlService {
         if (enabled != null) {
             userRepository.updateEnabledByLogin(enabled, login);
             log.info("User [{}] {}", login, enabled ? "enabled" : "disabled");
+            AuditLogger.adminAction(enabled ? "ENABLE_USER" : "DISABLE_USER", login);
             message = messageSource.getMessage("userControl.lock." + (enabled ? "enabled" : "disabled"), new Object[]{login}, l);
         }
         if (lock != null) {
@@ -222,6 +227,7 @@ public class UserControlService {
             ((ObjectNode) userConfig.get(ssoServerProperties.getApplication().getName())).put(UserAttributes.LOCK, lock);
             userRepository.updateConfigByLogin(user.getConfig(), login);
             log.info("User [{}] {}", login, lock ? "locked" : "unlocked");
+            AuditLogger.adminAction(lock ? "LOCK_USER" : "UNLOCK_USER", login);
             message = messageSource.getMessage("userControl.lock." + (lock ? "locked" : "unlocked"), new Object[]{login}, l);
         }
         return RequestStatusDTO.ok(message);
@@ -269,6 +275,7 @@ public class UserControlService {
         jdbcTemplate.update(INSERT_HASH_STATEMENT, newHash);
 
         log.info("Password for user [{}] changed", login);
+        AuditLogger.adminAction("CHANGE_USER_PASSWORD", login);
         String message = messageSource.getMessage("userControl.changePassword.success", new Object[]{login}, l);
         return RequestStatusDTO.ok(message);
     }
@@ -281,6 +288,7 @@ public class UserControlService {
         }
         changeUserPassword(login, null, password, l);
         log.info("Password for user [{}] reset", login);
+        AuditLogger.adminAction("RESET_USER_PASSWORD", login);
         String message = messageSource.getMessage("userControl.resetPassword.success",
                 new Object[]{login, newPassword == null ? password : "[]"}, l);
         return RequestStatusDTO.ok(message);
@@ -307,6 +315,7 @@ public class UserControlService {
         userRepository.updateConfigByLogin(user.getConfig(), login);
 
         log.info("Application [{}] config was changed for user [{}]", app, login);
+        AuditLogger.adminAction("CHANGE_USER_CONFIG", login + ":" + app);
         String message = messageSource.getMessage("userControl.changeConfig.success", new Object[]{login, app}, l);
         return RequestStatusDTO.ok(message);
     }
@@ -339,6 +348,7 @@ public class UserControlService {
         userRepository.updateConfigByLogin(user.getConfig(), login);
 
         log.info("Application [{}] config was deleted for user [{}]", app, login);
+        AuditLogger.adminAction("DELETE_USER_CONFIG", login + ":" + app);
         String message = messageSource.getMessage("userControl.deleteConfig.success", new Object[]{login, app}, l);
         return RequestStatusDTO.ok(message);
     }
@@ -409,6 +419,7 @@ public class UserControlService {
         jdbcTemplate.update(INSERT_HASH_STATEMENT, hash);
 
         log.info("Temporary user [{}] created for user [{}]", dTemporaryLogin, temporaryLogin);
+        AuditLogger.adminAction("CREATE_TEMPORARY_USER", dTemporaryLogin);
         String message = messageSource.getMessage("userControl.temporary.success",
                 new Object[]{dTemporaryLogin, dTemporaryPassword}, l);
         return RequestStatusDTO.ok(message);

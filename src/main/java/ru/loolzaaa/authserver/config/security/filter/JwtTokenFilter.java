@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -17,9 +18,11 @@ import ru.loolzaaa.authserver.services.JWTService;
 import ru.loolzaaa.authserver.services.SecurityContextService;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+@Slf4j
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
 
@@ -39,7 +42,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         String requestedUri = req.getRequestURI().substring(req.getContextPath().length());
         if (ignoredPathsHandler.checkUri(requestedUri)) {
-            logger.debug(String.format("Access to '%s' is permitted without jwt filter", requestedUri));
+            log.debug("Access to '{}' is permitted without jwt filter", requestedUri);
 
             chain.doFilter(req, resp);
             return;
@@ -49,7 +52,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
 
         if (accessToken == null) {
-            logger.trace("Access token is null");
+            log.trace("Access token is null");
 
             chain.doFilter(req, resp);
             return;
@@ -57,7 +60,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         String login = jwtService.checkAccessToken(accessToken);
         if (login != null) {
-            logger.debug(String.format("Access token for user [%s] validated. Update SecurityContext", login));
+            log.debug("Access token for user [{}] validated. Update SecurityContext", login);
 
             securityContextService.updateSecurityContextHolder(req, login);
 
@@ -65,10 +68,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        logger.debug("Invalid access token, try to refresh it");
+        log.debug("Invalid access token, try to refresh it");
 
         if (refreshToken == null) {
-            logger.trace("Refresh token is null. Clear SecurityContext");
+            log.trace("Refresh token is null. Clear SecurityContext");
 
             securityContextService.clearSecurityContextHolder(req, resp);
 
@@ -79,13 +82,13 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (req.getParameter("_fingerprint") == null) {
             String acceptHeader = req.getHeader("Accept");
             if (acceptHeader != null && acceptHeader.toLowerCase().contains("application/json")) {
-                logger.debug("Ajax request detected. Refresh via Auth Server API");
+                log.debug("Ajax request detected. Refresh via Auth Server API");
 
                 String fingerprintRequestUrl = getServerUrl(req) + "/api/refresh/ajax";
                 resp.setHeader("X-SSO-FP", fingerprintRequestUrl);
                 resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
             } else {
-                logger.debug("Browser request detected. Refresh via redirect to " + ssoServerProperties.getRefreshUri());
+                log.debug("Browser request detected. Refresh via redirect to {}", ssoServerProperties.getRefreshUri());
 
                 // If client application NOT CONTAIN access token, it will redirect to login with continue param,
                 // but SSO application can contain access token, so it will try to refresh it
@@ -97,7 +100,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 } else {
                     uriComponentsBuilder = UriComponentsBuilder.fromHttpUrl(getServerUrl(req) + ssoServerProperties.getRefreshUri());
                 }
-                String redirectURL = uriComponentsBuilder.queryParam("continue", continuePath).toUriString();
+                uriComponentsBuilder.queryParam("continue", continuePath);
+                addApplicationParam(req, uriComponentsBuilder);
+                String redirectURL = uriComponentsBuilder.toUriString();
                 resp.sendRedirect(redirectURL);
             }
             return;
@@ -112,14 +117,27 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
         if (jwtAuthentication != null) {
             String login = jwtAuthentication.getUsername();
-            logger.debug(String.format("Refresh token for user [%s] validated and updated. Update SecurityContext", login));
+            log.debug("Refresh token for user [{}] validated and updated. Update SecurityContext", login);
 
             securityContextService.updateSecurityContextHolder(req, login);
         } else {
-            logger.debug("Invalid refresh token. Clear SecurityContext");
+            log.debug("Invalid refresh token. Clear SecurityContext");
 
             securityContextService.clearSecurityContextHolder(req, resp);
         }
+    }
+
+    private void addApplicationParam(HttpServletRequest req, UriComponentsBuilder uriComponentsBuilder) {
+        String appParameter = req.getParameter("app");
+        if (appParameter == null) {
+            return;
+        }
+        try {
+            appParameter = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            log.debug("Cannot decode app parameter: {}", appParameter.replaceAll("[\r\n]", "_"));
+        }
+        uriComponentsBuilder.queryParam("app", appParameter);
     }
 
     private String getServerUrl(HttpServletRequest req) {

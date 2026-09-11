@@ -1,8 +1,7 @@
 package ru.loolzaaa.authserver.config.security;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,14 +22,13 @@ import ru.loolzaaa.authserver.config.security.property.BasicUsersProperties;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.springframework.security.config.Customizer.withDefaults;
+import static org.springframework.security.config.Customizer.*;
 
+@Slf4j
 @RequiredArgsConstructor
 @EnableConfigurationProperties(BasicUsersProperties.class)
 @Configuration
 public class BasicSecurityConfig {
-
-    private static final Logger log = LogManager.getLogger(BasicSecurityConfig.class.getName());
 
     private final BasicUsersProperties basicUsersProperties;
 
@@ -40,7 +38,7 @@ public class BasicSecurityConfig {
     @Bean("basicUserDetailsService")
     public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
         if (basicUsersProperties.getUsers().isEmpty()) {
-            log.warn("\n\n\tThere is no basic users in properties. Some API unavailable!\n");
+            log.warn("There is no basic users in properties. Some API unavailable!");
         }
         List<UserDetails> userDetailsList = new ArrayList<>(basicUsersProperties.getUsers().size() + 2);
         for (BasicUsersProperties.BasicUser user : basicUsersProperties.getUsers()) {
@@ -49,21 +47,21 @@ public class BasicSecurityConfig {
                     .password(passwordEncoder.encode(user.getPassword()))
                     .authorities(basicUsersProperties.getBasicUserAuthority())
                     .build());
-            log.info("Register basic user: {}", user.getUsername());
+            log.debug("Register basic user: {}", user.getUsername());
         }
         userDetailsList.add(User
                 .withUsername(basicUsersProperties.getRevokeUsername())
                 .password(passwordEncoder.encode(basicUsersProperties.getRevokePassword()))
                 .authorities(basicUsersProperties.getRevokeAuthority())
                 .build());
-        log.info("Register revoke token basic user: {}", basicUsersProperties.getRevokeUsername());
+        log.debug("Register revoke token basic user: {}", basicUsersProperties.getRevokeUsername());
         if (basicUsersProperties.isActuatorEnable()) {
             userDetailsList.add(User
                     .withUsername(basicUsersProperties.getActuatorUsername())
                     .password(passwordEncoder.encode(basicUsersProperties.getActuatorPassword()))
                     .authorities("ROLE_" + basicUsersProperties.getActuatorAuthority())
                     .build());
-            log.info("Register actuator admin user: {}", basicUsersProperties.getActuatorUsername());
+            log.debug("Register actuator admin user: {}", basicUsersProperties.getActuatorUsername());
         }
         return new InMemoryUserDetailsManager(userDetailsList);
     }

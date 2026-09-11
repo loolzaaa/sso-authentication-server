@@ -1,8 +1,7 @@
 package ru.loolzaaa.authserver.config.security;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -33,13 +32,12 @@ import ru.loolzaaa.authserver.services.SecurityContextService;
 
 import static org.springframework.security.config.Customizer.*;
 
+@Slf4j
 @RequiredArgsConstructor
 @EnableMethodSecurity
 @EnableConfigurationProperties(SsoServerProperties.class)
 @Configuration
 public class JwtSecurityConfig {
-
-    private static final Logger log = LogManager.getLogger(JwtSecurityConfig.class.getName());
 
     private final SsoServerProperties ssoServerProperties;
 

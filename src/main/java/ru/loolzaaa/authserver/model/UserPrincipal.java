@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-@Log4j2
+@Slf4j
 public class UserPrincipal implements UserDetails {
 
     private static String applicationName;
@@ -44,7 +44,7 @@ public class UserPrincipal implements UserDetails {
 
         userConf.fieldNames().forEachRemaining(s -> authorities.add(new SimpleGrantedAuthority(s)));
         if (!userConf.has(applicationName)) {
-            log.info("User [{}] is locked", user.getLogin());
+            log.debug("User [{}] is locked", user.getLogin());
             this.accountNonLocked = false;
             return;
         }
@@ -54,7 +54,7 @@ public class UserPrincipal implements UserDetails {
             authNode.get(UserAttributes.ROLES).forEach(role -> this.authorities.add(new SimpleGrantedAuthority(role.asText())));
         }
         if (authNode.has(UserAttributes.CREDENTIALS_EXP) && isUserCredentialsExpired(authNode)) {
-            log.info("User [{}] credentials is expired", user.getLogin());
+            log.debug("User [{}] credentials is expired", user.getLogin());
             this.credentialsNonExpired = false;
         }
         if (authNode.has(UserAttributes.LOCK)) {
@@ -67,7 +67,7 @@ public class UserPrincipal implements UserDetails {
             LocalDate dateFrom = LocalDate.parse(authNode.get(UserAttributes.TEMPORARY).get("dateFrom").asText());
             LocalDate dateTo = LocalDate.parse(authNode.get(UserAttributes.TEMPORARY).get("dateTo").asText());
             if (dateFrom.isAfter(LocalDate.now()) || dateTo.isBefore(LocalDate.now())) {
-                log.info("User [{}] temporary account is expired", user.getLogin());
+                log.debug("User [{}] temporary account is expired", user.getLogin());
                 this.accountNonExpired = false;
             }
         }

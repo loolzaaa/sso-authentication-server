@@ -5,7 +5,7 @@ import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import ru.loolzaaa.authserver.audit.AuditLogger;
 import ru.loolzaaa.authserver.config.security.JWTUtils;
 import ru.loolzaaa.authserver.model.JWTAuthentication;
 import ru.loolzaaa.authserver.model.User;
@@ -25,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class JWTService {
@@ -70,6 +71,7 @@ public class JWTService {
                 isRfid);
 
         log.info("User {}[{}] logged in. RFID: {}", user.getUsername(), req.getRemoteAddr(), isRfid);
+        AuditLogger.loginSuccess(user.getUsername(), req.getRemoteAddr(), isRfid);
 
         return jwtAuthentication.getAccessToken();
     }
@@ -97,7 +99,7 @@ public class JWTService {
         Claims claims = parseTokenClaims(token, false);
         String login = getLoginFromClaims(claims);
         if (login != null) {
-            log.debug("Success check token for {}", login);
+            log.trace("Success check token for {}", login);
             return login;
         } else {
             return null;
@@ -127,7 +129,7 @@ public class JWTService {
         Claims claims = parseTokenClaims(oldAccessToken, true);
         String login = getLoginFromClaims(claims);
         if (!username.equals(login)) {
-            log.error("Incorrect login in access token claim. Expected: {}, Actual: {}", username, login);
+            log.warn("Incorrect login in access token claim. Expected: {}, Actual: {}", username, login);
             return null;
         }
 
@@ -176,19 +178,20 @@ public class JWTService {
                      "WHERE refresh_token = ?::uuid AND refresh_sessions.user_id = users.id";
         String username = DataAccessUtils.singleResult(jdbcTemplate.queryForList(sql, String.class, refreshToken));
         if (username == null) {
-            log.warn("Cannot find user with token [{}] in database!", refreshToken);
+            log.warn("Cannot find user with refresh token [{}] in database!", mask(refreshToken));
         }
 
         int count = jdbcTemplate.update("DELETE FROM refresh_sessions WHERE refresh_token = ?::uuid", refreshToken);
         if (count > 0) {
             log.info("User [{}] logged out. Refresh token for this session successfully deleted.", username);
+            AuditLogger.logout(username);
         } else {
             log.warn("User [{}] logged out. There is no tokens in db for this user.", username);
         }
     }
 
     public void revokeToken(String token) {
-        log.debug("Revoke token: {}", token);
+        log.debug("Revoke token [{}]", mask(token));
         revokedTokens.add(new RevokeToken(token, LocalDateTime.now()));
     }
 
@@ -236,6 +239,13 @@ public class JWTService {
             return null;
         }
         return claims.get(LOGIN_CLAIM_NAME, String.class);
+    }
+
+    private String mask(String token) {
+        if (token == null || token.length() <= 8) {
+            return "***";
+        }
+        return token.substring(0, 8) + "...";
     }
 
     @Scheduled(initialDelay = 1, fixedDelay = 60, timeUnit = TimeUnit.MINUTES)

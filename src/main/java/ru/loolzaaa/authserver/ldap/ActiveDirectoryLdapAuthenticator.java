@@ -1,7 +1,6 @@
 package ru.loolzaaa.authserver.ldap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -24,9 +23,8 @@ import java.util.*;
  * by at-symbol with domain. Also, there is no possible
  * to get anonymous context with this strategy.
  */
+@Slf4j
 public class ActiveDirectoryLdapAuthenticator extends LdapAuthenticator {
-
-    private static final Logger log = LogManager.getLogger(ActiveDirectoryLdapAuthenticator.class);
 
     /**
      * Create initialized instance of ActiveDirectoryAuthenticator.

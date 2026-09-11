@@ -16,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import ru.loolzaaa.authserver.audit.AuditLogger;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.dto.RequestStatus;
@@ -137,7 +138,10 @@ public class AccessController {
         String from = req.getParameter("from");
         String app = req.getParameter("app");
 
-        if (!rfidKEY.equals(password)) throw new AccessDeniedException("Incorrect RFID key");
+        if (!rfidKEY.equals(password)) {
+            AuditLogger.loginFailure(login, req.getRemoteAddr(), "Incorrect RFID key");
+            throw new AccessDeniedException("Incorrect RFID key");
+        }
 
         if (!StringUtils.hasText(from) || !StringUtils.hasText(login)) {
             throw new RequestErrorException("FROM and LOGIN parameter must not be empty string");
@@ -178,6 +182,7 @@ public class AccessController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("/fast/prepare_logout")
     void prepareLogout(@RequestHeader("Revoke-Token") String token) {
+        AuditLogger.securityEvent("PREPARE_LOGOUT", "revoke token requested");
         jwtService.revokeToken(token);
     }
 

@@ -4,15 +4,18 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
+import ru.loolzaaa.authserver.audit.AuditLogger;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class JwtAuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
@@ -30,7 +33,8 @@ public class JwtAuthenticationFailureHandler extends SimpleUrlAuthenticationFail
         if (appParameter != null && continuePath != null) {
             defaultFailureUrl += "&app=" + appParameter + "&continue=" + continuePath;
         }
-        logger.info("Authentication failure with message: " + ex.getLocalizedMessage());
+        log.warn("Authentication failure: {}", AuditLogger.sanitize(ex.getLocalizedMessage()));
+        AuditLogger.loginFailure(req.getParameter("username"), req.getRemoteAddr(), ex.getLocalizedMessage());
 
         setAllowSessionCreation(false);
         setDefaultFailureUrl(defaultFailureUrl);

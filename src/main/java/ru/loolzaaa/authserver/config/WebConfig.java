@@ -1,8 +1,10 @@
 package ru.loolzaaa.authserver.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.web.servlet.LocaleResolver;
@@ -61,6 +63,13 @@ public class WebConfig implements WebMvcConfigurer {
         AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
         localeResolver.setDefaultLocale(createServerLocale());
         return localeResolver;
+    }
+
+    @Bean
+    public FilterRegistrationBean<MdcLoggingFilter> mdcLoggingFilter() {
+        FilterRegistrationBean<MdcLoggingFilter> registration = new FilterRegistrationBean<>(new MdcLoggingFilter());
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
     }
 
     @Bean

@@ -2,8 +2,7 @@ package ru.loolzaaa.authserver.ldap;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,9 +26,8 @@ import java.util.*;
 /**
  * LDAP authenticator which binds as a user.
  */
+@Slf4j
 public class LdapAuthenticator {
-
-    private static final Logger log = LogManager.getLogger(LdapAuthenticator.class);
 
     protected MessageSourceAccessor messages = SpringSecurityMessageSource.getAccessor();
 
@@ -175,7 +173,7 @@ public class LdapAuthenticator {
             return result;
         } catch (NamingException e) {
             if (e instanceof AuthenticationException) {
-                log.trace(String.format("Failed to bind as %s", userDnStr), e);
+                log.trace("Failed to bind as {}", userDnStr, e);
             } else {
                 throw new RuntimeException(e);
             }
