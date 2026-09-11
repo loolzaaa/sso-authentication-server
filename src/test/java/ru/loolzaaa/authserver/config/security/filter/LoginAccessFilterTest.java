@@ -87,7 +87,7 @@ class LoginAccessFilterTest {
         when(servletRequest.getParameter("app")).thenReturn(value ? "APP" : null);
         when(servletRequest.getParameter("continue")).thenReturn(value ? null : "CONTINUE");
 
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+        loginAccessFilter.doFilterInternal(servletRequest, servletResponse, chain);
 
         verify(chain).doFilter(servletRequest, servletResponse);
         verifyNoMoreInteractions(chain);
@@ -103,7 +103,7 @@ class LoginAccessFilterTest {
         when(servletRequest.getParameter("app")).thenReturn(null);
         when(servletRequest.getParameter("continue")).thenReturn("CONTINUE");
 
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+        loginAccessFilter.doFilterInternal(servletRequest, servletResponse, chain);
 
         verify(chain).doFilter(servletRequest, servletResponse);
         verifyNoMoreInteractions(chain);
@@ -119,7 +119,7 @@ class LoginAccessFilterTest {
         when(servletRequest.getParameter("app")).thenReturn(null);
         when(servletRequest.getParameter("continue")).thenReturn("CONTINUE");
 
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+        loginAccessFilter.doFilterInternal(servletRequest, servletResponse, chain);
 
         verify(chain).doFilter(servletRequest, servletResponse);
         verifyNoMoreInteractions(chain);
@@ -136,7 +136,7 @@ class LoginAccessFilterTest {
         when(servletRequest.getParameter("app")).thenReturn(op == 0 ? null : "APP");
         when(servletRequest.getParameter("continue")).thenReturn(op == 0 ? "CONTINUE" : null);
 
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+        loginAccessFilter.doFilterInternal(servletRequest, servletResponse, chain);
 
         verify(chain).doFilter(servletRequest, servletResponse);
         verifyNoMoreInteractions(chain);
@@ -157,7 +157,7 @@ class LoginAccessFilterTest {
         RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
         when(servletRequest.getRequestDispatcher(anyString())).thenReturn(requestDispatcher);
 
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+        loginAccessFilter.doFilterInternal(servletRequest, servletResponse, chain);
 
         verify(servletRequest).getRequestDispatcher(forwardStringCaptor.capture());
         verify(requestDispatcher).forward(servletRequest, servletResponse);
@@ -177,7 +177,7 @@ class LoginAccessFilterTest {
         when(servletRequest.getParameter("app")).thenReturn(APP);
         when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
 
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+        loginAccessFilter.doFilterInternal(servletRequest, servletResponse, chain);
 
         verify(chain).doFilter(servletRequest, servletResponse);
         verifyNoMoreInteractions(chain);
@@ -195,7 +195,7 @@ class LoginAccessFilterTest {
         when(servletRequest.getParameter("app")).thenReturn(APP);
         when(servletRequest.getParameter("continue")).thenReturn(CONTINUE_PATH);
 
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+        loginAccessFilter.doFilterInternal(servletRequest, servletResponse, chain);
 
         verify(chain).doFilter(servletRequest, servletResponse);
         verifyNoMoreInteractions(chain);
@@ -219,7 +219,7 @@ class LoginAccessFilterTest {
         when(jwtService.authenticateWithJWT(eq(servletRequest), eq(authentication), anyString())).thenReturn(TOKEN2);
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
 
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+        loginAccessFilter.doFilterInternal(servletRequest, servletResponse, chain);
 
         verify(jwtService).authenticateWithJWT(servletRequest, authentication, APP);
         verify(servletResponse).sendRedirect(url.capture());
@@ -242,7 +242,7 @@ class LoginAccessFilterTest {
         when(jwtService.authenticateWithJWT(eq(servletRequest), eq(authentication), anyString()))
                 .thenThrow(IllegalArgumentException.class);
 
-        loginAccessFilter.doFilter(servletRequest, servletResponse, chain);
+        loginAccessFilter.doFilterInternal(servletRequest, servletResponse, chain);
 
         verify(jwtService).authenticateWithJWT(servletRequest, authentication, APP);
         verify(accessDeniedHandler).handle(eq(servletRequest), eq(servletResponse), any());

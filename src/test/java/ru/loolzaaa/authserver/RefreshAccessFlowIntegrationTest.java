@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = "server.servlet.contextPath=/")
 class RefreshAccessFlowIntegrationTest {
 
-    private static final String LOGIN = "zpm_operator";
+    private static final String LOGIN = "user";
     private static final String APP_WITHOUT_ACCESS = "system5s";
     private static final String FINGERPRINT = "TEST_FP";
 

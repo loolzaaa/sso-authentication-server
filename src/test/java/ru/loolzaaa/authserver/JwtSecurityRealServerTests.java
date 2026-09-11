@@ -119,7 +119,9 @@ class JwtSecurityRealServerTests {
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertThat(response.getBody()).contains("<input type=\"text\" name=\"username\" class=\"form-control\" id=\"username\">");
+        assertThat(response.getBody())
+                .contains("name=\"username\"")
+                .contains("name=\"password\"");
     }
 
     @Test
@@ -155,7 +157,7 @@ class JwtSecurityRealServerTests {
 
     @Test
     void shouldPreserveAppParameterWhenRedirectingToRefreshForBrowserRequest() {
-        final String LOGIN = "zpm_operator";
+        final String LOGIN = "user";
         final String APP = "system5s";
         final String APP_URL = "http://example.com/app";
         final String CONTINUE_PARAM = Base64.getUrlEncoder().encodeToString(APP_URL.getBytes(StandardCharsets.UTF_8));
