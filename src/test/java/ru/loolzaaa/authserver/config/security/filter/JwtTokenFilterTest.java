@@ -242,4 +242,68 @@ class JwtTokenFilterTest {
         assertThat(redirectUrlCaptor.getValue()).isEqualTo(REDIRECT_URL);
         verifyNoInteractions(filterChain);
     }
+
+    @Test
+    void shouldPreserveAppParameterForFingerprintIfBrowserRequest() throws Exception {
+        final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
+        final String VALID_REFRESH_TOKEN = "VALID_REFRESH_TOKEN";
+        final String CONTEXT_PATH = "/context-path";
+        final String BROWSER_HEADER = "text/html; charset=utf-8";
+        final String CONTINUE_PATH = "aHR0cDovL2V4YW1wbGUuY29tLy90ZXN0L2FwaQ";
+        final String APP_PARAM = "app1";
+        final String REDIRECT_URL = "http://some-site.com:8080" + CONTEXT_PATH + ssoServerProperties.getRefreshUri() +
+                "?continue=" + CONTINUE_PATH + "&app=" + APP_PARAM;
+        ArgumentCaptor<String> redirectUrlCaptor = ArgumentCaptor.forClass(String.class);
+        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
+        when(req.getParameter("_fingerprint")).thenReturn(null);
+        when(req.getParameter("continue")).thenReturn(CONTINUE_PATH);
+        when(req.getParameter("app")).thenReturn(APP_PARAM);
+        when(req.getContextPath()).thenReturn(CONTEXT_PATH);
+        when(req.getScheme()).thenReturn("http");
+        when(req.getServerName()).thenReturn("some-site.com");
+        when(req.getServerPort()).thenReturn(8080);
+        when(req.getRequestURI()).thenReturn(CONTEXT_PATH + "/some-uri");
+        when(req.getQueryString()).thenReturn("");
+        when(req.getHeader("Accept")).thenReturn(BROWSER_HEADER);
+        when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        verify(resp).sendRedirect(redirectUrlCaptor.capture());
+        assertThat(redirectUrlCaptor.getValue()).isEqualTo(REDIRECT_URL);
+        verifyNoInteractions(filterChain);
+    }
+
+    @Test
+    void shouldDecodeAppParameterForFingerprintIfBrowserRequest() throws Exception {
+        final String INVALID_ACCESS_TOKEN = "INVALID_ACCESS_TOKEN";
+        final String VALID_REFRESH_TOKEN = "VALID_REFRESH_TOKEN";
+        final String CONTEXT_PATH = "/context-path";
+        final String BROWSER_HEADER = "text/html; charset=utf-8";
+        final String CONTINUE_PATH = "aHR0cDovL2V4YW1wbGUuY29tLy90ZXN0L2FwaQ";
+        final String APP_PARAM = "my+app";
+        final String REDIRECT_URL = "http://some-site.com:8080" + CONTEXT_PATH + ssoServerProperties.getRefreshUri() +
+                "?continue=" + CONTINUE_PATH + "&app=my%20app";
+        ArgumentCaptor<String> redirectUrlCaptor = ArgumentCaptor.forClass(String.class);
+        when(cookieService.getCookieValueByName(eq(CookieName.ACCESS.getName()), any())).thenReturn(INVALID_ACCESS_TOKEN);
+        when(cookieService.getCookieValueByName(eq(CookieName.REFRESH.getName()), any())).thenReturn(VALID_REFRESH_TOKEN);
+        when(req.getParameter("_fingerprint")).thenReturn(null);
+        when(req.getParameter("continue")).thenReturn(CONTINUE_PATH);
+        when(req.getParameter("app")).thenReturn(APP_PARAM);
+        when(req.getContextPath()).thenReturn(CONTEXT_PATH);
+        when(req.getScheme()).thenReturn("http");
+        when(req.getServerName()).thenReturn("some-site.com");
+        when(req.getServerPort()).thenReturn(8080);
+        when(req.getRequestURI()).thenReturn(CONTEXT_PATH + "/some-uri");
+        when(req.getQueryString()).thenReturn("");
+        when(req.getHeader("Accept")).thenReturn(BROWSER_HEADER);
+        when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
+
+        jwtTokenFilter.doFilterInternal(req, resp, filterChain);
+
+        verify(resp).sendRedirect(redirectUrlCaptor.capture());
+        assertThat(redirectUrlCaptor.getValue()).isEqualTo(REDIRECT_URL);
+        verifyNoInteractions(filterChain);
+    }
 }

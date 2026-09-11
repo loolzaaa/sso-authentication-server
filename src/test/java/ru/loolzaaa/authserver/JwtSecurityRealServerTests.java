@@ -17,9 +17,8 @@ import ru.loolzaaa.authserver.services.JWTService;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestProfiles
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -152,5 +151,42 @@ class JwtSecurityRealServerTests {
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertThat(response.getBody()).contains("Example Domain");
+    }
+
+    @Test
+    void shouldPreserveAppParameterWhenRedirectingToRefreshForBrowserRequest() {
+        final String LOGIN = "zpm_operator";
+        final String APP = "system5s";
+        final String APP_URL = "http://example.com/app";
+        final String CONTINUE_PARAM = Base64.getUrlEncoder().encodeToString(APP_URL.getBytes(StandardCharsets.UTF_8));
+        final String SSO_URL = String.format("http://localhost:%d%s?app=%s&continue=%s",
+                localPort, ssoServerProperties.getLoginPage(), APP, CONTINUE_PARAM);
+
+        Date issuedAt = new Date(System.currentTimeMillis() - 7_200_000L);
+        long accessExp = System.currentTimeMillis() - 3_600_000L;
+        Map<String, Object> params = new HashMap<>();
+        params.put("login", LOGIN);
+        params.put("authorities", List.of("passport"));
+        String expiredAccessToken = jwtUtils.buildAccessToken(issuedAt, accessExp, params);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE);
+        headers.add(HttpHeaders.COOKIE, CookieName.ACCESS.getName() + "=" + expiredAccessToken);
+        headers.add(HttpHeaders.COOKIE, CookieName.REFRESH.getName() + "=" + UUID.randomUUID());
+
+        HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                SSO_URL,
+                HttpMethod.GET,
+                httpEntity,
+                String.class);
+
+        assertNotNull(response);
+        assertThat(response.getStatusCode().is3xxRedirection()).isTrue();
+        String location = response.getHeaders().getFirst(HttpHeaders.LOCATION);
+        assertThat(location)
+                .contains(ssoServerProperties.getRefreshUri())
+                .contains("continue=")
+                .contains("app=" + APP);
     }
 }

@@ -17,6 +17,7 @@ import ru.loolzaaa.authserver.services.JWTService;
 import ru.loolzaaa.authserver.services.SecurityContextService;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -97,7 +98,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 } else {
                     uriComponentsBuilder = UriComponentsBuilder.fromHttpUrl(getServerUrl(req) + ssoServerProperties.getRefreshUri());
                 }
-                String redirectURL = uriComponentsBuilder.queryParam("continue", continuePath).toUriString();
+                uriComponentsBuilder.queryParam("continue", continuePath);
+                addApplicationParam(req, uriComponentsBuilder);
+                String redirectURL = uriComponentsBuilder.toUriString();
                 resp.sendRedirect(redirectURL);
             }
             return;
@@ -120,6 +123,19 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
             securityContextService.clearSecurityContextHolder(req, resp);
         }
+    }
+
+    private void addApplicationParam(HttpServletRequest req, UriComponentsBuilder uriComponentsBuilder) {
+        String appParameter = req.getParameter("app");
+        if (appParameter == null) {
+            return;
+        }
+        try {
+            appParameter = URLDecoder.decode(appParameter, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            logger.debug("Cannot decode app parameter: " + appParameter);
+        }
+        uriComponentsBuilder.queryParam("app", appParameter);
     }
 
     private String getServerUrl(HttpServletRequest req) {
