@@ -54,9 +54,16 @@ public class WebConfig implements WebMvcConfigurer {
         return route().GET(ssoServerProperties.getLoginPage(), handler).build();
     }
 
+    @Bean
+    public RouterFunction<ServerResponse> forbidden() {
+        return route()
+                .route(RequestPredicates.path(ssoServerProperties.getForbiddenUri()),
+                        request -> create("403").status(HttpStatus.FORBIDDEN).build())
+                .build();
+    }
+
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController(ssoServerProperties.getForbiddenUri()).setViewName("403");
         registry.addViewController(ssoServerProperties.getAdminUri()).setViewName("admin");
         registry.addViewController(ssoServerProperties.getRefreshUri()).setViewName("trefresh");
     }
