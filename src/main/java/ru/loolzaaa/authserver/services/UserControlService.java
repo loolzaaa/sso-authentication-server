@@ -79,7 +79,7 @@ public class UserControlService {
             log.trace("Return user principal [{}] for application [{}]", username, appName);
             return new UserPrincipal(user, appName);
         } catch (Exception e) {
-            log.warn("Can't create user principal: {}", username, e);
+            log.warn("Can't create user principal [{}]: {}", username, e.getMessage());
             String message = messageSource.getMessage("userControl.common.error", new Object[]{e.getMessage()}, l);
             throw new RequestErrorException(message);
         }

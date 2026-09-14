@@ -5,9 +5,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -16,8 +13,15 @@ import java.util.UUID;
 
 /**
  * Populates {@link MDC} with request scoped diagnostics
- * ({@code requestId}, {@code clientIp}, {@code username})
- * so that every log line can be correlated with a request.
+ * ({@code requestId}, {@code clientIp}) so that every log line
+ * can be correlated with a request, and clears all MDC fields
+ * once the request is finished.
+ * <p>
+ * The {@code username} field is intentionally not resolved here:
+ * this filter runs before the Spring Security filter chain, when
+ * the authentication is not established yet. It is populated by
+ * {@link MdcUsernameFilter} after authentication and by
+ * {@link ru.loolzaaa.authserver.services.SecurityContextService}.
  */
 public class MdcLoggingFilter extends OncePerRequestFilter {
 
@@ -31,11 +35,6 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
         try {
             MDC.put(REQUEST_ID, UUID.randomUUID().toString().substring(0, 8));
             MDC.put(CLIENT_IP, resolveClientIp(req));
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated()
-                    && !(authentication instanceof AnonymousAuthenticationToken)) {
-                MDC.put(USERNAME, authentication.getName());
-            }
             chain.doFilter(req, resp);
         } finally {
             MDC.remove(REQUEST_ID);

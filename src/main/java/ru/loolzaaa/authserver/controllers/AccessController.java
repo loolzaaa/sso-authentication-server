@@ -1,16 +1,19 @@
 package ru.loolzaaa.authserver.controllers;
 
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
@@ -27,8 +30,10 @@ import ru.loolzaaa.authserver.services.CookieService;
 import ru.loolzaaa.authserver.services.JWTService;
 import ru.loolzaaa.authserver.services.SecurityContextService;
 
+import java.io.IOException;
 import java.util.Base64;
 
+@Slf4j
 @RequiredArgsConstructor
 @Controller
 @RequestMapping("/api")
@@ -47,42 +52,49 @@ public class AccessController {
     private final JWTService jwtService;
     private final CookieService cookieService;
 
-    @PostMapping("/refresh")
-    String refreshToken(HttpServletRequest req, HttpServletResponse resp) {
-        boolean isRefreshTokenValid = true;
+    private final AccessDeniedHandler accessDeniedHandler;
 
+    @PostMapping("/refresh")
+    String refreshToken(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         String accessToken = cookieService.getCookieValueByName(CookieName.ACCESS.getName(), req.getCookies());
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
         if (accessToken == null || refreshToken == null) {
-            isRefreshTokenValid = false;
             securityContextService.clearSecurityContextHolder(req, resp);
+            return redirectToLoginOrContinue(req);
         }
 
-        JWTAuthentication jwtAuthentication = null;
-        if (isRefreshTokenValid) {
+        JWTAuthentication jwtAuthentication = jwtService.refreshSsoTokens(req, resp, accessToken, refreshToken);
+        if (jwtAuthentication == null) {
+            securityContextService.clearSecurityContextHolder(req, resp);
+            return redirectToLoginOrContinue(req);
+        }
+
+        // SSO session is valid and has just been extended. Authenticate the current request,
+        // so the access denied handler can forward to the protected error page.
+        securityContextService.updateSecurityContextHolder(req, jwtAuthentication.getUsername());
+
+        String appToken = null;
+        String appParameter = req.getParameter("_app");
+        if (appParameter != null) {
             try {
-                jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
-                if (jwtAuthentication == null) {
-                    isRefreshTokenValid = false;
-                    securityContextService.clearSecurityContextHolder(req, resp);
-                }
+                appToken = jwtService.buildApplicationAccessToken(jwtAuthentication.getUsername(), appParameter);
             } catch (IllegalArgumentException e) {
-                throw new AccessDeniedException(e.getLocalizedMessage());
+                log.warn("Access denied for application [{}] for user [{}]: {}",
+                        appParameter, jwtAuthentication.getUsername(), e.getLocalizedMessage());
+                accessDeniedHandler.handle(req, resp, new AccessDeniedException(e.getLocalizedMessage()));
+                return null;
             }
         }
 
-        String continuePath = req.getParameter("_continue");
-        if (continuePath == null) {
-            return !isRefreshTokenValid ? (REDIRECT_CMD + ssoServerProperties.getLoginPage()) : REDIRECT_CMD + "/";
+        String continueUrl = decodeContinueUrl(req.getParameter("_continue"));
+        if (continueUrl == null) {
+            return REDIRECT_CMD + "/";
         }
-        String continueUrl = new String(Base64.getUrlDecoder().decode(continuePath));
-        if (!isValidRedirectUrl(continueUrl)) {
-            return !isRefreshTokenValid ? (REDIRECT_CMD + ssoServerProperties.getLoginPage()) : REDIRECT_CMD + "/";
-        }
+
         UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromHttpUrl(continueUrl);
-        if (isRefreshTokenValid && req.getParameter("_app") != null) {
+        if (appToken != null) {
             uriComponentsBuilder
-                    .queryParam("token", jwtAuthentication.getAccessToken())
+                    .queryParam("token", appToken)
                     .queryParam("serverTime", System.currentTimeMillis());
         }
         return REDIRECT_CMD + uriComponentsBuilder.toUriString();
@@ -94,34 +106,31 @@ public class AccessController {
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
         if (accessToken == null || refreshToken == null) {
             securityContextService.clearSecurityContextHolder(req, resp);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(RequestStatusDTO.builder()
-                            .status(RequestStatus.ERROR)
-                            .statusCode(HttpStatus.UNAUTHORIZED)
-                            .text("There is no refresh token")
-                            .build()
-                    );
+            return refreshError(HttpStatus.UNAUTHORIZED, "There is no refresh token");
         }
 
-        try {
-            JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
-            if (jwtAuthentication == null) {
-                securityContextService.clearSecurityContextHolder(req, resp);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(RequestStatusDTO.builder()
-                                .status(RequestStatus.ERROR)
-                                .statusCode(HttpStatus.UNAUTHORIZED)
-                                .text("Refresh token is invalid")
-                                .build()
-                        );
+        JWTAuthentication jwtAuthentication = jwtService.refreshSsoTokens(req, resp, accessToken, refreshToken);
+        if (jwtAuthentication == null) {
+            securityContextService.clearSecurityContextHolder(req, resp);
+            return refreshError(HttpStatus.UNAUTHORIZED, "Refresh token is invalid");
+        }
+
+        securityContextService.updateSecurityContextHolder(req, jwtAuthentication.getUsername());
+
+        String token = jwtAuthentication.getAccessToken();
+        String appParameter = req.getParameter("_app");
+        if (appParameter != null) {
+            try {
+                token = jwtService.buildApplicationAccessToken(jwtAuthentication.getUsername(), appParameter);
+            } catch (IllegalArgumentException e) {
+                log.warn("Access denied for application [{}] for user [{}]: {}",
+                        appParameter, jwtAuthentication.getUsername(), e.getLocalizedMessage());
+                return refreshError(HttpStatus.FORBIDDEN, e.getLocalizedMessage());
             }
-
-            String body = String.format("{\"token\":\"%s\",\"serverTime\":%d}",
-                    jwtAuthentication.getAccessToken(), System.currentTimeMillis());
-            return ResponseEntity.ok().body(RequestStatusDTO.ok(body));
-        } catch (IllegalArgumentException e) {
-            throw new AccessDeniedException(e.getLocalizedMessage());
         }
+
+        String body = String.format("{\"token\":\"%s\",\"serverTime\":%d}", token, System.currentTimeMillis());
+        return ResponseEntity.ok().body(RequestStatusDTO.ok(body));
     }
 
     @PostMapping("/fast/rfid")
@@ -184,6 +193,33 @@ public class AccessController {
     void prepareLogout(@RequestHeader("Revoke-Token") String token) {
         AuditLogger.securityEvent("PREPARE_LOGOUT", "revoke token requested");
         jwtService.revokeToken(token);
+    }
+
+    private ResponseEntity<RequestStatusDTO> refreshError(HttpStatus status, String text) {
+        return ResponseEntity.status(status)
+                .body(RequestStatusDTO.builder()
+                        .status(RequestStatus.ERROR)
+                        .statusCode(status)
+                        .text(text)
+                        .build());
+    }
+
+    private String redirectToLoginOrContinue(HttpServletRequest req) {
+        String continueUrl = decodeContinueUrl(req.getParameter("_continue"));
+        return continueUrl != null ? REDIRECT_CMD + continueUrl : REDIRECT_CMD + ssoServerProperties.getLoginPage();
+    }
+
+    private String decodeContinueUrl(String continuePath) {
+        if (continuePath == null) {
+            return null;
+        }
+        try {
+            String continueUrl = new String(Base64.getUrlDecoder().decode(continuePath)).replaceAll("[\r\n]", "_");
+            return isValidRedirectUrl(continueUrl) ? continueUrl : null;
+        } catch (IllegalArgumentException e) {
+            log.warn("Continue parameter is not valid Base64 scheme");
+            return null;
+        }
     }
 
     private boolean isValidRedirectUrl(String url) {

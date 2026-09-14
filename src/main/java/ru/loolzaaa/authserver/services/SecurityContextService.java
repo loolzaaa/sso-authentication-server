@@ -43,13 +43,14 @@ public class SecurityContextService {
 
         SecurityContextHolder.getContext().setAuthentication(null);
         SecurityContextHolder.clearContext();
-        MDC.remove(MdcLoggingFilter.USERNAME);
 
         String refreshToken = cookieService.getCookieValueByName(CookieName.REFRESH.getName(), req.getCookies());
         if (refreshToken != null) {
+            // Emit logout audit while the user is still the subject of the request
             jwtService.deleteTokenFromDatabase(refreshToken);
         }
 
+        MDC.remove(MdcLoggingFilter.USERNAME);
         cookieService.clearCookies(req, resp);
     }
 }

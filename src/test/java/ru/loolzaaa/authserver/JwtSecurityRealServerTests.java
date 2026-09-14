@@ -8,14 +8,21 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.MessageSource;
 import org.springframework.http.*;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import ru.loolzaaa.authserver.config.security.CookieName;
 import ru.loolzaaa.authserver.config.security.JWTUtils;
 import ru.loolzaaa.authserver.config.security.property.SsoServerProperties;
 import ru.loolzaaa.authserver.services.JWTService;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,6 +45,9 @@ class JwtSecurityRealServerTests {
 
     @Autowired
     MessageSource messageSource;
+
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
     String accessToken;
     UUID refreshToken;
@@ -190,5 +200,106 @@ class JwtSecurityRealServerTests {
                 .contains(ssoServerProperties.getRefreshUri())
                 .contains("continue=")
                 .contains("app=" + APP);
+    }
+
+    @Test
+    void shouldReturnForbiddenAndExtendSsoSessionWhenRefreshAppWithoutAccess() {
+        final String LOGIN = "user";
+        final String APP = "system5s";
+        final String FINGERPRINT = "REFRESH_FORBIDDEN_FP";
+        final String APP_URL = "http://example.com/app";
+        final String CONTINUE_PARAM = Base64.getUrlEncoder().encodeToString(APP_URL.getBytes(StandardCharsets.UTF_8));
+
+        UUID validRefreshToken = UUID.randomUUID();
+        Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE login = ?", Long.class, LOGIN);
+        jdbcTemplate.update("INSERT INTO refresh_sessions (user_id, refresh_token, fingerprint, expires_in) " +
+                        "VALUES (?, ?::uuid, ?, ?)",
+                userId, validRefreshToken.toString(), FINGERPRINT,
+                new Timestamp(System.currentTimeMillis() + 3_600_000L));
+
+        try {
+            Date issuedAt = new Date(System.currentTimeMillis() - 7_200_000L);
+            long accessExp = System.currentTimeMillis() - 3_600_000L;
+            Map<String, Object> params = new HashMap<>();
+            params.put("login", LOGIN);
+            params.put("authorities", List.of("passport"));
+            String expiredAccessToken = jwtUtils.buildAccessToken(issuedAt, accessExp, params);
+
+            String accessCookie = CookieName.ACCESS.getName() + "=" + expiredAccessToken;
+            String refreshCookie = CookieName.REFRESH.getName() + "=" + validRefreshToken;
+            TestRestTemplate restTemplate = new TestRestTemplate();
+
+            HttpHeaders pageHeaders = new HttpHeaders();
+            pageHeaders.setAccept(List.of(MediaType.TEXT_HTML));
+            pageHeaders.add(HttpHeaders.COOKIE, accessCookie + "; " + refreshCookie);
+            ResponseEntity<String> refreshPage = restTemplate.exchange(
+                    String.format("http://localhost:%d%s?continue=%s&app=%s",
+                            localPort, ssoServerProperties.getRefreshUri(), CONTINUE_PARAM, APP),
+                    HttpMethod.GET,
+                    new HttpEntity<>(pageHeaders),
+                    String.class);
+
+            assertEquals(HttpStatus.OK, refreshPage.getStatusCode());
+            String csrfToken = extractCsrfToken(refreshPage.getBody());
+            assertThat(csrfToken).isNotBlank();
+
+            HttpHeaders postHeaders = new HttpHeaders();
+            postHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            postHeaders.add(HttpHeaders.COOKIE,
+                    accessCookie + "; " + refreshCookie + "; " + extractResponseCookies(refreshPage));
+
+            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+            form.add("_csrf", csrfToken);
+            form.add("_fingerprint", FINGERPRINT);
+            form.add("_app", APP);
+            form.add("_continue", CONTINUE_PARAM);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    String.format("http://localhost:%d/api/refresh", localPort),
+                    HttpMethod.POST,
+                    new HttpEntity<>(form, postHeaders),
+                    String.class);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertNull(response.getHeaders().getFirst(HttpHeaders.LOCATION));
+            assertThat(response.getBody())
+                    .contains("There is no application [" + APP + "] for user [" + LOGIN + "]");
+
+            List<String> setCookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+            assertNotNull(setCookies);
+            assertThat(setCookies.stream()
+                    .anyMatch(cookie -> cookie.startsWith(CookieName.ACCESS.getName() + "="))).isTrue();
+            assertThat(setCookies.stream()
+                    .anyMatch(cookie -> cookie.startsWith(CookieName.REFRESH.getName() + "="))).isTrue();
+        } finally {
+            jdbcTemplate.update("DELETE FROM refresh_sessions WHERE fingerprint = ?", FINGERPRINT);
+        }
+    }
+
+    private String extractCsrfToken(String html) {
+        if (html == null) {
+            return null;
+        }
+        Matcher inputMatcher = Pattern.compile("<input[^>]*>").matcher(html);
+        while (inputMatcher.find()) {
+            String input = inputMatcher.group();
+            if (input.contains("name=\"_csrf\"")) {
+                Matcher valueMatcher = Pattern.compile("value=\"([^\"]+)\"").matcher(input);
+                if (valueMatcher.find()) {
+                    return valueMatcher.group(1);
+                }
+            }
+        }
+        return null;
+    }
+
+    private String extractResponseCookies(ResponseEntity<?> response) {
+        List<String> setCookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+        if (setCookies == null) {
+            return "";
+        }
+        return setCookies.stream()
+                .map(header -> header.split(";", 2)[0])
+                .collect(Collectors.joining("; "));
     }
 }
