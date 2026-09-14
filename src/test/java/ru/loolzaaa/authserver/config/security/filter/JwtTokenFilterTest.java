@@ -127,7 +127,7 @@ class JwtTokenFilterTest {
         when(req.getRequestURI()).thenReturn("/uri");
         when(req.getParameter("_fingerprint")).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
-        when(jwtService.refreshAccessToken(req, resp, INVALID_ACCESS_TOKEN, INVALID_REFRESH_TOKEN)).thenReturn(null);
+        when(jwtService.refreshSsoTokens(req, resp, INVALID_ACCESS_TOKEN, INVALID_REFRESH_TOKEN)).thenReturn(null);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);
 
@@ -148,7 +148,7 @@ class JwtTokenFilterTest {
         when(req.getRequestURI()).thenReturn("/uri");
         when(req.getParameter("_fingerprint")).thenReturn("FINGERPRINT");
         when(jwtService.checkAccessToken(INVALID_ACCESS_TOKEN)).thenReturn(null);
-        when(jwtService.refreshAccessToken(req, resp, INVALID_ACCESS_TOKEN, VALID_REFRESH_TOKEN)).thenReturn(jwtAuthentication);
+        when(jwtService.refreshSsoTokens(req, resp, INVALID_ACCESS_TOKEN, VALID_REFRESH_TOKEN)).thenReturn(jwtAuthentication);
         when(jwtAuthentication.getUsername()).thenReturn(LOGIN);
 
         jwtTokenFilter.doFilterInternal(req, resp, filterChain);

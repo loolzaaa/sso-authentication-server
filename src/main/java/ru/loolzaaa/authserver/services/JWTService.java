@@ -106,9 +106,8 @@ public class JWTService {
         }
     }
 
-    public JWTAuthentication refreshAccessToken(HttpServletRequest req, HttpServletResponse resp,
-                                                String oldAccessToken, String refreshToken) {
-        String currentApplication = req.getParameter("_app");
+    public JWTAuthentication refreshSsoTokens(HttpServletRequest req, HttpServletResponse resp,
+                                              String oldAccessToken, String refreshToken) {
         String currentFingerprint = req.getParameter("_fingerprint");
 
         String sql = "SELECT login, fingerprint " +
@@ -156,20 +155,21 @@ public class JWTService {
                 jwtAuthentication.getRefreshToken().toString(),
                 isRfid);
 
-        if (currentApplication != null) {
-            User user = userRepository.findByLogin(username).orElse(null);
-            UserPrincipal userPrincipal = new UserPrincipal(user, currentApplication);
-            authorities = userPrincipal.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .toList();
-
-            jwtAuthentication = generateJWTAuthentication(username, authorities);
-        }
-
-        log.debug("Refresh token for user {}[{}]. RFID: {}. App: {}",
-                username, req.getRemoteAddr(), isRfid, currentApplication);
+        log.debug("Refresh SSO tokens for user {}[{}]. RFID: {}",
+                username, req.getRemoteAddr(), isRfid);
 
         return jwtAuthentication;
+    }
+
+    public String buildApplicationAccessToken(String username, String applicationName) {
+        User user = userRepository.findByLogin(username)
+                .orElseThrow(() -> new IllegalArgumentException(String.format("There is no user with login [%s]", username)));
+        UserPrincipal userPrincipal = new UserPrincipal(user, applicationName);
+        List<String> authorities = userPrincipal.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        return generateJWTAuthentication(username, authorities).getAccessToken();
     }
 
     public void deleteTokenFromDatabase(String refreshToken) {

@@ -114,7 +114,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 
     private void tryToRefreshAccessToken(HttpServletRequest req, HttpServletResponse resp, String accessToken, String refreshToken) {
-        JWTAuthentication jwtAuthentication = jwtService.refreshAccessToken(req, resp, accessToken, refreshToken);
+        JWTAuthentication jwtAuthentication = jwtService.refreshSsoTokens(req, resp, accessToken, refreshToken);
         if (jwtAuthentication != null) {
             String login = jwtAuthentication.getUsername();
             log.debug("Refresh token for user [{}] validated and updated. Update SecurityContext", login);
