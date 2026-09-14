@@ -1,16 +1,19 @@
 package ru.loolzaaa.authserver.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.function.HandlerFunction;
+import org.springframework.web.servlet.function.RequestPredicates;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
@@ -69,6 +72,14 @@ public class WebConfig implements WebMvcConfigurer {
     public FilterRegistrationBean<MdcLoggingFilter> mdcLoggingFilter() {
         FilterRegistrationBean<MdcLoggingFilter> registration = new FilterRegistrationBean<>(new MdcLoggingFilter());
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<MdcUsernameFilter> mdcUsernameFilter() {
+        FilterRegistrationBean<MdcUsernameFilter> registration = new FilterRegistrationBean<>(new MdcUsernameFilter());
+        // Run after the Spring Security filter chain (-100), once the user is authenticated
+        registration.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER + 1);
         return registration;
     }
 
